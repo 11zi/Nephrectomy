@@ -71,5 +71,8 @@ const { circleUrl, squareUrl, sizeList } = toRefs(state)
         </el-menu-item>
       </el-menu>
     </el-col>
+    <el-col :xs="8" :sm="12" :md="17" :lg="19" :xl="21">
+      <el-empty description="无内容"></el-empty>
+    </el-col>
   </el-row>
 </template>
