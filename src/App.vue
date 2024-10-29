@@ -1,58 +1,75 @@
 <script setup lang="ts">
-// import { ref } from 'vue'
-//
-// const isCollapse = ref(true)
-// const handleOpen = (key: string, keyPath: string[]) => {
-//   console.log(key, keyPath)
-// }
-// const handleClose = (key: string, keyPath: string[]) => {
-//   console.log(key, keyPath)
-// }
+import {
+  Document,
+  Menu as IconMenu,
+  Location,
+  Setting,
+} from '@element-plus/icons-vue'
+const handleOpen = (key: string, keyPath: string[]) => {
+  console.log(key, keyPath)
+}
+const handleClose = (key: string, keyPath: string[]) => {
+  console.log(key, keyPath)
+}
+
+import { reactive, toRefs } from 'vue'
+
+const state = reactive({
+  circleUrl:
+    'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png',
+  squareUrl:
+    'https://cube.elemecdn.com/9/c2/f0ee8a3c7c9638a54940382568c9dpng.png',
+  sizeList: ['small', '', 'large'] as const,
+})
+
+const { circleUrl, squareUrl, sizeList } = toRefs(state)
 </script>
 
 <template>
-  <!-- <div class="common-layout" id="App">
-    <el-container>
-      <el-aside width="200px">Aside</el-aside>
-      <el-main>Main</el-main>
-    </el-container>
-  </div> -->
-
-  <el-container>
-    <el-aside>我腰置顶</el-aside>
-    <el-container>
-      <el-header>置顶，占100宽度</el-header>
-      <el-main>
-        <el-empty description="这里放聊天内容"></el-empty>
-      </el-main>
-    </el-container>
-  </el-container>
+  <el-row class="tac">
+    <el-col :xs="16" :sm="12" :md="7" :lg="5" :xl="3">
+      <el-menu
+        active-text-color="#ac6b26"
+        background-color="#f1f2ef"
+        class="el-menu-vertical-demo"
+        default-active="2"
+        text-color="#00303b"
+        @open="handleOpen"
+        @close="handleClose"
+      >
+        <el-affix :offset="20" style="margin-left: 1vw; margin-bottom: 2vh">
+          <el-avatar :size="50" :src="circleUrl" />
+        </el-affix>
+        <el-sub-menu index="1">
+          <template #title>
+            <el-icon><location /></el-icon>
+            <span>第一导航</span>
+          </template>
+          <el-menu-item-group title="Group One">
+            <el-menu-item index="1-1">item one</el-menu-item>
+            <el-menu-item index="1-2">item two</el-menu-item>
+          </el-menu-item-group>
+          <el-menu-item-group title="Group Two">
+            <el-menu-item index="1-3">item three</el-menu-item>
+          </el-menu-item-group>
+          <el-sub-menu index="1-4">
+            <template #title>item four</template>
+            <el-menu-item index="1-4-1">item one</el-menu-item>
+          </el-sub-menu>
+        </el-sub-menu>
+        <el-menu-item index="2">
+          <el-icon><icon-menu /></el-icon>
+          <span>Navigator Two</span>
+        </el-menu-item>
+        <el-menu-item index="3" disabled>
+          <el-icon><document /></el-icon>
+          <span>Navigator Three</span>
+        </el-menu-item>
+        <el-menu-item index="4">
+          <el-icon><setting /></el-icon>
+          <span>Navigator Four</span>
+        </el-menu-item>
+      </el-menu>
+    </el-col>
+  </el-row>
 </template>
-<!-- <el-menu
-    default-active="2"
-    :collapse="isCollapse"
-    @open="handleOpen"
-    @close="handleClose"
-  >
-    <el-sub-menu index="1">
-      <template #title> 耋 </template>
-      <span>导航一号</span>
-      <el-menu-item-group>
-        <template #title><span>第一组</span></template>
-        <el-menu-item index="1-1">科目一</el-menu-item>
-        <el-menu-item index="1-2">科目一</el-menu-item>
-      </el-menu-item-group>
-      <el-menu-item-group title="第二组">
-        <el-menu-item index="1-3">科目三</el-menu-item>
-      </el-menu-item-group>
-    </el-sub-menu>
-  </el-menu>
-  <div class="el-main">
-    <el-empty description="不可描述" />
-    <el-radio-group v-model="isCollapse" style="margin-bottom: 20px">
-      <el-radio-button :value="false">expand</el-radio-button>
-      <el-radio-button :value="true">collapse</el-radio-button>
-    </el-radio-group>
-  </div> -->
-
-<style></style>
