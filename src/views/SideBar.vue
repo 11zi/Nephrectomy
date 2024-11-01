@@ -72,7 +72,7 @@ function toggleCollapse() {
               <el-text class="mx-1" type="info" size="small" line-clamp="2"
                 >凡是被那把武器伤害的人，都会遭到席卷全身的诅咒</el-text
               >
-              <el-text class="mx-1" size="large">姓名，对齐到底部</el-text>
+              <el-text class="mx-1" size="large">哈米斯基</el-text>
             </el-space>
           </el-col>
         </el-row>

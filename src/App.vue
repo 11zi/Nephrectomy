@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import SideBar from './views/SideBar.vue'
-import NephrectomyView from './views/NephrectomyView.vue'
+import Content from './views/Content.vue'
 </script>
 
 <template>
   <el-container style="height: 100%">
-    <SideBar></SideBar>
-    <NephrectomyView />
+    <SideBar />
+    <Content />
   </el-container>
 </template>
 <style></style>
