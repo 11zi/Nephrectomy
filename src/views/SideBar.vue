@@ -28,23 +28,29 @@ const handleClose = (key: string, keyPath: string[]) => {}
 // 控制侧边栏收起展开
 import { ref } from 'vue'
 const isCollapse = ref(false)
+const side_bar_width = ref(300)
 function toggleCollapse() {
-  isCollapse.value = !isCollapse.value
+  if (isCollapse.value) {
+    isCollapse.value = false
+    side_bar_width.value = 300
+  } else {
+    isCollapse.value = true
+    side_bar_width.value = 0
+  }
 }
 </script>
 
 <template>
-  <el-aside>
+  <el-aside :style="{ width: side_bar_width + 'px' }">
     <el-menu
       active-text-color="#923408"
       background-color="#fffaf3"
       text-color="#191724"
       :collapse="isCollapse"
+      collapse-transition="false"
       @open="handleOpen"
       @close="handleClose"
       style="height: 100%"
-      popper-offset="2"
-      class="sidebar"
     >
       <el-scrollbar>
         <el-row :align="Bottom" style="padding-top: 16px; padding-bottom: 24px">
@@ -153,7 +159,7 @@ function toggleCollapse() {
       </el-scrollbar>
     </el-menu>
   </el-aside>
-  <el-affix :offset="8">
+  <el-affix :offset="8" style="margin-left: 8px">
     <el-button :icon="ElementPlus" @click="toggleCollapse" circle></el-button
   ></el-affix>
 </template>
@@ -163,6 +169,9 @@ function toggleCollapse() {
   min-width: 0px !important;
 }
 .el-menu--collapse {
-  width: 1px !important;
+  width: 2px !important;
+}
+.el-aside {
+  width: 4px;
 }
 </style>
