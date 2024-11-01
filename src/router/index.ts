@@ -7,11 +7,6 @@ const router = createRouter({
   routes: [
     {
       path: '/Nephrectomy',
-      name: 'SideBar',
-      component: SideBar,
-    },
-    {
-      path: '/Nephrectomy',
       name: 'Nephrectomy',
       // route level code-splitting
       // this generates a separate chunk (About.[hash].js) for this route
