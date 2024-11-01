@@ -18,6 +18,7 @@ import {
   User,
   ChatRound,
   Bottom,
+  ElementPlus,
 } from '@element-plus/icons-vue'
 
 // 保留，每个子菜单打开关闭时触发
@@ -28,7 +29,7 @@ const handleClose = (key: string, keyPath: string[]) => {}
 import { ref } from 'vue'
 const isCollapse = ref(false)
 function toggleCollapse() {
-  // isCollapse.value = !isCollapse.value
+  isCollapse.value = !isCollapse.value
 }
 </script>
 
@@ -42,7 +43,7 @@ function toggleCollapse() {
       @open="handleOpen"
       @close="handleClose"
       style="height: 100%"
-      popper-offset="41"
+      popper-offset="2"
       class="sidebar"
     >
       <el-scrollbar>
@@ -55,7 +56,6 @@ function toggleCollapse() {
                 shape="square"
                 :size="60"
                 :src="squareUrl"
-                @click="toggleCollapse"
               />
             </el-space>
           </el-col>
@@ -153,6 +153,9 @@ function toggleCollapse() {
       </el-scrollbar>
     </el-menu>
   </el-aside>
+  <el-affix :offset="8">
+    <el-button :icon="ElementPlus" @click="toggleCollapse" circle></el-button
+  ></el-affix>
 </template>
 
 <style>
@@ -160,6 +163,6 @@ function toggleCollapse() {
   min-width: 0px !important;
 }
 .el-menu--collapse {
-  width: 0px;
+  width: 1px !important;
 }
 </style>
