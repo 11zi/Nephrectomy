@@ -4,9 +4,7 @@ import Content from './views/Content.vue'
 </script>
 
 <template>
-  <el-container style="height: 100%">
-    <SideBar />
-    <Content />
-  </el-container>
+  <SideBar />
+  <Content />
 </template>
 <style></style>
