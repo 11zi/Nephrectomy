@@ -1,4 +1,5 @@
 import './assets/css/mdui.min.css'
+import './assets/js/mdui.min.js'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

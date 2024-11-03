@@ -1,125 +1,94 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-const isSideBarCollapsed = ref(false)
-const component = [
+const components = [
   {
     name: '导航',
     vueSrc: '',
+    index: '1',
+    icon: 'home',
     child: [
-      { name: '房间信息', vueSrc: '' },
-      { name: '房间列表', vueSrc: '' },
-      { name: '注册/编辑', vueSrc: '' },
-      { name: '帮助', vueSrc: '' },
+      { name: '房间信息', vueSrc: '', index: '1-1', icon: 'class' },
+      { name: '房间列表', vueSrc: '', index: '1-2', icon: 'map' },
+      { name: '注册/编辑', vueSrc: '', index: '1-3', icon: 'exit_to_app' },
+      { name: '帮助', vueSrc: '', index: '1-4', icon: 'help_outline' },
     ],
   },
   {
     name: '板块',
     vueSrc: '',
+    index: '2',
+    icon: 'widgets',
     child: [
-      { name: '银行', vueSrc: '' },
-      { name: '炒股', vueSrc: '' },
-      { name: '骰子', vueSrc: '' },
-      { name: '商城', vueSrc: '' },
+      { name: '银行', vueSrc: '', index: '2-1', icon: 'account_balance' },
+      { name: '炒股', vueSrc: '', index: '2-2', icon: 'timeline' },
+      { name: '骰子', vueSrc: '', index: '2-3', icon: 'money_off' },
+      { name: '商城', vueSrc: '', index: '2-4', icon: 'add_shopping_cart' },
     ],
   },
   {
     name: '工具',
     vueSrc: '',
+    index: '3',
+    icon: 'gavel',
     child: [
-      { name: '点播', vueSrc: '' },
-      { name: '便签', vueSrc: '' },
-      { name: '解析', vueSrc: '' },
-      { name: '吃饭', vueSrc: '' },
-      { name: '隐式传送', vueSrc: '' },
+      { name: '点播', vueSrc: '', index: '3-1', icon: 'playlist_play' },
+      { name: '便签', vueSrc: '', index: '3-2', icon: 'note' },
+      { name: '解析', vueSrc: '', index: '3-3', icon: 'sd_card' },
+      { name: '吃饭', vueSrc: '', index: '3-4', icon: 'restaurant_menu' },
+      {
+        name: '时间',
+        vueSrc: '',
+        index: '3-6',
+        icon: 'access_time',
+      },
+      { name: '隐式传送', vueSrc: '', index: '3-5', icon: 'blur_on' },
     ],
   },
+  { name: '好友', vueSrc: '', index: '4', icon: 'account_box' },
+  { name: '消息', vueSrc: '', index: '5', icon: 'message' },
   {
     name: '系统',
     vueSrc: '',
+    index: '6',
+    icon: 'settings',
     child: [
-      { name: '设置', vueSrc: '' },
-      { name: '关于', vueSrc: '' },
-      { name: '重载', vueSrc: '' },
-      { name: '登出', vueSrc: '' },
-      { name: '2019年4月29日13点23分', vueSrc: '' },
+      { name: '设置', vueSrc: '', index: '6-1', icon: 'settings' },
+      { name: '关于', vueSrc: '', index: '6-2', icon: 'info_outline' },
+      { name: '重载', vueSrc: '', index: '6-3', icon: 'refresh' },
+      { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app' },
     ],
   },
-  { name: '好友', vueSrc: '' },
-  { name: '消息', vueSrc: '' },
 ]
 </script>
 
 <template>
-  <div class="mdui-drawer mdui-drawer-open mdui-color-blue-grey" swipe="true">
-    <v-for></v-for>
-    <ul class="mdui-list" mdui-collapse="{accordion: true}">
-      <li class="mdui-list-item mdui-ripple">
-        <i class="mdui-list-item-icon mdui-icon material-icons">home</i>
-        <div class="mdui-list-item-content">Home</div>
+  <div
+    class="mdui-drawer mdui-drawer-open mdui-color-blue-grey"
+    id="collapse"
+    swipe="true"
+    overlay="true"
+  >
+    <ul class="mdui-list" v-for="item in components" :key="item.index">
+      <li></li>
+      <li class="mdui-subheader">
+        {{ item.name }}
+        <i class="mdui-icon material-icons">{{ item.icon }}</i>
       </li>
-
-      <li class="mdui-list-item mdui-ripple">
-        <i class="mdui-list-item-icon mdui-icon material-icons">dashboard</i>
-        <div class="mdui-list-item-content">Dashboard</div>
-      </li>
-
-      <li class="mdui-collapse-item mdui-collapse-item-open">
-        <div class="mdui-collapse-item-header mdui-list-item mdui-ripple">
-          <i class="mdui-list-item-icon mdui-icon material-icons">people</i>
-          <div class="mdui-list-item-content">Audience</div>
-          <i class="mdui-collapse-item-arrow mdui-icon material-icons"
-            >keyboard_arrow_down</i
-          >
+      <li
+        class="mdui-list-item mdui-ripple"
+        v-for="_item in item.child"
+        :key="_item.index"
+      >
+        &nbsp;&nbsp;&nbsp;&nbsp;
+        <div class="mdui-list-item-content">
+          {{ _item.name }}
+          <i class="mdui-list-item-icon mdui-icon material-icons">{{
+            _item.icon
+          }}</i>
         </div>
-        <ul class="mdui-collapse-item-body mdui-list mdui-list-dense">
-          <li class="mdui-list-item mdui-ripple">Overview</li>
-          <li class="mdui-list-item mdui-ripple">Language</li>
-          <li class="mdui-list-item mdui-ripple">Location</li>
-          <li class="mdui-list-item mdui-ripple">New vs Returning</li>
-        </ul>
-      </li>
-
-      <li class="mdui-collapse-item">
-        <div class="mdui-collapse-item-header mdui-list-item mdui-ripple">
-          <i class="mdui-list-item-icon mdui-icon material-icons">device_hub</i>
-          <div class="mdui-list-item-content">Acquisition</div>
-          <i class="mdui-collapse-item-arrow mdui-icon material-icons"
-            >keyboard_arrow_down</i
-          >
-        </div>
-        <ul class="mdui-collapse-item-body mdui-list mdui-list-dense">
-          <li class="mdui-list-item mdui-ripple">Overview</li>
-          <li class="mdui-list-item mdui-ripple">All Traffic</li>
-          <li class="mdui-list-item mdui-ripple">Direct Traffic</li>
-          <li class="mdui-list-item mdui-ripple">Search Overview</li>
-        </ul>
-      </li>
-
-      <li class="mdui-collapse-item">
-        <div class="mdui-collapse-item-header mdui-list-item mdui-ripple">
-          <i class="mdui-list-item-icon mdui-icon material-icons">touch_app</i>
-          <div class="mdui-list-item-content">Behavior</div>
-          <i class="mdui-collapse-item-arrow mdui-icon material-icons"
-            >keyboard_arrow_down</i
-          >
-        </div>
-        <ul class="mdui-collapse-item-body mdui-list mdui-list-dense">
-          <li class="mdui-list-item mdui-ripple">Overview</li>
-          <li class="mdui-list-item mdui-ripple">All Pages</li>
-          <li class="mdui-list-item mdui-ripple">Landing Pages</li>
-          <li class="mdui-list-item mdui-ripple">Exit Pages</li>
-        </ul>
-      </li>
-
-      <li class="mdui-list-item mdui-ripple">
-        <i class="mdui-list-item-icon mdui-icon material-icons"
-          >shopping_cart</i
-        >
-        <div class="mdui-list-item-content">Ecommerce</div>
       </li>
     </ul>
   </div>
-  <button class="mdui-btn mdui-color-theme-accent mdui-ripple">脱勾</button>
 </template>
 
 <style></style>
