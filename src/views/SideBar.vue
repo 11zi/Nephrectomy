@@ -1,5 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { onClickOutside } from '@vueuse/core'
+
+const isSidebarOpen = ref(false)
+const sidebarClass = ref([
+  'mdui-drawer',
+  `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`,
+  'mdui-color-blue-grey',
+])
+function openSideBar() {
+  isSidebarOpen.value = true
+  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+}
+const sidebar = ref(null)
+onClickOutside(sidebar, CloseSideBar) // todo: 还是不触发
+function CloseSideBar() {
+  isSidebarOpen.value = false
+  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+}
+// 假数据，功能列表
 const components = [
   {
     name: '导航',
@@ -63,11 +82,51 @@ const components = [
 
 <template>
   <div
-    class="mdui-drawer mdui-drawer-open mdui-color-blue-grey"
-    id="collapse"
-    swipe="true"
-    overlay="true"
-  >
+    style="
+      height: 100%;
+      width: 1px;
+      position: absolute;
+      left: 0px;
+      background-color: gray;
+    "
+    @mouseenter="openSideBar"
+  ></div>
+  <!-- https://www.mdui.org/zh-cn/design/1/patterns/navigation-drawer.html#navigation-drawer-specs -->
+  <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
+    <div class="mdui-container" style="padding: 12px">
+      <div class="mdui-row">
+        <img
+          src="../assets/static_image/r19.png"
+          alt="avatar"
+          class="mdui-img-rounded mdui-shadow-2"
+          style="position: absolute"
+          width="80"
+          height="80"
+        />
+        <div
+          class="mdui-col-sm-7 mdui-col-offset-sm-5 mdui-col-xs-8 mdui-col-offset-xs-4"
+          style="height: 100%"
+        >
+          <div
+            class="mdui-list-item-two-line mdui-typo-caption"
+            style="
+              font-weight: 200;
+              opacity: 87%;
+              padding-top: 2px;
+              white-space: normal;
+            "
+          >
+            凡是被那把武器伤害的人，都会遭到席卷全身的诅咒
+          </div>
+          <div
+            class="mdui-typo-title"
+            style="font-weight: 400; padding-top: 16px"
+          >
+            哈米斯基
+          </div>
+        </div>
+      </div>
+    </div>
     <ul class="mdui-list" v-for="item in components" :key="item.index">
       <li></li>
       <li class="mdui-subheader">
@@ -81,10 +140,10 @@ const components = [
       >
         &nbsp;&nbsp;&nbsp;&nbsp;
         <div class="mdui-list-item-content">
-          {{ _item.name }}
           <i class="mdui-list-item-icon mdui-icon material-icons">{{
             _item.icon
           }}</i>
+          {{ _item.name }}
         </div>
       </li>
     </ul>
