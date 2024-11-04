@@ -10,14 +10,18 @@ const sidebarClass = ref([
 ])
 function openSideBar() {
   isSidebarOpen.value = true
+  document.body.style.paddingLeft = '240px'
   sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
 }
 const sidebar = ref(null)
-onClickOutside(sidebar, CloseSideBar) // todo: 还是不触发
+onClickOutside(sidebar, CloseSideBar)
 function CloseSideBar() {
   isSidebarOpen.value = false
+  document.body.style.paddingLeft = '0px'
   sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+  mdui.mutation()
 }
+document.body.style.paddingLeft = '0px'
 // 假数据，功能列表
 const components = [
   {
@@ -93,7 +97,7 @@ const components = [
   ></div>
   <!-- https://www.mdui.org/zh-cn/design/1/patterns/navigation-drawer.html#navigation-drawer-specs -->
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
-    <div class="mdui-container" style="padding: 12px">
+    <div class="mdui-container mdui-p-a-2">
       <div class="mdui-row">
         <img
           src="../assets/static_image/r19.png"
@@ -108,7 +112,7 @@ const components = [
           style="height: 100%"
         >
           <div
-            class="mdui-list-item-two-line mdui-typo-caption"
+            class="mdui-list-item-two-line mdui-typo-caption noselect"
             style="
               font-weight: 200;
               opacity: 87%;
@@ -119,8 +123,8 @@ const components = [
             凡是被那把武器伤害的人，都会遭到席卷全身的诅咒
           </div>
           <div
-            class="mdui-typo-title"
-            style="font-weight: 400; padding-top: 16px"
+            class="mdui-typo-title mdui-p-t-2 noselect"
+            style="font-weight: 400"
           >
             哈米斯基
           </div>
@@ -129,9 +133,9 @@ const components = [
     </div>
     <ul class="mdui-list" v-for="item in components" :key="item.index">
       <li></li>
-      <li class="mdui-subheader">
+      <li class="mdui-subheader noselect">
+        <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>
         {{ item.name }}
-        <i class="mdui-icon material-icons">{{ item.icon }}</i>
       </li>
       <li
         class="mdui-list-item mdui-ripple"
@@ -140,7 +144,7 @@ const components = [
       >
         &nbsp;&nbsp;&nbsp;&nbsp;
         <div class="mdui-list-item-content">
-          <i class="mdui-list-item-icon mdui-icon material-icons">{{
+          <i class="mdui-list-item-icon mdui-icon material-icons mdui-m-r-1">{{
             _item.icon
           }}</i>
           {{ _item.name }}
@@ -150,4 +154,13 @@ const components = [
   </div>
 </template>
 
-<style></style>
+<style>
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+</style>
