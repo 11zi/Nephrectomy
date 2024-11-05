@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { ref, Text } from 'vue'
+import '../../assets/js/marked.min.js'
+
+function parseMD(text) {
+  return marked.parse(text)
+}
 
 const enums = ref([
   { count: '1', msg: '你' },
@@ -8,20 +13,25 @@ const enums = ref([
 ])
 const message_send = ref('')
 function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
+  if (message_send.value.length == 0) return 0
   if (msgEvent == null || (!msgEvent.shiftKey && !msgEvent.altKey)) {
+    message_send.value = parseMD(message_send.value)
+    console.log(message_send)
     enums.value.push({
       count: enums.value.length.toString(),
       msg: message_send.value,
     })
     console.log(message_send.value)
-    message_send.value = '' // 当侧边栏打开后，清空数值失效了，不再同步
+    message_send.value = ''
+    // 刷新组件似乎有一点问题：提交后输入框显示为两行，未及时刷新
     mdui.mutation()
+    return 1
   }
 }
 </script>
 <template>
   <div
-    class="mdui-container"
+    class="mdui-container mdui-m-l-4"
     style="height: 100%; width: -webkit-fill-available"
   >
     <div class="mdui-row">
@@ -35,13 +45,13 @@ function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
               width="40"
               height="40"
             />
-            <p>{{ _message.msg }}</p>
+            <div v-html="_message.msg"></div>
           </div>
         </div>
       </div>
     </div>
     <div
-      class="mdui-row"
+      class="mdui-row mdui-m-r-4"
       style="position: absolute; width: inherit; bottom: 8px"
     >
       <div class="mdui-textfield">
@@ -49,7 +59,7 @@ function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
           src="../../assets/static_image/r19.png"
           alt="avatar"
           class="mdui-img-rounded mdui-shadow-1 mdui-m-a-1"
-          style="position: absolute; top: 0px"
+          style="position: absolute; bottom: 0px"
           width="48"
           height="48"
         />
