@@ -8,16 +8,9 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 
-// 导入elementPlus
-// import elementPlus from 'element-plus'
-// import 'element-plus/dist/index.css'
+const Nephrectomy = createApp(App)
 
-// import 'mdui/mdui.css'
-// import 'mdui'
+Nephrectomy.use(createPinia())
+Nephrectomy.use(router)
 
-const app1 = createApp(App)
-
-app1.use(createPinia())
-app1.use(router)
-
-app1.mount('#app')
+Nephrectomy.mount('#app')

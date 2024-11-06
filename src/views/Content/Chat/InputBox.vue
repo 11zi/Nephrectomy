@@ -47,7 +47,7 @@ function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
         class="mdui-textfield-input"
         id="msg_textarea"
         v-model="message_send"
-        @keypress.enter="sendMsg"
+        @keyup.enter="sendMsg"
         placeholder="说点什么...!"
         rows="2"
         style="margin-left: 64px"

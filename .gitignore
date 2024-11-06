@@ -28,3 +28,5 @@ coverage
 *.sw?
 
 *.tsbuildinfo
+*.xlsx
+src/fake_data_account.json

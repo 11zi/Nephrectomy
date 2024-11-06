@@ -21,7 +21,14 @@ function CloseSideBar() {
   sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
   mdui.mutation()
 }
-document.body.style.paddingLeft = '0px'
+function openPanel(panelName: string, panelPath: string) {
+  mdui.snackbar({
+    message: panelPath,
+    timeout: 500,
+    position: 'right-top',
+  })
+  // 打开../Card/BaseCard.vue
+}
 // 假数据，功能列表
 const components = [
   {
@@ -56,7 +63,12 @@ const components = [
     child: [
       { name: '点播', vueSrc: '', index: '3-1', icon: 'playlist_play' },
       { name: '便签', vueSrc: '', index: '3-2', icon: 'note' },
-      { name: '解析', vueSrc: '', index: '3-3', icon: 'sd_card' },
+      {
+        name: '解析',
+        vueSrc: '../Card/BaseCard.vue',
+        index: '3-3',
+        icon: 'sd_card',
+      },
       { name: '吃饭', vueSrc: '', index: '3-4', icon: 'restaurant_menu' },
       {
         name: '时间',
@@ -141,6 +153,7 @@ const components = [
         class="mdui-list-item mdui-ripple"
         v-for="_item in item.child"
         :key="_item.index"
+        @click="openPanel(_item.name, _item.vueSrc)"
       >
         &nbsp;&nbsp;&nbsp;&nbsp;
         <div class="mdui-list-item-content">
