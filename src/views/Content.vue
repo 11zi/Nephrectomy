@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import TemporaryPage from './Content/TemporaryPage.vue'
+import ChatRoom from './Content/Chat/ChatRoom.vue'
 </script>
 
 <template>
-  <TemporaryPage />
+  <ChatRoom />
 </template>
 
 <style></style>
