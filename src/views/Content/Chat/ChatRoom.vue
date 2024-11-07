@@ -13,6 +13,7 @@ const enums = ref([
     msg: '<h4>我也不想在这里！style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"</h1>',
   },
 ])
+const avatar_url_ = '../../assets/static_image/r19.png'
 function sendMsg(_msg: { value: string }) {
   console.log(_msg)
   enums.value.push({
@@ -39,7 +40,7 @@ function sendMsg(_msg: { value: string }) {
           :key="_message.count"
           style="padding-right: 120px"
         >
-          <Message :html_msg="_message.msg"></Message>
+          <Message :html_msg="_message.msg" :avatar_url="avatar_url_"></Message>
         </div>
       </div>
     </div>
