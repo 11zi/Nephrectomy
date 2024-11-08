@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, h } from 'vue'
 import { onClickOutside } from '@vueuse/core'
+import BaseCard from './Card/BaseCard.vue'
 
 const isSidebarOpen = ref(false)
 const sidebarClass = ref([
@@ -8,27 +9,40 @@ const sidebarClass = ref([
   `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`,
   'mdui-color-blue-grey',
 ])
+const sidebar = ref(null)
+
+onClickOutside(sidebar, CloseSideBar)
+
 function openSideBar() {
   isSidebarOpen.value = true
   document.body.style.paddingLeft = '240px'
   sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
 }
-const sidebar = ref(null)
-onClickOutside(sidebar, CloseSideBar)
 function CloseSideBar() {
   isSidebarOpen.value = false
   document.body.style.paddingLeft = '0px'
   sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
   mdui.mutation()
 }
+/**
+ * 打开插件面板
+ * @param panelName 插件名
+ * @param panelPath 插件路径
+ */
 function openPanel(panelName: string, panelPath: string) {
   mdui.snackbar({
-    message: panelPath,
+    message: panelName,
     timeout: 500,
     position: 'right-top',
   })
   // 打开../Card/BaseCard.vue
+  // return h('div', { innerHTML: `<BaseCard />` })
+  _isActive.value = true
 }
+function closePanel() {
+  _isActive.value = false
+}
+const _isActive = ref(false)
 // 假数据，功能列表
 const components = [
   {
@@ -97,17 +111,11 @@ const components = [
 </script>
 
 <template>
+  <BaseCard v-if="_isActive" @close-panel="closePanel"></BaseCard>
   <div
-    style="
-      height: 100%;
-      width: 1px;
-      position: absolute;
-      left: 0px;
-      background-color: gray;
-    "
+    style="height: 100%; width: 1px; position: absolute; left: 0px"
     @mouseenter="openSideBar"
   ></div>
-  <!-- https://www.mdui.org/zh-cn/design/1/patterns/navigation-drawer.html#navigation-drawer-specs -->
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
     <div class="mdui-container mdui-p-a-2">
       <div class="mdui-row">

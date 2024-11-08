@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { ref, Text, VueElement } from 'vue'
 import '../../../assets/js/marked.min.js'
-import InputBox from './InputBox.vue'
-function parseMD(text) {
-  return marked.parse(text)
-}
 
 const message_send = ref('')
 const emit = defineEmits(['sendMsg'])
@@ -17,10 +13,12 @@ function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
     message_send.value = parseMD(message_send.value)
     emit('sendMsg', message_send.value)
     message_send.value = ''
-    // 刷新组件似乎有一点问题：提交后输入框显示为两行，未及时刷新
     mdui.mutation()
     return 1
   }
+}
+function parseMD(text) {
+  return marked.parse(text)
 }
 </script>
 <template>
@@ -40,7 +38,7 @@ function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
       <i
         class="mdui-icon material-icons mdui-ripple icon-plus-round mdui-p-a-1"
         style="right: 8px; border-radius: 50%"
-        v-on:click="sendMsg()"
+        v-on:click="sendMsg"
         >send</i
       >
       <textarea

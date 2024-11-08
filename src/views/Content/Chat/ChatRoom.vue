@@ -15,7 +15,6 @@ const enums = ref([
 ])
 const avatar_url_ = '../../assets/static_image/r19.png'
 function sendMsg(_msg: { value: string }) {
-  console.log(_msg)
   enums.value.push({
     count: enums.value.length.toString(),
     msg: _msg,

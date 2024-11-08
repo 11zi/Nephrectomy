@@ -30,3 +30,4 @@ coverage
 *.tsbuildinfo
 *.xlsx
 src/fake_data_account.json
+src/fake_data_room.json
