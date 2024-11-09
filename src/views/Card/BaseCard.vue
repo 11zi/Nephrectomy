@@ -7,6 +7,7 @@ const cardPos = ref({
   left: '240px',
 })
 const _emit = defineEmits(['closePanel'])
+const props = defineProps({ panelName: String })
 let cardOffSet = {
   left: 0,
   top: 0,
@@ -52,7 +53,7 @@ function m_u() {
       <div class="mdui-card-media-covered mdui-card-media-covered-top">
         <div class="mdui-card-actions">
           <div class="mdui-card-primary-title mdui-float-left mdui-p-l-2">
-            哈窝希萨乌西
+            {{ panelName }}
           </div>
           <button
             class="mdui-btn mdui-btn-icon mdui-ripple mdui-ripple-white mdui-float-right"

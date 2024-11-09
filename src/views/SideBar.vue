@@ -3,46 +3,6 @@ import { ref, h } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
 
-const isSidebarOpen = ref(false)
-const sidebarClass = ref([
-  'mdui-drawer',
-  `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`,
-  'mdui-color-blue-grey',
-])
-const sidebar = ref(null)
-
-onClickOutside(sidebar, CloseSideBar)
-
-function openSideBar() {
-  isSidebarOpen.value = true
-  document.body.style.paddingLeft = '240px'
-  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
-}
-function CloseSideBar() {
-  isSidebarOpen.value = false
-  document.body.style.paddingLeft = '0px'
-  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
-  mdui.mutation()
-}
-/**
- * 打开插件面板
- * @param panelName 插件名
- * @param panelPath 插件路径
- */
-function openPanel(panelName: string, panelPath: string) {
-  mdui.snackbar({
-    message: panelName,
-    timeout: 500,
-    position: 'right-top',
-  })
-  // 打开../Card/BaseCard.vue
-  // return h('div', { innerHTML: `<BaseCard />` })
-  _isActive.value = true
-}
-function closePanel() {
-  _isActive.value = false
-}
-const _isActive = ref(false)
 // 假数据，功能列表
 const components = [
   {
@@ -93,8 +53,8 @@ const components = [
       { name: '隐式传送', vueSrc: '', index: '3-5', icon: 'blur_on' },
     ],
   },
-  { name: '好友', vueSrc: '', index: '4', icon: 'account_box' },
-  { name: '消息', vueSrc: '', index: '5', icon: 'message' },
+  { name: '好友', vueSrc: '', index: '4', icon: 'account_box', child: [] },
+  { name: '消息', vueSrc: '', index: '5', icon: 'message', child: [] },
   {
     name: '系统',
     vueSrc: '',
@@ -108,14 +68,67 @@ const components = [
     ],
   },
 ]
+const isSidebarOpen = ref(false)
+const isActive = ref([])
+const sidebarClass = ref([
+  'mdui-drawer',
+  `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`,
+  'mdui-color-blue-grey',
+])
+const sidebar = ref(null)
+
+// 预处理
+onClickOutside(sidebar, closeSideBar)
+for (let i = 0; i < components.length; i++) {
+  for (let j = 0; j < components[i].child.length; j++) {
+    const _panelName = components[i].child[j].name
+    isActive.value[_panelName] = false
+  }
+}
+
+// 函数声明
+function openSideBar() {
+  isSidebarOpen.value = true
+  document.body.style.paddingLeft = '240px'
+  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+}
+function closeSideBar() {
+  isSidebarOpen.value = false
+  document.body.style.paddingLeft = '0px'
+  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+  mdui.mutation()
+}
+/**
+ * 打开插件面板
+ * @param panelName 插件名
+ * @param panelPath 插件路径
+ */
+function openPanel(panelName: string, panelPath: string) {
+  isActive.value[panelName] = true
+}
+function closePanel(panelName: string) {
+  isActive.value[panelName] = false
+}
 </script>
 
 <template>
-  <BaseCard v-if="_isActive" @close-panel="closePanel"></BaseCard>
   <div
     style="height: 100%; width: 1px; position: absolute; left: 0px"
     @mouseenter="openSideBar"
   ></div>
+  <div>
+    <div v-for="item in components" :key="item.index">
+      <div v-for="_item in item.child" :key="_item.index">
+        <component
+          ref="isActive"
+          v-if="isActive[_item.name]"
+          :is="BaseCard"
+          @closePanel="closePanel(_item.name)"
+          :panelName="_item.name"
+        ></component>
+      </div>
+    </div>
+  </div>
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
     <div class="mdui-container mdui-p-a-2">
       <div class="mdui-row">
