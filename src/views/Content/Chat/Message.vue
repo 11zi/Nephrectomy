@@ -10,14 +10,14 @@ const props = defineProps({
   >
     <div style="margin-bottom: auto">
       <img
-        :src="avatar_url"
+        :src="props.avatar_url"
         alt="avatar"
         class="mdui-img-circle mdui-m-a-1"
         width="40"
         height="40"
       />
     </div>
-    <div class="" v-html="html_msg"></div>
+    <div class="" v-html="props.html_msg"></div>
   </div>
 </template>
 <style>

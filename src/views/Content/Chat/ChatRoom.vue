@@ -6,14 +6,12 @@ const enums = ref([
   { count: '1', msg: '<p>你。。</p>' },
   { count: '2', msg: '<h2>你说你不想在这里！</h2>' },
   { count: '3', msg: '<h1>我也不想在这里！</h1>' },
-  { count: '3', msg: '<h1>我也不想在这里！</h1>' },
-  { count: '3', msg: '<h1>我也不想在这里！</h1>' },
   {
     count: '3',
-    msg: '<h4>我也不想在这里！style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"style="height: 92%; overflow: scroll; width: calc(100vw-240px)"</h1>',
+    msg: '<h3 style="background-color:red">但天黑</h3>',
   },
 ])
-const avatar_url_ = '../../assets/static_image/r19.png'
+const avatar_url_ = 'src/assets/static_image/r19.png'
 function sendMsg(_msg: { value: string }) {
   enums.value.push({
     count: enums.value.length.toString(),
