@@ -29,7 +29,7 @@ function sendMsg(_msg: string) {
   >
     <div
       class="mdui-row"
-      style="height: 92%; overflow: scroll; width: calc(100vw - 240px)"
+      style="height: 92%; overflow-y: auto; width: calc(100vw - 240px)"
     >
       <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2" style="width: 100%">
         <div
