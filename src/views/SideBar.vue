@@ -15,10 +15,34 @@ const components = [
     index: '1',
     icon: 'home',
     child: [
-      { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: null },
-      { name: '房间列表',  vueSrc: '', index: '1-2', icon: 'map',          navigate: 'room-list' as ContentPage },
-      { name: '注册/编辑', vueSrc: '', index: '1-3', icon: 'exit_to_app',  navigate: null },
-      { name: '帮助',      vueSrc: '', index: '1-4', icon: 'help_outline', navigate: null },
+      {
+        name: '房间信息',
+        vueSrc: '',
+        index: '1-1',
+        icon: 'class',
+        navigate: null,
+      },
+      {
+        name: '房间列表',
+        vueSrc: '',
+        index: '1-2',
+        icon: 'map',
+        navigate: 'room-list' as ContentPage,
+      },
+      {
+        name: '注册/编辑',
+        vueSrc: '',
+        index: '1-3',
+        icon: 'exit_to_app',
+        navigate: 'account-edit' as ContentPage,
+      },
+      {
+        name: '帮助',
+        vueSrc: '',
+        index: '1-4',
+        icon: 'help_outline',
+        navigate: null,
+      },
     ],
   },
   {
@@ -27,10 +51,34 @@ const components = [
     index: '2',
     icon: 'widgets',
     child: [
-      { name: '银行', vueSrc: '', index: '2-1', icon: 'account_balance',   navigate: null },
-      { name: '炒股', vueSrc: '', index: '2-2', icon: 'timeline',          navigate: null },
-      { name: '骰子', vueSrc: '', index: '2-3', icon: 'money_off',         navigate: null },
-      { name: '商城', vueSrc: '', index: '2-4', icon: 'add_shopping_cart', navigate: null },
+      {
+        name: '银行',
+        vueSrc: '',
+        index: '2-1',
+        icon: 'account_balance',
+        navigate: null,
+      },
+      {
+        name: '炒股',
+        vueSrc: '',
+        index: '2-2',
+        icon: 'timeline',
+        navigate: null,
+      },
+      {
+        name: '骰子',
+        vueSrc: '',
+        index: '2-3',
+        icon: 'money_off',
+        navigate: null,
+      },
+      {
+        name: '商城',
+        vueSrc: '',
+        index: '2-4',
+        icon: 'add_shopping_cart',
+        navigate: null,
+      },
     ],
   },
   {
@@ -39,12 +87,42 @@ const components = [
     index: '3',
     icon: 'gavel',
     child: [
-      { name: '点播',     vueSrc: '',                  index: '3-1', icon: 'playlist_play',  navigate: null },
-      { name: '便签',     vueSrc: '',                  index: '3-2', icon: 'note',           navigate: null },
-      { name: '解析',     vueSrc: '../Card/BaseCard.vue', index: '3-3', icon: 'sd_card',     navigate: null },
-      { name: '吃饭',     vueSrc: '',                  index: '3-4', icon: 'restaurant_menu',navigate: null },
-      { name: '时间',     vueSrc: '',                  index: '3-6', icon: 'access_time',    navigate: null },
-      { name: '隐式传送', vueSrc: '',                  index: '3-5', icon: 'blur_on',        navigate: null },
+      {
+        name: '点播',
+        vueSrc: '',
+        index: '3-1',
+        icon: 'playlist_play',
+        navigate: null,
+      },
+      { name: '便签', vueSrc: '', index: '3-2', icon: 'note', navigate: null },
+      {
+        name: '解析',
+        vueSrc: '../Card/BaseCard.vue',
+        index: '3-3',
+        icon: 'sd_card',
+        navigate: null,
+      },
+      {
+        name: '吃饭',
+        vueSrc: '',
+        index: '3-4',
+        icon: 'restaurant_menu',
+        navigate: null,
+      },
+      {
+        name: '时间',
+        vueSrc: '',
+        index: '3-6',
+        icon: 'access_time',
+        navigate: null,
+      },
+      {
+        name: '隐式传送',
+        vueSrc: '',
+        index: '3-5',
+        icon: 'blur_on',
+        navigate: null,
+      },
     ],
   },
   {
@@ -69,10 +147,34 @@ const components = [
     index: '6',
     icon: 'settings',
     child: [
-      { name: '设置', vueSrc: '', index: '6-1', icon: 'settings',     navigate: null },
-      { name: '关于', vueSrc: '', index: '6-2', icon: 'info_outline', navigate: null },
-      { name: '重载', vueSrc: '', index: '6-3', icon: 'refresh',      navigate: null },
-      { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app',  navigate: null },
+      {
+        name: '设置',
+        vueSrc: '',
+        index: '6-1',
+        icon: 'settings',
+        navigate: null,
+      },
+      {
+        name: '关于',
+        vueSrc: '',
+        index: '6-2',
+        icon: 'info_outline',
+        navigate: null,
+      },
+      {
+        name: '重载',
+        vueSrc: '',
+        index: '6-3',
+        icon: 'refresh',
+        navigate: null,
+      },
+      {
+        name: '登出',
+        vueSrc: '',
+        index: '6-4',
+        icon: 'exit_to_app',
+        navigate: null,
+      },
     ],
   },
 ]
@@ -109,7 +211,11 @@ function closeSideBar() {
   mdui.mutation()
 }
 
-function handleItemClick(item: { name: string; vueSrc: string; navigate?: ContentPage | null }) {
+function handleItemClick(item: {
+  name: string
+  vueSrc: string
+  navigate?: ContentPage | null
+}) {
   if (item.navigate) {
     // 导航类：切换主内容页面并关闭侧边栏
     contentStore.navigateTo(item.navigate)
@@ -171,11 +277,19 @@ function closePanel(panelName: string) {
         >
           <div
             class="mdui-list-item-two-line mdui-typo-caption noselect"
-            style="font-weight: 200; opacity: 87%; padding-top: 2px; white-space: normal"
+            style="
+              font-weight: 200;
+              opacity: 87%;
+              padding-top: 2px;
+              white-space: normal;
+            "
           >
             凡是被那把武器伤害的人，都会遭到席卷全身的诅咒
           </div>
-          <div class="mdui-typo-title mdui-p-t-2 noselect" style="font-weight: 400">
+          <div
+            class="mdui-typo-title mdui-p-t-2 noselect"
+            style="font-weight: 400"
+          >
             哈米斯基
           </div>
         </div>
@@ -187,8 +301,15 @@ function closePanel(panelName: string) {
       <!-- 顶级分组标题，若自身有 navigate 则也可点击（如「消息」） -->
       <li
         class="mdui-subheader noselect"
-        :class="{ 'mdui-ripple': item.navigate, 'clickable-header': item.navigate }"
-        @click="item.navigate && contentStore.navigateTo(item.navigate) && closeSideBar()"
+        :class="{
+          'mdui-ripple': item.navigate,
+          'clickable-header': item.navigate,
+        }"
+        @click="
+          item.navigate &&
+            contentStore.navigateTo(item.navigate) &&
+            closeSideBar()
+        "
       >
         <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>
         {{ item.name }}
@@ -201,7 +322,9 @@ function closePanel(panelName: string) {
       >
         &nbsp;&nbsp;&nbsp;&nbsp;
         <div class="mdui-list-item-content">
-          <i class="mdui-list-item-icon mdui-icon material-icons mdui-m-r-1">{{ _item.icon }}</i>
+          <i class="mdui-list-item-icon mdui-icon material-icons mdui-m-r-1">{{
+            _item.icon
+          }}</i>
           {{ _item.name }}
         </div>
       </li>

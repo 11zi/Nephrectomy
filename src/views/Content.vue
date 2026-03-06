@@ -6,6 +6,7 @@ import { useContentStore } from '../stores/useContentStore'
 import ChatRoom from './Content/Chat/ChatRoom.vue'
 import ChatRoomList from './Content/ChatRoomList.vue'
 import PrivateMessage from './Content/PrivateMessage.vue'
+import AccountEdit from './Content/AccountEdit.vue'
 
 const contentStore = useContentStore()
 
@@ -13,6 +14,7 @@ const currentComponent = computed(() => {
   switch (contentStore.currentPage) {
     case 'room-list':       return ChatRoomList
     case 'private-message': return PrivateMessage
+    case 'account-edit':     return AccountEdit
     case 'chat':
     default:                return ChatRoom
   }

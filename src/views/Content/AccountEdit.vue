@@ -1,4 +1,3 @@
-<!-- TODO: 房间列表页面（占位，待实现） -->
 <script setup lang="ts">
 import { useContentStore } from '../../stores/useContentStore'
 const contentStore = useContentStore()
@@ -10,8 +9,8 @@ const contentStore = useContentStore()
     style="height: 100%; width: -webkit-fill-available"
   >
     <div class="mdui-row mdui-p-a-3">
-      <div class="mdui-typo-display-1 mdui-m-b-2">房间列表</div>
-      <!-- TODO: 房间列表内容待实现 -->
+      <div class="mdui-typo-display-1 mdui-m-b-2">注册 / 编辑</div>
+      <!-- TODO: 用户编辑内容待实现 -->
     </div>
     <button
       class="mdui-btn mdui-btn-raised mdui-ripple"

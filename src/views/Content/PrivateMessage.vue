@@ -1,4 +1,4 @@
-<!-- 私聊页面（占位，待实现） -->
+<!-- TODO: 私聊页面（占位，待实现） -->
 <script setup lang="ts">
 import { useContentStore } from '../../stores/useContentStore'
 const contentStore = useContentStore()
@@ -11,7 +11,7 @@ const contentStore = useContentStore()
   >
     <div class="mdui-row mdui-p-a-3">
       <div class="mdui-typo-display-1 mdui-m-b-2">消息</div>
-      <!-- 私聊内容待实现 -->
+      <!-- TODO: 私聊内容待实现 -->
     </div>
     <button
       class="mdui-btn mdui-btn-raised mdui-ripple"
