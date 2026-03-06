@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, h } from 'vue'
+import { ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
 
-// 假数据，功能列表
 const components = [
   {
     name: '导航',
@@ -44,12 +43,7 @@ const components = [
         icon: 'sd_card',
       },
       { name: '吃饭', vueSrc: '', index: '3-4', icon: 'restaurant_menu' },
-      {
-        name: '时间',
-        vueSrc: '',
-        index: '3-6',
-        icon: 'access_time',
-      },
+      { name: '时间', vueSrc: '', index: '3-6', icon: 'access_time' },
       { name: '隐式传送', vueSrc: '', index: '3-5', icon: 'blur_on' },
     ],
   },
@@ -68,8 +62,15 @@ const components = [
     ],
   },
 ]
+
 const isSidebarOpen = ref(false)
-const isActive = ref([])
+// isActive：记录每个面板是否打开
+// stackIndex：记录每个面板打开时分配到的层叠序号
+const isActive = ref<Record<string, boolean>>({})
+const stackIndexMap = ref<Record<string, number>>({})
+// 累计打开过多少个面板，用于计算偏移；关闭不重置，再次打开时继续递增
+let openCount = 0
+
 const sidebarClass = ref([
   'mdui-drawer',
   `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`,
@@ -77,33 +78,37 @@ const sidebarClass = ref([
 ])
 const sidebar = ref(null)
 
-// 预处理
 onClickOutside(sidebar, closeSideBar)
-for (let i = 0; i < components.length; i++) {
-  for (let j = 0; j < components[i].child.length; j++) {
-    const _panelName = components[i].child[j].name
-    isActive.value[_panelName] = false
+for (const item of components) {
+  for (const _item of item.child) {
+    isActive.value[_item.name] = false
+    stackIndexMap.value[_item.name] = 0
   }
 }
 
-// 函数声明
 function openSideBar() {
   isSidebarOpen.value = true
   document.body.style.paddingLeft = '240px'
-  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+  sidebarClass.value[1] = `mdui-drawer-open`
 }
 function closeSideBar() {
   isSidebarOpen.value = false
   document.body.style.paddingLeft = '0px'
-  sidebarClass.value[1] = `mdui-drawer-${isSidebarOpen.value ? 'open' : 'close'}`
+  sidebarClass.value[1] = `mdui-drawer-close`
   mdui.mutation()
 }
+
 /**
  * 打开插件面板
  * @param panelName 插件名
  * @param panelPath 插件路径
  */
-function openPanel(panelName: string, panelPath: string) {
+function openPanel(panelName: string, _panelPath: string) {
+  if (!isActive.value[panelName]) {
+    // 每次新打开时分配新的层叠序号
+    stackIndexMap.value[panelName] = openCount
+    openCount++
+  }
   isActive.value[panelName] = true
 }
 function closePanel(panelName: string) {
@@ -120,11 +125,11 @@ function closePanel(panelName: string) {
     <div v-for="item in components" :key="item.index">
       <div v-for="_item in item.child" :key="_item.index">
         <component
-          ref="isActive"
           v-if="isActive[_item.name]"
           :is="BaseCard"
           @closePanel="closePanel(_item.name)"
           :panelName="_item.name"
+          :stackIndex="stackIndexMap[_item.name]"
         ></component>
       </div>
     </div>

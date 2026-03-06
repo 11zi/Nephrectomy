@@ -1,26 +1,30 @@
 <script setup lang="ts">
-import { ref, Text, VueElement } from 'vue'
+import { ref } from 'vue'
 import '../../../assets/js/marked.min.js'
 
 const message_send = ref('')
 const emit = defineEmits(['sendMsg'])
-function sendMsg(msgEvent: { shiftKey: boolean; altKey: boolean } | null) {
-  if (message_send.value == '\n' || message_send.value.length == 0) {
+
+function sendMsg(msgEvent: KeyboardEvent | MouseEvent | null) {
+  // 清理首尾空白后判断是否为空
+  if (message_send.value.trim().length === 0) {
     message_send.value = ''
-    return 0
+    return
   }
-  if (msgEvent == null || (!msgEvent.shiftKey && !msgEvent.altKey)) {
-    message_send.value = parseMD(message_send.value)
-    emit('sendMsg', message_send.value)
-    message_send.value = ''
-    mdui.mutation()
-    return 1
+  // Shift+Enter 或 Alt+Enter：换行，不发送
+  if (
+    msgEvent instanceof KeyboardEvent &&
+    (msgEvent.shiftKey || msgEvent.altKey)
+  ) {
+    return
   }
-}
-function parseMD(text) {
-  return marked.parse(text)
+  // 发送原始 Markdown 文本，不在此处解析
+  // XSS 过滤在 Message.vue 渲染时进行
+  emit('sendMsg', message_send.value)
+  message_send.value = ''
 }
 </script>
+
 <template>
   <div
     class="mdui-row mdui-m-r-4"
@@ -38,14 +42,14 @@ function parseMD(text) {
       <i
         class="mdui-icon material-icons mdui-ripple icon-plus-round mdui-p-a-1"
         style="right: 8px; border-radius: 50%"
-        v-on:click="sendMsg"
+        @click="sendMsg(null)"
         >send</i
       >
       <textarea
         class="mdui-textfield-input"
         id="msg_textarea"
         v-model="message_send"
-        @keyup.enter="sendMsg"
+        @keydown.enter="sendMsg($event)"
         placeholder="说点什么...!"
         rows="2"
         style="margin-left: 64px"
