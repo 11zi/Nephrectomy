@@ -184,6 +184,10 @@ const isActive = ref<Record<string, boolean>>({})
 const stackIndexMap = ref<Record<string, number>>({})
 let openCount = 0
 
+// mdui Drawer 实例
+const drawer: any = null
+const drawerEl = ref<HTMLElement | null>(null)
+
 const sidebarClass = ref([
   'mdui-drawer',
   'mdui-drawer-close',
@@ -202,11 +206,13 @@ for (const item of components) {
 function openSideBar() {
   isSidebarOpen.value = true
   document.body.style.paddingLeft = '240px'
+  document.documentElement.style.setProperty('--sidebar-width', '240px')
   sidebarClass.value[1] = 'mdui-drawer-open'
 }
 function closeSideBar() {
   isSidebarOpen.value = false
   document.body.style.paddingLeft = '0px'
+  document.documentElement.style.setProperty('--sidebar-width', '0px')
   sidebarClass.value[1] = 'mdui-drawer-close'
   mdui.mutation()
 }
