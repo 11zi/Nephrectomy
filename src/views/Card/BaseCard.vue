@@ -48,9 +48,36 @@ function m_d(_e: MouseEvent) {
   document.addEventListener('mouseup', onDragEnd)
 }
 
+// ── touch 拖拽 ──────────────────────────────────────────
+function onTouchMove(_e: TouchEvent) {
+  _e.stopPropagation()
+  cardPos.value.left = _e.touches[0].clientX - cardOffSet.left + 'px'
+  cardPos.value.top  = _e.touches[0].clientY - cardOffSet.top  + 'px'
+}
+
+function onTouchDragEnd(_e: TouchEvent) {
+  _e.stopPropagation()
+  isDrag.value = false
+  document.removeEventListener('touchmove', onTouchMove)
+  document.removeEventListener('touchend', onTouchDragEnd)
+}
+
+function onTouchStart(_e: TouchEvent) {
+  _e.stopPropagation()  // 阻止冒泡，防止 Content.vue 的侧边栏手势误判
+  bringToFront()
+  isDrag.value = true
+  cardOffSet.left = _e.touches[0].clientX - parseInt(cardPos.value.left)
+  cardOffSet.top  = _e.touches[0].clientY - parseInt(cardPos.value.top)
+
+  document.addEventListener('touchmove', onTouchMove)
+  document.addEventListener('touchend', onTouchDragEnd)
+}
+
 onUnmounted(() => {
   document.removeEventListener('mousemove', onDragMove)
   document.removeEventListener('mouseup', onDragEnd)
+  document.removeEventListener('touchmove', onTouchMove)
+  document.removeEventListener('touchend', onTouchDragEnd)
 })
 </script>
 
@@ -61,17 +88,16 @@ onUnmounted(() => {
     @mousedown="bringToFront"
   >
     <div class="mdui-card-media">
-      <div style="width: 24vw; height: 48vh" class="mdui-color-blue-grey-200">
+      <div style="width: 24vw; height: 48vh; overflow: hidden" class="mdui-color-blue-grey-200">
         <img
-          class="mdui-img-fluid"
           src="../../../src/assets/static_image/xuan5.jpg"
           alt="静态图片"
-          style="-webkit-user-drag: none"
+          style="-webkit-user-drag: none; width: 100%; height: 100%; object-fit: cover; display: block"
         />
       </div>
 
       <div class="mdui-card-media-covered mdui-card-media-covered-top">
-        <div class="mdui-card-actions drag-handle" @mousedown="m_d($event)">
+        <div class="mdui-card-actions drag-handle" @mousedown="m_d($event)" @touchstart="onTouchStart($event)">
           <div class="mdui-card-primary-title mdui-float-left mdui-p-l-2">
             {{ panelName }}
           </div>
@@ -90,11 +116,18 @@ onUnmounted(() => {
 
 <style scoped>
 .float-card {
-  position: absolute;
+  position: fixed;
   width: 24vw;
   height: 48vh;
   top: v-bind('cardPos.top');
   left: v-bind('cardPos.left');
+}
+
+@media (max-width: 768px) {
+  .float-card {
+    width: 80vw;
+    height: 60vh;
+  }
 }
 
 .drag-handle {
