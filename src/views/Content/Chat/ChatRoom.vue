@@ -29,14 +29,14 @@ function sendMsg(_msg: string) {
   >
     <div
       class="mdui-row"
-      style="height: 92%; overflow-y: auto; width: calc(100vw - 240px)"
+      style="height: 92%; overflow-y: auto; width: -webkit-fill-available"
     >
       <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2" style="width: 100%">
         <div
           class="mdui-row mdui-m-a-1"
           v-for="_message in enums"
           :key="_message.count"
-          style="padding-right: 120px"
+          style="padding-right: 32px"
         >
           <!-- raw_msg 传原始文本，解析和过滤在 Message.vue 内部进行 -->
           <Message :raw_msg="_message.msg" :avatar_url="avatar_url_" />
