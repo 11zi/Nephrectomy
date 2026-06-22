@@ -2,23 +2,22 @@
 import { ref } from 'vue'
 import InputBox from './InputBox.vue'
 import Message from './Message.vue'
+import { useChatStore } from '../../../stores/useChatStore'
 
-const enums = ref([
-  { count: '1', msg: '你。。' },
-  { count: '2', msg: '## 你说你不想在这里！' },
-  { count: '3', msg: '# 我也不想在这里！' },
-  { count: '4', msg: '### 但天黑' },
-])
-
-const avatar_url_ = 'src/assets/static_image/r19.png'
+const chatStore = useChatStore()
 const inputBoxRef = ref<InstanceType<typeof InputBox> | null>(null)
 
-function sendMsg(_msg: string) {
-  enums.value.push({
-    count: enums.value.length.toString(),
-    msg: _msg,
-  })
+async function sendMsg(message: string) {
+  const result = await chatStore.sendMessage(message)
+  if (!result) return
   mdui.mutation()
+}
+
+function formatMessageTime(createdAt: string) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(createdAt))
 }
 </script>
 
@@ -40,11 +39,16 @@ function sendMsg(_msg: string) {
       <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2" style="width: 100%">
         <div
           class="mdui-row mdui-m-a-1"
-          v-for="_message in enums"
-          :key="_message.count"
+          v-for="message in chatStore.activeRoomMessages"
+          :key="message.id"
           style="padding-right: 32px"
         >
-          <Message :raw_msg="_message.msg" :avatar_url="avatar_url_" />
+          <Message
+            :raw_msg="message.content"
+            :avatar_url="message.sender.avatarUrl"
+            :sender_name="message.sender.nickname"
+            :timestamp="formatMessageTime(message.createdAt)"
+          />
         </div>
       </div>
     </div>

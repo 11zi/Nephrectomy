@@ -113,6 +113,12 @@ function handleItemClick(item: {
   }
 }
 
+function handleHeaderClick(item: { navigate?: ContentPage | null }) {
+  if (!item.navigate) return
+  contentStore.navigateTo(item.navigate)
+  closeSideBar()
+}
+
 const assignedPanels = new Set<string>()
 
 // toggle：已开启则关闭，未开启则打开
@@ -189,7 +195,7 @@ function closePanel(panelName: string) {
       <li
         class="mdui-subheader noselect"
         :class="{ 'mdui-ripple': item.navigate, 'clickable-header': item.navigate }"
-        @click="item.navigate && contentStore.navigateTo(item.navigate) && closeSideBar()"
+        @click="handleHeaderClick(item)"
       >
         <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>
         {{ item.name }}

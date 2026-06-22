@@ -34,7 +34,7 @@ const safeHtml = computed(() => {
 // ---- 右键菜单 ----
 const menuItems = [
   { icon: 'reply',        label: '引用' },
-  { icon: 'person',       label: 'At' },
+  { icon: 'person',       label: '@他' },
   { icon: 'content_copy', label: '复读' },
   { icon: 'undo',         label: '撤回' },
 ]
