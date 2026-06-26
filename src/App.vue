@@ -62,14 +62,14 @@ watch(
   <template v-else-if="isReady && userStore.isAuthenticated">
     <SideBar />
     <Content />
-    <SysMsgSnackBar ref="snackbarRef" />
   </template>
 
   <!-- 未认证：只显示 Content（登录/注册页），隐藏 SideBar -->
   <template v-else-if="isReady && !userStore.isAuthenticated">
     <Content />
-    <SysMsgSnackBar ref="snackbarRef" />
   </template>
+
+  <SysMsgSnackBar ref="snackbarRef" />
 </template>
 
 <style>

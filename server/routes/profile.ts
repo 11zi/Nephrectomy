@@ -44,6 +44,9 @@ router.get('/', authRequired, async (req, res) => {
       likes: user.likes,
       money: user.money,
       bankDeposit: user.bankDeposit ?? 0,
+      stockShares: user.stockShares ?? 0,
+      stockAutoBuyPrice: user.stockAutoBuyPrice ?? null,
+      stockAutoSellPrice: user.stockAutoSellPrice ?? null,
       visitCount: user.visitCount,
       albums: user.albums,
     })
@@ -99,6 +102,9 @@ router.put('/', authRequired, async (req, res) => {
       likes: user.likes,
       money: user.money,
       bankDeposit: user.bankDeposit ?? 0,
+      stockShares: user.stockShares ?? 0,
+      stockAutoBuyPrice: user.stockAutoBuyPrice ?? null,
+      stockAutoSellPrice: user.stockAutoSellPrice ?? null,
       visitCount: user.visitCount,
       albums: user.albums,
     })

@@ -52,6 +52,9 @@ function serializeProfile(user: any) {
     likes: user.likes,
     money: user.money,
     bankDeposit: user.bankDeposit ?? 0,
+    stockShares: user.stockShares ?? 0,
+    stockAutoBuyPrice: user.stockAutoBuyPrice ?? null,
+    stockAutoSellPrice: user.stockAutoSellPrice ?? null,
     visitCount: user.visitCount,
     albums: user.albums,
   }
@@ -131,6 +134,9 @@ router.post('/register', async (req, res) => {
       bankDeposit: 0,
       bankInterestSettledAt: new Date(),
       bankPassiveMinutes: 0,
+      stockShares: 0,
+      stockAutoBuyPrice: null,
+      stockAutoSellPrice: null,
       visitCount: 0,
       albums: [],
     })

@@ -22,6 +22,9 @@ export interface AccountProfile {
   followers: string[]
   money: number
   bankDeposit: number
+  stockShares: number
+  stockAutoBuyPrice: number | null
+  stockAutoSellPrice: number | null
   albums: string[]
   visitCount: number
   accountStatus: number

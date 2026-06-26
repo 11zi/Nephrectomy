@@ -7,7 +7,9 @@ import messagesRouter from './routes/messages'
 import profileRouter from './routes/profile'
 import authRouter from './routes/auth'
 import bankRouter from './routes/bank'
+import stockRouter from './routes/stock'
 import { msUntilNextUtcMidnight, settleAllDepositInterest } from './bank/service'
+import { ensureStock, tickStock } from './stock/service'
 import { initRealtime } from './realtime'
 
 const PORT = Number(process.env.API_PORT) || 3001
@@ -27,6 +29,16 @@ function scheduleDailyBankInterest() {
   }, msUntilNextUtcMidnight())
 }
 
+function scheduleStockUpdates() {
+  setInterval(async () => {
+    try {
+      await tickStock()
+    } catch (err) {
+      console.error('[stock] scheduled update failed:', err)
+    }
+  }, 60_000)
+}
+
 app.use(cors())
 
 // JSON 解析
@@ -39,6 +51,7 @@ app.use('/api/rooms', roomsRouter)
 app.use('/api/rooms', messagesRouter)
 app.use('/api/profile', profileRouter)
 app.use('/api/bank', bankRouter)
+app.use('/api/stock', stockRouter)
 
 // 健康检查
 app.get('/api/health', (_req, res) => {
@@ -57,7 +70,9 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 async function start() {
   await connectDb()
   await settleAllDepositInterest()
+  await ensureStock()
   scheduleDailyBankInterest()
+  scheduleStockUpdates()
   initRealtime(httpServer)
   httpServer.listen(PORT, () => {
     console.log(`[server] listening on http://localhost:${PORT}`)

@@ -5,6 +5,7 @@ import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
 import BankPanel from './Card/BankPanel.vue'
 import DicePanel from './Card/DicePanel.vue'
+import StockPanel from './Card/StockPanel.vue'
 import { useContentStore } from '../stores/useContentStore'
 import { useRoomStore } from '../stores/useRoomStore'
 import { useUserStore } from '../stores/useUserStore'
@@ -77,6 +78,7 @@ let openCount = 0
 const drawerEl = ref<HTMLElement | null>(null)
 const panelComponents: Record<string, Component> = {
   银行: BankPanel,
+  炒股: StockPanel,
   骰子: DicePanel,
 }
 

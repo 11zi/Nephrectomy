@@ -2,6 +2,7 @@
 
 declare const mdui: {
   mutation: () => void
+  updateTextFields?: () => void
   dialog: (options: {
     title?: string
     content?: string

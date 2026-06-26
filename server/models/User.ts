@@ -45,6 +45,9 @@ export interface IUser extends Document {
   bankDeposit: number // 银行存款
   bankInterestSettledAt: Date // 上次存款利息结算时间
   bankPassiveMinutes: number // 尚未结算的在线收益分钟数
+  stockShares: number // 持股数
+  stockAutoBuyPrice: number | null // 自动买入价
+  stockAutoSellPrice: number | null // 自动卖出价
   visitCount: number // 访问量
   albums: string[] // 相册 photo_id[]
 }
@@ -88,6 +91,9 @@ const UserSchema = new Schema<IUser>(
     bankDeposit: { type: Number, default: 0 },
     bankInterestSettledAt: { type: Date, default: Date.now },
     bankPassiveMinutes: { type: Number, default: 0 },
+    stockShares: { type: Number, default: 0 },
+    stockAutoBuyPrice: { type: Number, default: null },
+    stockAutoSellPrice: { type: Number, default: null },
     visitCount: { type: Number, default: 0 },
     albums: { type: [String], default: [] },
   },

@@ -34,8 +34,10 @@ function show(message: string, type: SysMsgSnackBarType = 'info', duration = 300
   return mdui.snackbar({
     message: `<span class="sys-snackbar-content"><i class="mdui-icon material-icons">${icon}</i><span>${safeMessage}</span></span>`,
     timeout: duration,
+    position: 'bottom',
     buttonText: duration === 0 ? '关闭' : '',
     buttonColor: colorByType[type],
+    closeOnButtonClick: true,
     closeOnOutsideClick: duration !== 0,
   })
 }

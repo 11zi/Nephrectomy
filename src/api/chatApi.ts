@@ -13,6 +13,12 @@ import type {
 } from '../types/chatTypes'
 import type { AccountProfile } from '../types/accountTypes'
 import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
+import type {
+  StockAutoPayload,
+  StockStatus,
+  StockTradePayload,
+  StockTradeResult,
+} from '../types/stockTypes'
 
 export interface ChatApi {
   /** 获取房间历史消息 */
@@ -45,4 +51,12 @@ export interface ChatApi {
   withdrawBank(payload: BankTransferPayload): Promise<BankStatus>
   /** 骰子下注 */
   rollDice(payload: BankTransferPayload): Promise<DiceResult>
+  /** 获取股票状态 */
+  fetchStockStatus(): Promise<StockStatus>
+  /** 买入股票 */
+  buyStock(payload: StockTradePayload): Promise<StockTradeResult>
+  /** 卖出股票 */
+  sellStock(payload: StockTradePayload): Promise<StockTradeResult>
+  /** 设置股票自动交易价格 */
+  setStockAutoPrices(payload: StockAutoPayload): Promise<StockStatus>
 }

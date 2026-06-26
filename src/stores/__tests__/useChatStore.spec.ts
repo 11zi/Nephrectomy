@@ -38,6 +38,9 @@ vi.mock('../../api/httpChatApi', () => ({
       followers: [],
       money: 0,
       bankDeposit: 0,
+      stockShares: 0,
+      stockAutoBuyPrice: null,
+      stockAutoSellPrice: null,
       albums: [],
       visitCount: 0,
       accountStatus: 0,
@@ -51,6 +54,11 @@ vi.mock('../../api/httpChatApi', () => ({
     fetchBankStatus: vi.fn().mockRejectedValue(new Error('offline')),
     depositBank: vi.fn().mockRejectedValue(new Error('offline')),
     withdrawBank: vi.fn().mockRejectedValue(new Error('offline')),
+    rollDice: vi.fn().mockRejectedValue(new Error('offline')),
+    fetchStockStatus: vi.fn().mockRejectedValue(new Error('offline')),
+    buyStock: vi.fn().mockRejectedValue(new Error('offline')),
+    sellStock: vi.fn().mockRejectedValue(new Error('offline')),
+    setStockAutoPrices: vi.fn().mockRejectedValue(new Error('offline')),
   },
 }))
 

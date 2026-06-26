@@ -14,6 +14,12 @@ import type {
 } from '../types/chatTypes'
 import type { AccountProfile } from '../types/accountTypes'
 import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
+import type {
+  StockAutoPayload,
+  StockStatus,
+  StockTradePayload,
+  StockTradeResult,
+} from '../types/stockTypes'
 
 const BASE = '/api'
 
@@ -176,6 +182,31 @@ export const httpChatApi: ChatApi = {
 
   async rollDice(payload: BankTransferPayload): Promise<DiceResult> {
     return request<DiceResult>('/bank/dice', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async fetchStockStatus(): Promise<StockStatus> {
+    return request<StockStatus>('/stock')
+  },
+
+  async buyStock(payload: StockTradePayload): Promise<StockTradeResult> {
+    return request<StockTradeResult>('/stock/buy', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async sellStock(payload: StockTradePayload): Promise<StockTradeResult> {
+    return request<StockTradeResult>('/stock/sell', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async setStockAutoPrices(payload: StockAutoPayload): Promise<StockStatus> {
+    return request<StockStatus>('/stock/auto', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
