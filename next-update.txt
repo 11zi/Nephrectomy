@@ -1,0 +1,120 @@
+# 2026-6-26（待办）
+
+在线状态指示灯把头像挤到了行右侧，偏离了原本的位置
+默认房间为广场，所有用户都是。不存在“处于选择房间”的状态
+“上线了”、“下线了”这个状态是不会发送信息到房间的，但是进入和离开房间会（除非使用了隐式传送功能）
+
+# 2026-6-25（已完成）
+
+种子用户：hamisky@nephrectomy.local / password123
+
+把当前的"前端 mock 聊天"收口成"可本地运行的前后端聊天室 MVP"
+
+当前改动已经在做这件事：
+
+- 新增了 server/：Express + MongoDB 后端
+- 新增了 httpChatApi：前端开始通过 /api 请求后端
+- 拆出了 useRoomStore / useUserStore
+- useChatStore 已经支持 API 失败时降级到本地 mock
+- ChatRoomList 已经改成从房间 store 读取房间树
+
+所以接下来最重要的不是继续加新功能，而是把这条链路打通、稳定、可测试。
+
+推荐下一步任务清单
+
+1. 后端联调跑通
+
+目标：
+
+- npm run dev:server 能正常启动
+- MongoDB 连接正常
+- npm run seed 能写入基础房间、用户、消息
+- 前端 /api/rooms、/api/profile、/api/rooms/:id/messages 都能返回数据
+
+重点检查：
+
+- server/db.ts
+- server/seed.ts
+- server/routes/rooms.ts
+- server/routes/messages.ts
+- server/routes/profile.ts
+- vite.config.ts 里的 /api proxy
+
+2. 修正 API 与类型边界
+
+目前前端 store 和后端返回结构已经接近，但还需要统一：
+
+- UserSummary 里是 motto，旧代码里可能还残留 status
+- RoomNode 是否需要 canEdit
+- AccountProfile 字段是否全部有默认值
+- 后端 lastOnline、registeredAt 这类 Date 字段返回格式要稳定
+- messages.hasMore 当前用 limit < total 判断不够精确，翻页时可能不准
+
+3. 把 store 初始化改得更稳
+
+现在 useUserStore、useRoomStore、useChatStore 在 store 创建时直接发请求。能跑，但后续维护会有隐患。
+
+建议下一步改成显式初始化：
+
+await userStore.loadProfile()
+await roomStore.fetchRoomList()
+await chatStore.fetchRoomMessages()
+
+这样更容易控制：
+
+- 页面首次加载状态
+- loading
+- 错误提示
+- 测试 mock
+- 后续登录态接入
+
+4. 补上基础测试
+
+已有测试文件被改动了，下一步应该保证：
+
+npm run test:unit
+npm run type-check
+npm run build
+
+都能过。
+
+重点补测：
+
+- useRoomStore.enterRoom
+- useChatStore.sendMessage
+- API 失败时 fallback 到 mock
+- useUserStore.saveProfile
+
+5. 做一个最小可用体验闭环
+
+最终这一轮更新最好能达到：
+
+1. 打开房间列表
+2. 点击房间
+3. 进入聊天页
+4. 加载历史消息
+5. 发送新消息
+6. 刷新页面后消息还在 MongoDB
+7. 编辑个人资料后能保存并刷新保留
+
+我建议的版本目标名称
+
+可以叫：
+
+▎ update: 接入本地后端与房间聊天数据持久化
+
+或者更短：
+
+▎ update: 聊天后端联调
+
+优先级排序
+
+最建议按这个顺序做：
+
+1. 先跑通后端 + seed + API
+2. 修类型和 store 初始化
+3. 跑测试和 type-check
+4. 修 UI 里的边缘问题
+5. 再考虑房间编辑、权限、登录等新功能
+
+也就是说，下一步不要急着加"房间编辑"或"权限系统"。当前最值钱的目标是把"房间列表 - 进入房间 - 发送消息 - 保存资料"这条主链路稳定下来。

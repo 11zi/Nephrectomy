@@ -6,7 +6,7 @@ export interface UserSummary {
   id: UserId
   nickname: string
   avatarUrl: string
-  status?: string
+  motto?: string
 }
 
 export interface RoomSummary {
@@ -33,7 +33,6 @@ export interface ChatMessage {
 
 export interface SendMessagePayload {
   roomId: RoomId
-  senderId: UserId
   content: string
   replyToId?: MessageId
 }
@@ -52,4 +51,44 @@ export interface FetchRoomMessagesResult {
   room: RoomSummary
   messages: ChatMessage[]
   hasMore: boolean
+}
+
+/** 房间树节点——用于房间列表的层级展示，继承核心 RoomSummary */
+export interface RoomNode extends RoomSummary {
+  parentId: RoomId | null
+  children: RoomNode[]
+  cover?: string
+  colSpan?: number
+  rowSpan?: number
+}
+
+// ── 用户资料（与 accountTypes.ts 的 AccountProfile 对应） ──
+
+export interface SaveProfilePayload {
+  userId: UserId
+  profile: Record<string, unknown>
+}
+
+export interface SaveProfileResult {
+  success: boolean
+}
+
+// ── 认证相关类型 ──
+
+export interface AuthCredentials {
+  email: string
+  password: string
+}
+
+export interface RegisterPayload extends AuthCredentials {
+  nickname: string
+}
+
+export interface AuthResult {
+  token: string
+  user: import('./accountTypes').AccountProfile
+}
+
+export interface HeartbeatResult {
+  success: boolean
 }

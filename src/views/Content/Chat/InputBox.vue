@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useUserStore } from '../../../stores/useUserStore'
 import '../../../assets/js/marked.min.js'
 
+const userStore = useUserStore()
 const message_send = ref('')
 const emit = defineEmits(['sendMsg'])
 
@@ -55,7 +57,7 @@ defineExpose({
   <div class="mdui-row" style="position: relative; width: 100%">
     <div class="mdui-textfield">
       <img
-        src="../../../assets/static_image/r19.png"
+        :src="userStore.currentUser?.avatarUrl"
         alt="avatar"
         class="mdui-img-rounded mdui-shadow-1 mdui-m-a-1"
         style="position: absolute; bottom: 0px; cursor: pointer"

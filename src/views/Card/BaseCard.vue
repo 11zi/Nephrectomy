@@ -20,7 +20,7 @@ const cardPos = ref({
   left: `${240 + props.stackIndex * STACK_OFFSET}px`,
 })
 
-let cardOffSet = { left: 0, top: 0 }
+const cardOffSet = { left: 0, top: 0 }
 
 function bringToFront() {
   currentZIndex.value = getNextZIndex()
@@ -48,11 +48,11 @@ function m_d(_e: MouseEvent) {
   document.addEventListener('mouseup', onDragEnd)
 }
 
-// ── touch 拖拽 ──────────────────────────────────────────
+// touch drag
 function onTouchMove(_e: TouchEvent) {
   _e.stopPropagation()
   cardPos.value.left = _e.touches[0].clientX - cardOffSet.left + 'px'
-  cardPos.value.top  = _e.touches[0].clientY - cardOffSet.top  + 'px'
+  cardPos.value.top = _e.touches[0].clientY - cardOffSet.top + 'px'
 }
 
 function onTouchDragEnd(_e: TouchEvent) {
@@ -63,11 +63,11 @@ function onTouchDragEnd(_e: TouchEvent) {
 }
 
 function onTouchStart(_e: TouchEvent) {
-  _e.stopPropagation()  // 阻止冒泡，防止 Content.vue 的侧边栏手势误判
+  _e.stopPropagation()
   bringToFront()
   isDrag.value = true
   cardOffSet.left = _e.touches[0].clientX - parseInt(cardPos.value.left)
-  cardOffSet.top  = _e.touches[0].clientY - parseInt(cardPos.value.top)
+  cardOffSet.top = _e.touches[0].clientY - parseInt(cardPos.value.top)
 
   document.addEventListener('touchmove', onTouchMove)
   document.addEventListener('touchend', onTouchDragEnd)
@@ -88,16 +88,14 @@ onUnmounted(() => {
     @mousedown="bringToFront"
   >
     <div class="mdui-card-media">
-      <div style="width: 24vw; height: 48vh; overflow: hidden" class="mdui-color-blue-grey-200">
-        <img
-          src="../../../src/assets/static_image/xuan5.jpg"
-          alt="静态图片"
-          style="-webkit-user-drag: none; width: 100%; height: 100%; object-fit: cover; display: block"
-        />
-      </div>
+      <div class="card-surface"></div>
 
       <div class="mdui-card-media-covered mdui-card-media-covered-top">
-        <div class="mdui-card-actions drag-handle" @mousedown="m_d($event)" @touchstart="onTouchStart($event)">
+        <div
+          class="mdui-card-actions drag-handle"
+          @mousedown="m_d($event)"
+          @touchstart="onTouchStart($event)"
+        >
           <div class="mdui-card-primary-title mdui-float-left mdui-p-l-2">
             {{ panelName }}
           </div>
@@ -136,5 +134,48 @@ onUnmounted(() => {
 }
 .drag-handle:active {
   cursor: grabbing;
+}
+
+/* ── 程序化背景：渐变底色 + 噪声颗粒 + 暗角 ── */
+.card-surface {
+  width: 24vw;
+  height: 48vh;
+  overflow: hidden;
+  position: relative;
+
+  /* 底层：线性渐变，上方亮（暖灰）→ 底部暗（带紫） */
+  background: linear-gradient(-180deg, #cfd8dc 0%, #607d8b 75%);
+}
+
+/* 噪声颗粒 — 底图作为 overlay 叠加，opacity 控制强度 */
+.card-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../../assets/static_image/noise_pic.png') center / 256px 256px repeat;
+  opacity: 0.10;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* 暗角 — 径向渐变，中心透明，边缘暗紫 */
+.card-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 40% 45%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.15) 70%,
+    rgba(10, 5, 20, 0.55) 100%
+  );
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .card-surface {
+    width: 80vw;
+    height: 60vh;
+  }
 }
 </style>

@@ -4,9 +4,11 @@ import { ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
 import { useContentStore } from '../stores/useContentStore'
+import { useUserStore } from '../stores/useUserStore'
 import type { ContentPage } from '../stores/useContentStore'
 
 const contentStore = useContentStore()
+const userStore = useUserStore()
 
 const components = [
   {
@@ -17,8 +19,7 @@ const components = [
     child: [
       { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: null },
       { name: '房间列表',  vueSrc: '', index: '1-2', icon: 'map',          navigate: 'room-list' as ContentPage },
-      { name: '注册/编辑', vueSrc: '', index: '1-3', icon: 'exit_to_app',  navigate: 'account-edit' as ContentPage },
-      { name: '帮助',      vueSrc: '', index: '1-4', icon: 'help_outline', navigate: null },
+      { name: '编辑资料',   vueSrc: '', index: '1-3', icon: 'edit',        navigate: 'account-edit' as ContentPage },
     ],
   },
   {
@@ -58,7 +59,7 @@ const components = [
       { name: '设置', vueSrc: '', index: '6-1', icon: 'settings',     navigate: null },
       { name: '关于', vueSrc: '', index: '6-2', icon: 'info_outline', navigate: null },
       { name: '重载', vueSrc: '', index: '6-3', icon: 'refresh',      navigate: null },
-      { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app',  navigate: null },
+      { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app',  navigate: 'logout' as unknown as ContentPage },
     ],
   },
 ]
@@ -68,7 +69,6 @@ const isActive = ref<Record<string, boolean>>({})
 const stackIndexMap = ref<Record<string, number>>({})
 let openCount = 0
 
-const drawer: any = null
 const drawerEl = ref<HTMLElement | null>(null)
 
 const sidebarClass = ref([
@@ -100,11 +100,21 @@ function closeSideBar() {
   mdui.mutation()
 }
 
+async function handleLogout() {
+  await userStore.logout()
+  contentStore.navigateTo('login' as ContentPage)
+  closeSideBar()
+}
+
 function handleItemClick(item: {
   name: string
   vueSrc: string
   navigate?: ContentPage | null
 }) {
+  if (item.navigate === ('logout' as ContentPage)) {
+    handleLogout()
+    return
+  }
   if (item.navigate) {
     contentStore.navigateTo(item.navigate)
     closeSideBar()
@@ -165,14 +175,21 @@ function closePanel(panelName: string) {
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
     <div class="mdui-container mdui-p-a-2">
       <div class="mdui-row">
-        <img
-          src="../assets/static_image/r19.png"
-          alt="avatar"
-          class="mdui-img-rounded mdui-shadow-2"
-          style="position: absolute"
-          width="80"
-          height="80"
-        />
+        <div class="avatar-wrapper">
+          <img
+            :src="userStore.currentUser?.avatarUrl"
+            alt="avatar"
+            class="mdui-img-rounded mdui-shadow-2"
+            width="80"
+            height="80"
+          />
+          <!-- 在线状态指示灯 -->
+          <span
+            class="online-dot"
+            :class="{ online: userStore.isOnline }"
+            :title="userStore.isOnline ? '在线' : '离线'"
+          ></span>
+        </div>
         <div
           class="mdui-col-sm-7 mdui-col-offset-sm-5 mdui-col-xs-8 mdui-col-offset-xs-4"
           style="height: 100%"
@@ -181,10 +198,10 @@ function closePanel(panelName: string) {
             class="mdui-list-item-two-line mdui-typo-caption noselect"
             style="font-weight: 200; opacity: 87%; padding-top: 2px; white-space: normal"
           >
-            凡是被那把武器伤害的人，都会遭到席卷全身的诅咒
+            {{ userStore.currentUser?.motto ?? '还没有签名' }}
           </div>
-          <div class="mdui-typo-title mdui-p-t-2 noselect" style="font-weight: 400">
-            哈米斯基
+          <div class="mdui-typo-title mdui-p-t-2 noselect" style="font-weight: 400; display: flex; align-items: center;">
+            {{ userStore.currentUser?.nickname ?? '未登录' }}
           </div>
         </div>
       </div>
@@ -227,5 +244,30 @@ function closePanel(panelName: string) {
 }
 .clickable-header {
   cursor: pointer;
+}
+
+/* 头像 + 在线状态指示器 */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+  vertical-align: top;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #bdbdbd;
+  border: 2px solid #fff;
+  transition: background 0.3s;
+}
+
+.online-dot.online {
+  background: #4caf50;
 }
 </style>

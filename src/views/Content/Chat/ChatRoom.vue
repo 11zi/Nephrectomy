@@ -2,9 +2,12 @@
 import { ref } from 'vue'
 import InputBox from './InputBox.vue'
 import Message from './Message.vue'
+import StateMessage from './StateMessage.vue'
 import { useChatStore } from '../../../stores/useChatStore'
+import { useRoomStore } from '../../../stores/useRoomStore'
 
 const chatStore = useChatStore()
+const roomStore = useRoomStore()
 const inputBoxRef = ref<InstanceType<typeof InputBox> | null>(null)
 
 async function sendMsg(message: string) {
@@ -31,6 +34,28 @@ function formatMessageTime(createdAt: string) {
       flex-direction: column;
     "
   >
+    <!-- 房间标题栏 -->
+    <div
+      style="
+        flex-shrink: 0;
+        padding: 12px 16px;
+        background: transparent;
+        border-bottom: 1px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      "
+    >
+      <span style="font-size: 16px; font-weight: 600; color: #37474f">
+        {{ chatStore.activeRoom.name }}
+      </span>
+      <span
+        style="font-size: 12px; color: #90a4ae"
+      >
+        {{ chatStore.activeRoom.memberCount }} 人在线
+      </span>
+    </div>
+
     <!-- 消息滚动区，flex: 1 占满剩余空间 -->
     <div
       class="mdui-row"
@@ -43,10 +68,24 @@ function formatMessageTime(createdAt: string) {
           :key="message.id"
           style="padding-right: 32px"
         >
+          <!-- 用户消息 -->
           <Message
+            v-if="message.kind === 'user'"
             :raw_msg="message.content"
             :avatar_url="message.sender.avatarUrl"
             :sender_name="message.sender.nickname"
+            :timestamp="formatMessageTime(message.createdAt)"
+          />
+          <!-- 状态消息 -->
+          <StateMessage
+            v-else-if="message.kind === 'state'"
+            :content="message.content"
+            :timestamp="formatMessageTime(message.createdAt)"
+          />
+          <!-- 命令消息（预留） -->
+          <StateMessage
+            v-else-if="message.kind === 'command'"
+            :content="message.content"
             :timestamp="formatMessageTime(message.createdAt)"
           />
         </div>

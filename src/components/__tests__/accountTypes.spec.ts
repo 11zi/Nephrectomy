@@ -3,16 +3,32 @@ import { validateProfile } from '../../types/accountTypes'
 import type { AccountProfile } from '../../types/accountTypes'
 
 const validProfile: AccountProfile = {
-  avatar: '',
+  uid: 'user-test',
+  avatarUrl: '',
   nickname: '哈米斯基',
-  status: '',
-  gender: 'undisclosed',
+  motto: '',
+  gender: true,
   birthday: '',
+  age: -1,
   address: '',
   hobbies: [],
   friends: [],
   email: '',
   website: '',
+  community: '',
+  titles: [],
+  likes: 0,
+  following: [],
+  followers: [],
+  money: 0,
+  albums: [],
+  visitCount: 0,
+  accountStatus: 0,
+  currentRoom: '',
+  lastOnline: '',
+  onlineDuration: 0,
+  registeredAt: '',
+  peerId: '',
 }
 
 describe('validateProfile', () => {
@@ -22,7 +38,6 @@ describe('validateProfile', () => {
 
   it('requires nickname', () => {
     const errors = validateProfile({ ...validProfile, nickname: '   ' })
-
     expect(errors).toContainEqual({
       field: 'nickname',
       message: '昵称不能为空',
@@ -35,7 +50,6 @@ describe('validateProfile', () => {
       email: 'bad-email',
       website: 'not-a-url',
     })
-
-    expect(errors.map(error => error.field)).toEqual(['email', 'website'])
+    expect(errors.map((e) => e.field)).toEqual(['email', 'website'])
   })
 })

@@ -6,6 +6,10 @@
 npm run dev
 ```
 
+```sh
+npm run dev:server
+```
+
 在 [Vitest](https://vitest.dev/) 运行单元测试
 
 ```sh
