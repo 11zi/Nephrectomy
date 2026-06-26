@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import SideBar from './views/SideBar.vue'
 import Content from './views/Content.vue'
-import AppSnackbar from './components/AppSnackbar.vue'
+import SysMsgSnackBar from './components/SysMsgSnackBar.vue'
 import { registerSnackbar } from './composables/useSnackbar'
 import { useAppInit } from './stores/useAppInit'
 import { useUserStore } from './stores/useUserStore'
+import { useRoomStore } from './stores/useRoomStore'
+import { useRealtimeStore } from './stores/useRealtimeStore'
 
-const snackbarRef = ref<InstanceType<typeof AppSnackbar> | null>(null)
+const snackbarRef = ref<InstanceType<typeof SysMsgSnackBar> | null>(null)
 const { isReady, isLoading, error, initApp } = useAppInit()
 const userStore = useUserStore()
+const roomStore = useRoomStore()
+const realtimeStore = useRealtimeStore()
 
 onMounted(() => {
   if (snackbarRef.value) {
@@ -17,6 +21,28 @@ onMounted(() => {
   }
   initApp()
 })
+
+watch(
+  () => userStore.isAuthenticated,
+  (isAuthenticated) => {
+    if (isAuthenticated) {
+      realtimeStore.connect()
+      realtimeStore.joinRoom(roomStore.activeRoomId)
+    } else {
+      realtimeStore.disconnect()
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => roomStore.activeRoomId,
+  (roomId, prevRoomId) => {
+    if (!userStore.isAuthenticated) return
+    realtimeStore.leaveRoom(prevRoomId)
+    realtimeStore.joinRoom(roomId)
+  },
+)
 </script>
 
 <template>
@@ -36,13 +62,13 @@ onMounted(() => {
   <template v-else-if="isReady && userStore.isAuthenticated">
     <SideBar />
     <Content />
-    <AppSnackbar ref="snackbarRef" />
+    <SysMsgSnackBar ref="snackbarRef" />
   </template>
 
   <!-- 未认证：只显示 Content（登录/注册页），隐藏 SideBar -->
   <template v-else-if="isReady && !userStore.isAuthenticated">
     <Content />
-    <AppSnackbar ref="snackbarRef" />
+    <SysMsgSnackBar ref="snackbarRef" />
   </template>
 </template>
 

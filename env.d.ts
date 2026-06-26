@@ -18,6 +18,17 @@ declare const mdui: {
       close: () => void
     }) => void
   }) => void
+  snackbar: (options: {
+    message: string
+    timeout?: number
+    position?: 'bottom' | 'top' | 'left-top' | 'left-bottom' | 'right-top' | 'right-bottom'
+    buttonText?: string
+    buttonColor?: string
+    closeOnButtonClick?: boolean
+    closeOnOutsideClick?: boolean
+    onClick?: (snackbar: { close: () => void }) => void
+    onButtonClick?: (snackbar: { close: () => void }) => void
+  }) => { close: () => void }
 }
 
 declare const marked: {

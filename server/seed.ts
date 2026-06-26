@@ -11,8 +11,8 @@ import { User } from './models/User'
 import { Message } from './models/Message'
 
 const rooms = [
-  { roomId: 'plaza',    name: '广场', description: '所有人闲聊的大厅',   memberCount: 35, isActive: true,  parentId: null, cover: '#546e7a', colSpan: 2, rowSpan: 2 },
-  { roomId: 'teahouse', name: '茶馆', description: '品茶闲聊，安静交流', memberCount: 12, isActive: true,  parentId: null, cover: '#4e6b5e', colSpan: 1, rowSpan: 1 },
+  { roomId: 'plaza',    name: '广场', description: '所有人闲聊的大厅',   memberCount: 35, heat: 70, isActive: true,  parentId: null, cover: '#546e7a', colSpan: 2, rowSpan: 2 },
+  { roomId: 'teahouse', name: '茶馆', description: '品茶闲聊，安静交流', memberCount: 12, heat: 18, isActive: true,  parentId: null, cover: '#4e6b5e', colSpan: 1, rowSpan: 1 },
 ]
 
 const users = [
@@ -44,6 +44,9 @@ const users = [
     peerId: '',
     likes: 128,
     money: 5200,
+    bankDeposit: 12000,
+    bankInterestSettledAt: new Date(),
+    bankPassiveMinutes: 0,
     visitCount: 1024,
     albums: [],
   },

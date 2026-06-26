@@ -5,6 +5,7 @@ export interface IRoom extends Document {
   name: string
   description: string
   memberCount: number
+  heat: number
   isActive: boolean
   parentId: string | null
   cover: string
@@ -18,6 +19,7 @@ const RoomSchema = new Schema<IRoom>(
     name: { type: String, required: true },
     description: { type: String, default: '' },
     memberCount: { type: Number, default: 0 },
+    heat: { type: Number, default: 0 },
     isActive: { type: Boolean, default: false },
     parentId: { type: String, default: null },
     cover: { type: String, default: '#546e7a' },

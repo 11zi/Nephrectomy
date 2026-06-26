@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
+import type { Component } from 'vue'
 import { getNextZIndex } from '../../utils/useZIndex'
 
 const isDrag = ref(false)
@@ -10,6 +11,10 @@ const props = defineProps({
   stackIndex: {
     type: Number,
     default: 0,
+  },
+  contentComponent: {
+    type: Object as () => Component | null,
+    default: null,
   },
 })
 const _emit = defineEmits(['closePanel'])
@@ -87,26 +92,27 @@ onUnmounted(() => {
     :style="{ zIndex: currentZIndex }"
     @mousedown="bringToFront"
   >
-    <div class="mdui-card-media">
-      <div class="card-surface"></div>
-
-      <div class="mdui-card-media-covered mdui-card-media-covered-top">
-        <div
-          class="mdui-card-actions drag-handle"
-          @mousedown="m_d($event)"
-          @touchstart="onTouchStart($event)"
-        >
-          <div class="mdui-card-primary-title mdui-float-left mdui-p-l-2">
-            {{ panelName }}
-          </div>
-          <button
-            class="mdui-btn mdui-btn-icon mdui-ripple mdui-ripple-white mdui-float-right"
-            @click="_emit('closePanel')"
-            @mousedown.stop
-          >
-            <i class="mdui-icon material-icons">close</i>
-          </button>
+    <div class="card-surface">
+      <div
+        class="mdui-card-actions drag-handle"
+        @mousedown="m_d($event)"
+        @touchstart="onTouchStart($event)"
+      >
+        <div class="mdui-card-primary-title mdui-p-l-1">
+          {{ panelName }}
         </div>
+        <button
+          class="mdui-btn mdui-btn-icon mdui-ripple"
+          @click="_emit('closePanel')"
+          @mousedown.stop
+        >
+          <i class="mdui-icon material-icons">close</i>
+        </button>
+      </div>
+
+      <div class="card-content">
+        <component v-if="contentComponent" :is="contentComponent" />
+        <slot v-else></slot>
       </div>
     </div>
   </div>
@@ -115,22 +121,42 @@ onUnmounted(() => {
 <style scoped>
 .float-card {
   position: fixed;
-  width: 24vw;
-  height: 48vh;
+  width: fit-content;
+  height: fit-content;
+  min-width: 280px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
   top: v-bind('cardPos.top');
   left: v-bind('cardPos.left');
+  overflow: hidden;
 }
 
 @media (max-width: 768px) {
   .float-card {
-    width: 80vw;
-    height: 60vh;
+    max-width: calc(100vw - 20px);
   }
 }
 
 .drag-handle {
   cursor: grab;
   user-select: none;
+  min-height: 48px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #263238;
+  background: rgba(255, 255, 255, 0.78);
+  border-bottom: 1px solid rgba(84, 110, 122, 0.16);
+}
+.drag-handle .mdui-card-primary-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.drag-handle .mdui-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 .drag-handle:active {
   cursor: grabbing;
@@ -138,8 +164,9 @@ onUnmounted(() => {
 
 /* ── 程序化背景：渐变底色 + 噪声颗粒 + 暗角 ── */
 .card-surface {
-  width: 24vw;
-  height: 48vh;
+  width: 100%;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
   overflow: hidden;
   position: relative;
 
@@ -172,10 +199,15 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+.card-content {
+  position: relative;
+  max-height: calc(100vh - 104px);
+  overflow: auto;
+}
+
 @media (max-width: 768px) {
   .card-surface {
-    width: 80vw;
-    height: 60vh;
+    max-width: calc(100vw - 20px);
   }
 }
 </style>

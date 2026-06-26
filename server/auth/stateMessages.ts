@@ -1,4 +1,5 @@
 import { Message, type ISenderSummary } from '../models/Message'
+import { emitRoomMessageCreated } from '../realtime'
 
 /**
  * 在当前房间发布一条 kind: 'state' 的系统消息
@@ -9,7 +10,7 @@ export async function postStateMessage(
   content: string,
 ): Promise<void> {
   const messageId = `state-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-  await Message.create({
+  const doc = await Message.create({
     messageId,
     roomId,
     kind: 'state',
@@ -20,4 +21,5 @@ export async function postStateMessage(
     mentionedUserIds: [],
     canRecall: false,
   })
+  emitRoomMessageCreated(doc)
 }

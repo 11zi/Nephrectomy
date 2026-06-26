@@ -41,6 +41,13 @@ export interface SendMessageResult {
   message: ChatMessage
 }
 
+export interface MessageCreatedEvent {
+  scope: 'room' | 'private'
+  roomId?: RoomId
+  conversationId?: string
+  message: ChatMessage
+}
+
 export interface FetchRoomMessagesQuery {
   roomId: RoomId
   beforeMessageId?: MessageId
@@ -91,4 +98,5 @@ export interface AuthResult {
 
 export interface HeartbeatResult {
   success: boolean
+  income?: number
 }

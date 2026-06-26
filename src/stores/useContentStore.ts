@@ -4,7 +4,14 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
 // 所有可切换的主页面类型
-export type ContentPage = 'chat' | 'room-list' | 'private-message' | 'account-edit' | 'login' | 'register'
+export type ContentPage =
+  | 'chat'
+  | 'room-list'
+  | 'implicit-room-list'
+  | 'private-message'
+  | 'account-edit'
+  | 'login'
+  | 'register'
 
 export const useContentStore = defineStore('content', () => {
   const currentPage = ref<ContentPage>('chat')

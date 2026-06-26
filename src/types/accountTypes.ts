@@ -21,6 +21,7 @@ export interface AccountProfile {
   following: string[]
   followers: string[]
   money: number
+  bankDeposit: number
   albums: string[]
   visitCount: number
   accountStatus: number

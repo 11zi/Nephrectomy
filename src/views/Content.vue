@@ -16,6 +16,7 @@ import RegisterPage from './Content/Register.vue'
 const currentComponent = computed(() => {
   switch (contentStore.currentPage) {
     case 'room-list':        return ChatRoomList
+    case 'implicit-room-list': return ChatRoomList
     case 'private-message':  return PrivateMessage
     case 'account-edit':     return AccountEdit
     case 'login':            return LoginPage
@@ -28,6 +29,7 @@ const currentComponent = computed(() => {
 // 登录/注册页面不缓存（避免表单残留敏感数据）
 const cacheablePages = new Set(['chat', 'room-list', 'private-message', 'account-edit'])
 const currentPage = computed(() => contentStore.currentPage)
+const isImplicitRoomList = computed(() => contentStore.currentPage === 'implicit-room-list')
 
 // ── 触摸滑动手势 ──────────────────────────────────────────
 const SWIPE_MIN_X = 40
@@ -70,8 +72,8 @@ function onTouchEnd(e: TouchEvent) {
     @touchend.passive="onTouchEnd"
   >
     <KeepAlive v-if="cacheablePages.has(currentPage)">
-      <component :is="currentComponent" />
+      <component :is="currentComponent" :implicit-teleport="isImplicitRoomList" />
     </KeepAlive>
-    <component v-else :is="currentComponent" :key="currentPage" />
+    <component v-else :is="currentComponent" :key="currentPage" :implicit-teleport="isImplicitRoomList" />
   </div>
 </template>

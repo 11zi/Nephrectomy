@@ -1,14 +1,31 @@
 import express from 'express'
 import cors from 'cors'
+import { createServer } from 'node:http'
 import { connectDb } from './db'
 import roomsRouter from './routes/rooms'
 import messagesRouter from './routes/messages'
 import profileRouter from './routes/profile'
 import authRouter from './routes/auth'
+import bankRouter from './routes/bank'
+import { msUntilNextUtcMidnight, settleAllDepositInterest } from './bank/service'
+import { initRealtime } from './realtime'
 
 const PORT = Number(process.env.API_PORT) || 3001
 
 const app = express()
+const httpServer = createServer(app)
+
+function scheduleDailyBankInterest() {
+  setTimeout(async () => {
+    try {
+      await settleAllDepositInterest()
+    } catch (err) {
+      console.error('[bank] daily interest settlement failed:', err)
+    } finally {
+      scheduleDailyBankInterest()
+    }
+  }, msUntilNextUtcMidnight())
+}
 
 app.use(cors())
 
@@ -21,6 +38,7 @@ app.use('/api/auth', authRouter)
 app.use('/api/rooms', roomsRouter)
 app.use('/api/rooms', messagesRouter)
 app.use('/api/profile', profileRouter)
+app.use('/api/bank', bankRouter)
 
 // 健康检查
 app.get('/api/health', (_req, res) => {
@@ -38,7 +56,10 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 async function start() {
   await connectDb()
-  app.listen(PORT, () => {
+  await settleAllDepositInterest()
+  scheduleDailyBankInterest()
+  initRealtime(httpServer)
+  httpServer.listen(PORT, () => {
     console.log(`[server] listening on http://localhost:${PORT}`)
   })
 }

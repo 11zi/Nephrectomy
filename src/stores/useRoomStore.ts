@@ -3,6 +3,8 @@ import { defineStore } from 'pinia'
 import type { RoomId, RoomNode, RoomSummary } from '../types/chatTypes'
 import { httpChatApi } from '../api/httpChatApi'
 
+export const DEFAULT_ROOM_ID: RoomId = 'plaza'
+
 // ── mock 房间数据（API 不可用时的降级数据） ──
 
 const mockRooms: RoomNode[] = [
@@ -46,7 +48,7 @@ function findRoomById(nodes: RoomNode[], id: RoomId): RoomNode | null {
 export const useRoomStore = defineStore('room', () => {
   const rooms = ref<RoomNode[]>([...mockRooms])
   const navStack = ref<RoomNode[]>([])
-  const activeRoomId = ref<RoomId>('plaza')
+  const activeRoomId = ref<RoomId>(DEFAULT_ROOM_ID)
   const isLoadingRooms = ref(false)
 
   /** 当前面包屑层级可见的房间列表 */
@@ -90,6 +92,10 @@ export const useRoomStore = defineStore('room', () => {
     }
   }
 
+  function setActiveRoom(roomId?: RoomId | null): void {
+    activeRoomId.value = roomId || DEFAULT_ROOM_ID
+  }
+
   return {
     rooms,
     navStack,
@@ -98,5 +104,6 @@ export const useRoomStore = defineStore('room', () => {
     isLoadingRooms,
     fetchRoomList,
     enterRoom,
+    setActiveRoom,
   }
 })

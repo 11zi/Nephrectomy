@@ -5,8 +5,14 @@ import { signToken } from '../auth/jwt'
 import { authRequired } from '../auth/middleware'
 import { postStateMessage } from '../auth/stateMessages'
 import type { ISenderSummary } from '../models/Message'
+import { settlePassiveIncome } from '../bank/service'
 
 const router = Router()
+const DEFAULT_ROOM_ID = 'plaza'
+
+function normalizeCurrentRoom(roomId?: string | null): string {
+  return roomId || DEFAULT_ROOM_ID
+}
 
 /** 根据 User document 构建 sender 摘要（用于 state message） */
 function senderFromUser(user: any): ISenderSummary {
@@ -33,7 +39,7 @@ function serializeProfile(user: any) {
     website: user.website,
     community: user.community,
     accountStatus: user.accountStatus,
-    currentRoom: user.currentRoom,
+    currentRoom: normalizeCurrentRoom(user.currentRoom),
     lastOnline: user.lastOnline,
     onlineDuration: user.onlineDuration,
     registeredAt: user.registeredAt,
@@ -45,6 +51,7 @@ function serializeProfile(user: any) {
     peerId: user.peerId,
     likes: user.likes,
     money: user.money,
+    bankDeposit: user.bankDeposit ?? 0,
     visitCount: user.visitCount,
     albums: user.albums,
   }
@@ -107,7 +114,7 @@ router.post('/register', async (req, res) => {
       website: '',
       community: '',
       accountStatus: 1,
-      currentRoom: 'plaza',
+      currentRoom: DEFAULT_ROOM_ID,
       isOnline: true,
       lastSeenAt: new Date(),
       lastOnline: new Date(),
@@ -121,6 +128,9 @@ router.post('/register', async (req, res) => {
       peerId: '',
       likes: 0,
       money: 0,
+      bankDeposit: 0,
+      bankInterestSettledAt: new Date(),
+      bankPassiveMinutes: 0,
       visitCount: 0,
       albums: [],
     })
@@ -128,7 +138,7 @@ router.post('/register', async (req, res) => {
     const profile = serializeProfile(user)
     const token = signToken(uid)
 
-    await postAuthStateMessage('plaza', user, `${user.nickname} 加入了社区！欢迎~`)
+    await postAuthStateMessage(DEFAULT_ROOM_ID, user, `${user.nickname} 加入了社区！欢迎~`)
 
     res.status(201).json({ token, user: profile })
   } catch (err) {
@@ -167,7 +177,7 @@ router.post('/login', async (req, res) => {
     }
 
     // 登录只更新在线状态，避免旧用户文档的无关字段校验导致登录失败。
-    const currentRoom = user.currentRoom || 'plaza'
+    const currentRoom = normalizeCurrentRoom(user.currentRoom)
     user.isOnline = true
     user.currentRoom = currentRoom
     user.lastSeenAt = new Date()
@@ -233,11 +243,27 @@ router.get('/me', authRequired, async (req, res) => {
 // ── POST /api/auth/heartbeat ──
 router.post('/heartbeat', authRequired, async (req, res) => {
   try {
+    const user = await User.findOne({ uid: req.userId })
+    if (!user) return res.status(404).json({ error: '用户不存在' })
+
+    const now = new Date()
+    const income = await settlePassiveIncome(user, now)
+    user.isOnline = true
+    user.lastSeenAt = now
     await User.updateOne(
-      { uid: req.userId },
-      { $set: { isOnline: true, lastSeenAt: new Date() } },
+      { uid: user.uid },
+      {
+        $set: {
+          isOnline: true,
+          lastSeenAt: now,
+          money: user.money,
+          onlineDuration: user.onlineDuration,
+          bankPassiveMinutes: user.bankPassiveMinutes,
+        },
+      },
     )
-    res.json({ success: true })
+
+    res.json({ success: true, income })
   } catch (err) {
     res.status(500).json({ error: '心跳更新失败' })
   }

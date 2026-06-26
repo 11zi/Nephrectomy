@@ -76,8 +76,10 @@ function goToRegister() {
           :disabled="isSubmitting"
           @click="handleLogin"
         >
-          <i class="mdui-icon material-icons mdui-icon-left">{{ isSubmitting ? 'hourglass_empty' : 'login' }}</i>
-          {{ isSubmitting ? '登录中…' : '登录' }}
+          <span class="auth-btn-content">
+            <i class="mdui-icon material-icons">{{ isSubmitting ? 'hourglass_empty' : 'login' }}</i>
+            <span>{{ isSubmitting ? '登录中…' : '登录' }}</span>
+          </span>
         </button>
       </div>
 
@@ -128,9 +130,28 @@ function goToRegister() {
 
 .auth-btn {
   width: 100%;
+  min-height: 40px;
   margin-top: 12px;
-  padding: 10px 0;
+  padding: 0 16px;
   font-size: 15px;
+  line-height: 40px;
+}
+
+.auth-btn-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 40px;
+  line-height: 1;
+}
+
+.auth-btn-content .mdui-icon {
+  height: 20px;
+  margin: 0;
+  font-size: 20px;
+  line-height: 20px;
 }
 
 .auth-footer {

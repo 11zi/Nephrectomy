@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import type { UserSummary } from '../types/chatTypes'
 import type { AccountProfile } from '../types/accountTypes'
 import { httpChatApi } from '../api/httpChatApi'
+import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 
 // ── 默认值 ──
 const defaultUser: UserSummary = {
@@ -32,10 +33,11 @@ function makeDefaultProfile(user: UserSummary): AccountProfile {
     following: [],
     followers: [],
     money: 0,
+    bankDeposit: 0,
     albums: [],
     visitCount: 0,
     accountStatus: 0,
-    currentRoom: '',
+    currentRoom: DEFAULT_ROOM_ID,
     lastOnline: '',
     onlineDuration: 0,
     registeredAt: '',
@@ -83,6 +85,10 @@ export const useUserStore = defineStore('user', () => {
     }, 30_000)
   }
 
+  function syncCurrentRoom(p: AccountProfile): void {
+    useRoomStore().setActiveRoom(p.currentRoom)
+  }
+
   function stopHeartbeat() {
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer)
@@ -99,6 +105,7 @@ export const useUserStore = defineStore('user', () => {
     setToken(result.token)
     authToken.value = result.token
     profile.value = result.user
+    syncCurrentRoom(result.user)
     currentUser.value = {
       id: result.user.uid,
       nickname: result.user.nickname,
@@ -115,6 +122,7 @@ export const useUserStore = defineStore('user', () => {
     setToken(result.token)
     authToken.value = result.token
     profile.value = result.user
+    syncCurrentRoom(result.user)
     currentUser.value = {
       id: result.user.uid,
       nickname: result.user.nickname,
@@ -146,6 +154,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const p = await httpChatApi.fetchMe()
       profile.value = { ...p }
+      syncCurrentRoom(p)
       currentUser.value = {
         id: p.uid,
         nickname: p.nickname,
@@ -180,6 +189,7 @@ export const useUserStore = defineStore('user', () => {
       const p = await httpChatApi.fetchProfile()
       if (p && p.nickname) {
         profile.value = { ...p }
+        syncCurrentRoom(p)
         syncCurrentUser(p)
       }
     } catch {
@@ -195,15 +205,14 @@ export const useUserStore = defineStore('user', () => {
     try {
       const saved = await httpChatApi.saveProfile(p)
       profile.value = { ...saved }
+      syncCurrentRoom(saved)
       syncCurrentUser(saved)
+      return { ...profile.value }
     } catch {
-      // API 不可用，本地保存
-      profile.value = { ...p }
-      syncCurrentUser(p)
+      throw new Error('保存失败，请稍后重试')
     } finally {
       isSavingProfile.value = false
     }
-    return { ...profile.value! }
   }
 
   function syncCurrentUser(p: AccountProfile) {

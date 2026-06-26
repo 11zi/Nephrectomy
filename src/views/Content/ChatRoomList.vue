@@ -2,11 +2,18 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useContentStore } from '../../stores/useContentStore'
+import { useChatStore } from '../../stores/useChatStore'
 import { useRoomStore } from '../../stores/useRoomStore'
 import type { RoomNode } from '../../types/chatTypes'
 
 const contentStore = useContentStore()
+const chatStore = useChatStore()
 const roomStore = useRoomStore()
+const props = withDefaults(defineProps<{
+  implicitTeleport?: boolean
+}>(), {
+  implicitTeleport: false,
+})
 
 // 进入子房间或弹出 dialog
 function handleRoomClick(room: RoomNode) {
@@ -29,6 +36,7 @@ function goToLevel(index: number) {
 const dialogRoom = ref<RoomNode | null>(null)
 
 function openDialog(room: RoomNode) {
+  const actionText = props.implicitTeleport ? '传送' : '进入房间'
   dialogRoom.value = room
   mdui.dialog({
     title: room.name,
@@ -56,11 +64,12 @@ function openDialog(room: RoomNode) {
         },
       },
       {
-        text: '进入房间',
+        text: actionText,
         bold: true,
         close: true,
         onClick: async () => {
-          await roomStore.enterRoom(room.id)
+          await roomStore.enterRoom(room.id, { implicit: props.implicitTeleport })
+          await chatStore.fetchRoomMessages({ roomId: room.id, limit: 50 })
           contentStore.navigateTo('chat')
         },
       },
@@ -83,7 +92,7 @@ watch(
 </script>
 
 <template>
-  <div class="room-list-root">
+  <div class="room-list-root" :class="{ 'implicit-room-list': props.implicitTeleport }">
 
     <!-- 顶部导航栏：用 mdui 已有类 + 少量 inline -->
     <div class="room-list-header">
@@ -98,7 +107,9 @@ watch(
 
       <!-- 面包屑 -->
       <div class="breadcrumb">
-        <span class="breadcrumb-item" @click="roomStore.navStack = []">房间列表</span>
+        <span class="breadcrumb-item" @click="roomStore.navStack = []">
+          {{ props.implicitTeleport ? '隐式传送' : '房间列表' }}
+        </span>
         <template v-for="(room, i) in roomStore.navStack" :key="room.id">
           <i class="mdui-icon material-icons breadcrumb-sep">chevron_right</i>
           <span
@@ -166,6 +177,10 @@ watch(
   overflow: hidden;
 }
 
+.room-list-root.implicit-room-list {
+  background: #eef2f3;
+}
+
 /* ── 顶部导航：透明占位背景，仅显示文字 ── */
 .room-list-header {
   display: flex;
@@ -176,6 +191,10 @@ watch(
   border-bottom: 1px solid transparent;
   flex-shrink: 0;
   min-height: 52px;
+}
+
+.implicit-room-list .room-list-header {
+  border-bottom-color: rgba(84, 110, 122, 0.18);
 }
 
 /* ── 面包屑 ── */

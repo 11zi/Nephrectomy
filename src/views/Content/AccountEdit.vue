@@ -5,6 +5,7 @@ import { useUserStore } from '../../stores/useUserStore'
 import { useSnackbar } from '../../composables/useSnackbar'
 import { validateProfile } from '../../types/accountTypes'
 import type { AccountProfile } from '../../types/accountTypes'
+import { DEFAULT_ROOM_ID } from '../../stores/useRoomStore'
 
 const contentStore = useContentStore()
 const userStore = useUserStore()
@@ -30,10 +31,11 @@ const profile = ref<AccountProfile>({
   following: [],
   followers: [],
   money: 0,
+  bankDeposit: 0,
   albums: [],
   visitCount: 0,
   accountStatus: 0,
-  currentRoom: '',
+  currentRoom: DEFAULT_ROOM_ID,
   lastOnline: '',
   onlineDuration: 0,
   registeredAt: '',
@@ -156,8 +158,9 @@ async function handleSubmit() {
   try {
     await userStore.saveProfile(profile.value)
     snackbar.success('保存成功！')
-  } catch {
-    snackbar.error('保存失败，请稍后重试')
+    contentStore.navigateTo('chat')
+  } catch (err) {
+    snackbar.error(err instanceof Error ? err.message : '保存失败，请稍后重试')
   } finally {
     isSubmitting.value = false
   }

@@ -5,6 +5,11 @@ import { authRequired } from '../auth/middleware'
 import { postStateMessage } from '../auth/stateMessages'
 
 const router = Router()
+const DEFAULT_ROOM_ID = 'plaza'
+
+function normalizeCurrentRoom(roomId?: string | null): string {
+  return roomId || DEFAULT_ROOM_ID
+}
 
 /** 将扁平房间列表组装为树 */
 function buildRoomTree(rooms: InstanceType<typeof Room>[]) {
@@ -55,20 +60,24 @@ router.get('/', async (_req, res) => {
 // POST /api/rooms/:roomId/enter
 router.post('/:roomId/enter', authRequired, async (req, res) => {
   try {
-    const room = await Room.findOne({ roomId: req.params.roomId }).lean()
+    const targetRoomId = String(req.params.roomId)
+    const room = await Room.findOne({ roomId: targetRoomId }).lean()
     if (!room) return res.status(404).json({ error: '房间不存在' })
 
     // 获取当前用户
     const user = await User.findOne({ uid: req.userId })
     if (!user) return res.status(404).json({ error: '用户不存在' })
 
-    const prevRoom = user.currentRoom
+    const prevRoom = normalizeCurrentRoom(user.currentRoom)
     const isImplicit = req.body?.implicit === true
-    const isSameRoom = prevRoom === req.params.roomId
+    const isSameRoom = prevRoom === targetRoomId
+    const prevRoomDoc = !isSameRoom
+      ? await Room.findOne({ roomId: prevRoom }).lean()
+      : null
 
     // 更新用户当前房间
-    if (!isSameRoom) {
-      user.currentRoom = req.params.roomId
+    if (user.currentRoom !== targetRoomId) {
+      user.currentRoom = targetRoomId
       await user.save()
     }
 
@@ -81,12 +90,8 @@ router.post('/:roomId/enter', authRequired, async (req, res) => {
     }
 
     if (!isImplicit && !isSameRoom) {
-      await postStateMessage(req.params.roomId, sender, `${user.nickname} 来到了 ${room.name}`)
-
-      // 如果在旧房间，发离开消息
-      if (prevRoom) {
-        await postStateMessage(prevRoom, sender, `${user.nickname} 离开了房间`)
-      }
+      await postStateMessage(prevRoom, sender, `${user.nickname} 离开了 ${prevRoomDoc?.name ?? '房间'}`)
+      await postStateMessage(targetRoomId, sender, `${user.nickname} 来到了 ${room.name}`)
     }
 
     res.json({

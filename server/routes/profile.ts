@@ -3,6 +3,11 @@ import { User } from '../models/User'
 import { authRequired } from '../auth/middleware'
 
 const router = Router()
+const DEFAULT_ROOM_ID = 'plaza'
+
+function normalizeCurrentRoom(roomId?: string | null): string {
+  return roomId || DEFAULT_ROOM_ID
+}
 
 // GET /api/profile
 router.get('/', authRequired, async (req, res) => {
@@ -26,7 +31,7 @@ router.get('/', authRequired, async (req, res) => {
       website: user.website,
       community: user.community,
       accountStatus: user.accountStatus,
-      currentRoom: user.currentRoom,
+      currentRoom: normalizeCurrentRoom(user.currentRoom),
       lastOnline: user.lastOnline,
       onlineDuration: user.onlineDuration,
       registeredAt: user.registeredAt,
@@ -38,6 +43,7 @@ router.get('/', authRequired, async (req, res) => {
       peerId: user.peerId,
       likes: user.likes,
       money: user.money,
+      bankDeposit: user.bankDeposit ?? 0,
       visitCount: user.visitCount,
       albums: user.albums,
     })
@@ -80,7 +86,7 @@ router.put('/', authRequired, async (req, res) => {
       website: user.website,
       community: user.community,
       accountStatus: user.accountStatus,
-      currentRoom: user.currentRoom,
+      currentRoom: normalizeCurrentRoom(user.currentRoom),
       lastOnline: user.lastOnline,
       onlineDuration: user.onlineDuration,
       registeredAt: user.registeredAt,
@@ -92,6 +98,7 @@ router.put('/', authRequired, async (req, res) => {
       peerId: user.peerId,
       likes: user.likes,
       money: user.money,
+      bankDeposit: user.bankDeposit ?? 0,
       visitCount: user.visitCount,
       albums: user.albums,
     })

@@ -9,7 +9,7 @@ import type {
   SendMessageResult,
 } from '../types/chatTypes'
 import { useUserStore } from './useUserStore'
-import { useRoomStore } from './useRoomStore'
+import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 import { httpChatApi } from '../api/httpChatApi'
 
 function createLocalMessageId() {
@@ -81,10 +81,21 @@ export const useChatStore = defineStore('chat', () => {
 
   const activeRoomMessages = computed(() => messages.value)
 
+  function appendMessage(message: ChatMessage): void {
+    if (!messagesByRoom.value[message.roomId]) {
+      messagesByRoom.value[message.roomId] = []
+    }
+
+    const exists = messagesByRoom.value[message.roomId].some(item => item.id === message.id)
+    if (!exists) {
+      messagesByRoom.value[message.roomId].push(message)
+    }
+  }
+
   /** 获取房间历史消息 */
   async function fetchRoomMessages(
     query: FetchRoomMessagesQuery = {
-      roomId: roomStore.activeRoomId ?? 'plaza',
+      roomId: roomStore.activeRoomId || DEFAULT_ROOM_ID,
       limit: 50,
     },
   ): Promise<FetchRoomMessagesResult> {
@@ -125,7 +136,7 @@ export const useChatStore = defineStore('chat', () => {
 
     isSendingMessage.value = true
     try {
-      const roomId = roomStore.activeRoomId ?? 'plaza'
+      const roomId = roomStore.activeRoomId || DEFAULT_ROOM_ID
 
       const payload: SendMessagePayload = {
         roomId,
@@ -134,10 +145,7 @@ export const useChatStore = defineStore('chat', () => {
 
       try {
         const result = await httpChatApi.sendMessage(payload)
-        if (!messagesByRoom.value[roomId]) {
-          messagesByRoom.value[roomId] = []
-        }
-        messagesByRoom.value[roomId].push(result.message)
+        appendMessage(result.message)
         return result
       } catch {
         // API 不可用，本地模拟
@@ -147,10 +155,7 @@ export const useChatStore = defineStore('chat', () => {
           payload.content,
           userStore.currentUser,
         )
-        if (!messagesByRoom.value[roomId]) {
-          messagesByRoom.value[roomId] = []
-        }
-        messagesByRoom.value[roomId].push(message)
+        appendMessage(message)
         return { message }
       }
     } finally {
@@ -166,6 +171,7 @@ export const useChatStore = defineStore('chat', () => {
     isInitialized,
     messages,
     messagesByRoom,
+    appendMessage,
     fetchRoomMessages,
     sendMessage,
   }

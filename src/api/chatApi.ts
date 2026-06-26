@@ -12,6 +12,7 @@ import type {
   SendMessageResult,
 } from '../types/chatTypes'
 import type { AccountProfile } from '../types/accountTypes'
+import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
 
 export interface ChatApi {
   /** 获取房间历史消息 */
@@ -36,4 +37,12 @@ export interface ChatApi {
   fetchMe(): Promise<AccountProfile>
   /** 心跳保活 */
   heartbeat(): Promise<HeartbeatResult>
+  /** 获取银行状态 */
+  fetchBankStatus(): Promise<BankStatus>
+  /** 存入银行 */
+  depositBank(payload: BankTransferPayload): Promise<BankStatus>
+  /** 从银行提取 */
+  withdrawBank(payload: BankTransferPayload): Promise<BankStatus>
+  /** 骰子下注 */
+  rollDice(payload: BankTransferPayload): Promise<DiceResult>
 }

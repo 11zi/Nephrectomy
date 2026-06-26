@@ -13,6 +13,7 @@ import type {
   SendMessageResult,
 } from '../types/chatTypes'
 import type { AccountProfile } from '../types/accountTypes'
+import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
 
 const BASE = '/api'
 
@@ -32,17 +33,27 @@ function clearToken(): void {
 
 // ── 请求封装 ──
 
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
+type RequestOptions = RequestInit & {
+  skipAuth?: boolean
+  suppressUnauthorizedEvent?: boolean
+}
+
+async function request<T>(url: string, options?: RequestOptions): Promise<T> {
   const token = getToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
-  if (token) {
+  if (token && !options?.skipAuth) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
   // 合并 options.headers（如果有），以自定义 header 覆盖默认值
-  const { headers: optHeaders, ...restOpts } = options ?? ({} as RequestInit & { headers?: Record<string, string> })
+  const {
+    headers: optHeaders,
+    skipAuth: _skipAuth,
+    suppressUnauthorizedEvent,
+    ...restOpts
+  } = options ?? ({} as RequestOptions)
   const mergedHeaders = { ...headers, ...(optHeaders ?? {}) }
 
   const res = await fetch(`${BASE}${url}`, {
@@ -51,7 +62,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    if (res.status === 401) {
+    if (res.status === 401 && !suppressUnauthorizedEvent) {
       clearToken()
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
     }
@@ -109,6 +120,8 @@ export const httpChatApi: ChatApi = {
   async login(credentials: AuthCredentials): Promise<AuthResult> {
     const result = await request<AuthResult>('/auth/login', {
       method: 'POST',
+      skipAuth: true,
+      suppressUnauthorizedEvent: true,
       body: JSON.stringify(credentials),
     })
     setToken(result.token)
@@ -118,6 +131,8 @@ export const httpChatApi: ChatApi = {
   async register(payload: RegisterPayload): Promise<AuthResult> {
     const result = await request<AuthResult>('/auth/register', {
       method: 'POST',
+      skipAuth: true,
+      suppressUnauthorizedEvent: true,
       body: JSON.stringify(payload),
     })
     setToken(result.token)
@@ -139,5 +154,30 @@ export const httpChatApi: ChatApi = {
 
   async heartbeat(): Promise<HeartbeatResult> {
     return request<HeartbeatResult>('/auth/heartbeat', { method: 'POST' })
+  },
+
+  async fetchBankStatus(): Promise<BankStatus> {
+    return request<BankStatus>('/bank')
+  },
+
+  async depositBank(payload: BankTransferPayload): Promise<BankStatus> {
+    return request<BankStatus>('/bank/deposit', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async withdrawBank(payload: BankTransferPayload): Promise<BankStatus> {
+    return request<BankStatus>('/bank/withdraw', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async rollDice(payload: BankTransferPayload): Promise<DiceResult> {
+    return request<DiceResult>('/bank/dice', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
 }

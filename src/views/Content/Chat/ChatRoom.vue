@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, onActivated, onMounted, ref, watch } from 'vue'
 import InputBox from './InputBox.vue'
 import Message from './Message.vue'
 import StateMessage from './StateMessage.vue'
@@ -9,6 +9,37 @@ import { useRoomStore } from '../../../stores/useRoomStore'
 const chatStore = useChatStore()
 const roomStore = useRoomStore()
 const inputBoxRef = ref<InstanceType<typeof InputBox> | null>(null)
+const messageScrollRef = ref<HTMLElement | null>(null)
+const isPinnedToBottom = ref(true)
+const unreadMessageCount = ref(0)
+
+function isAtMessageBottom() {
+  const el = messageScrollRef.value
+  if (!el) return true
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= 8
+}
+
+function scrollMessagesToBottom() {
+  const el = messageScrollRef.value
+  if (!el) return
+  el.scrollTop = el.scrollHeight
+  isPinnedToBottom.value = true
+  unreadMessageCount.value = 0
+}
+
+async function scrollMessagesToBottomAfterRender() {
+  await nextTick()
+  requestAnimationFrame(scrollMessagesToBottom)
+}
+
+function handleMessageScroll() {
+  isPinnedToBottom.value = isAtMessageBottom()
+  if (isPinnedToBottom.value) unreadMessageCount.value = 0
+}
+
+function showLatestMessages() {
+  scrollMessagesToBottomAfterRender()
+}
 
 async function sendMsg(message: string) {
   const result = await chatStore.sendMessage(message)
@@ -22,6 +53,31 @@ function formatMessageTime(createdAt: string) {
     minute: '2-digit',
   }).format(new Date(createdAt))
 }
+
+watch(
+  () => roomStore.activeRoomId,
+  () => {
+    isPinnedToBottom.value = true
+    unreadMessageCount.value = 0
+    scrollMessagesToBottomAfterRender()
+  },
+)
+
+watch(
+  () => chatStore.activeRoomMessages.length,
+  (newLength, oldLength) => {
+    const addedCount = Math.max(0, newLength - oldLength)
+    if (isPinnedToBottom.value) {
+      scrollMessagesToBottomAfterRender()
+    } else if (addedCount > 0) {
+      unreadMessageCount.value += addedCount
+    }
+  },
+  { flush: 'post' },
+)
+
+onMounted(scrollMessagesToBottomAfterRender)
+onActivated(scrollMessagesToBottomAfterRender)
 </script>
 
 <template>
@@ -58,8 +114,10 @@ function formatMessageTime(createdAt: string) {
 
     <!-- 消息滚动区，flex: 1 占满剩余空间 -->
     <div
+      ref="messageScrollRef"
       class="mdui-row"
-      style="flex: 1; overflow-y: auto; width: -webkit-fill-available; min-height: 0"
+      style="flex: 1; overflow-y: auto; width: -webkit-fill-available; min-height: 0; position: relative"
+      @scroll="handleMessageScroll"
     >
       <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2" style="width: 100%">
         <div
@@ -90,6 +148,14 @@ function formatMessageTime(createdAt: string) {
           />
         </div>
       </div>
+      <button
+        v-if="unreadMessageCount > 0"
+        class="new-message-badge mdui-ripple"
+        type="button"
+        @click="showLatestMessages"
+      >
+        {{ unreadMessageCount }}
+      </button>
     </div>
 
     <!-- 输入栏，flex-shrink: 0 固定在底部 -->
@@ -207,6 +273,27 @@ function formatMessageTime(createdAt: string) {
   padding: 24px 0;
   font-size: 13px;
   color: #b0bec5;
+}
+
+.new-message-badge {
+  position: sticky;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
+  min-width: 32px;
+  height: 28px;
+  margin: 0 auto 8px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 14px;
+  background: #546e7a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 28px;
+  box-shadow: 0 2px 8px rgba(38, 50, 56, 0.22);
+  cursor: pointer;
 }
 
 .emoji-panel-enter-active,

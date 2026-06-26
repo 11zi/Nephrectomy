@@ -3,13 +3,14 @@ import { Message } from '../models/Message'
 import { Room } from '../models/Room'
 import { User } from '../models/User'
 import { authRequired } from '../auth/middleware'
+import { emitRoomMessageCreated, serializeMessage } from '../realtime'
 
 const router = Router()
 
 // GET /api/rooms/:roomId/messages
 router.get('/:roomId/messages', async (req, res) => {
   try {
-    const { roomId } = req.params
+    const roomId = String(req.params.roomId)
     const beforeMessageId = req.query.beforeMessageId as string | undefined
     const limit = Math.min(Number(req.query.limit) || 50, 100)
 
@@ -62,7 +63,7 @@ router.get('/:roomId/messages', async (req, res) => {
 // POST /api/rooms/:roomId/messages
 router.post('/:roomId/messages', authRequired, async (req, res) => {
   try {
-    const { roomId } = req.params
+    const roomId = String(req.params.roomId)
     const { content, replyToId } = req.body
 
     if (!content?.trim()) {
@@ -97,18 +98,11 @@ router.post('/:roomId/messages', authRequired, async (req, res) => {
       canRecall: true,
     })
 
+    const message = serializeMessage(doc)
+    emitRoomMessageCreated(doc)
+
     res.status(201).json({
-      message: {
-        id: doc.messageId,
-        roomId: doc.roomId,
-        kind: doc.kind,
-        sender: doc.sender,
-        content: doc.content,
-        createdAt: doc.createdAt.toISOString(),
-        replyToId: doc.replyToId,
-        mentionedUserIds: doc.mentionedUserIds,
-        canRecall: doc.canRecall,
-      },
+      message,
     })
   } catch (err) {
     res.status(500).json({ error: '发送消息失败' })

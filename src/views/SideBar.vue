@@ -1,13 +1,18 @@
 <!-- src/views/SideBar.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
+import BankPanel from './Card/BankPanel.vue'
+import DicePanel from './Card/DicePanel.vue'
 import { useContentStore } from '../stores/useContentStore'
+import { useRoomStore } from '../stores/useRoomStore'
 import { useUserStore } from '../stores/useUserStore'
 import type { ContentPage } from '../stores/useContentStore'
+import type { Component } from 'vue'
 
 const contentStore = useContentStore()
+const roomStore = useRoomStore()
 const userStore = useUserStore()
 
 const components = [
@@ -45,7 +50,7 @@ const components = [
       { name: '解析',     vueSrc: '../Card/BaseCard.vue', index: '3-3', icon: 'sd_card',        navigate: null },
       { name: '吃饭',     vueSrc: '',                    index: '3-4', icon: 'restaurant_menu', navigate: null },
       { name: '时间',     vueSrc: '',                    index: '3-6', icon: 'access_time',     navigate: null },
-      { name: '隐式传送', vueSrc: '',                    index: '3-5', icon: 'blur_on',         navigate: null },
+      { name: '隐式传送', vueSrc: '',                    index: '3-5', icon: 'blur_on',         navigate: 'implicit-room-list' as ContentPage },
     ],
   },
   { name: '好友', vueSrc: '', index: '4', icon: 'account_box', child: [] },
@@ -70,6 +75,10 @@ const stackIndexMap = ref<Record<string, number>>({})
 let openCount = 0
 
 const drawerEl = ref<HTMLElement | null>(null)
+const panelComponents: Record<string, Component> = {
+  银行: BankPanel,
+  骰子: DicePanel,
+}
 
 const sidebarClass = ref([
   'mdui-drawer',
@@ -148,6 +157,19 @@ function togglePanel(panelName: string) {
 function closePanel(panelName: string) {
   isActive.value[panelName] = false
 }
+
+function closeAllPanels() {
+  for (const panelName of Object.keys(isActive.value)) {
+    isActive.value[panelName] = false
+  }
+}
+
+watch(
+  () => roomStore.activeRoomId,
+  () => {
+    closeAllPanels()
+  },
+)
 </script>
 
 <template>
@@ -166,6 +188,7 @@ function closePanel(panelName: string) {
           @closePanel="closePanel(_item.name)"
           :panelName="_item.name"
           :stackIndex="stackIndexMap[_item.name]"
+          :contentComponent="panelComponents[_item.name] ?? null"
         />
       </div>
     </div>
@@ -174,7 +197,7 @@ function closePanel(panelName: string) {
   <!-- 侧边栏 -->
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
     <div class="mdui-container mdui-p-a-2">
-      <div class="mdui-row">
+      <div class="sidebar-profile">
         <div class="avatar-wrapper">
           <img
             :src="userStore.currentUser?.avatarUrl"
@@ -190,17 +213,14 @@ function closePanel(panelName: string) {
             :title="userStore.isOnline ? '在线' : '离线'"
           ></span>
         </div>
-        <div
-          class="mdui-col-sm-7 mdui-col-offset-sm-5 mdui-col-xs-8 mdui-col-offset-xs-4"
-          style="height: 100%"
-        >
+        <div class="profile-text">
           <div
-            class="mdui-list-item-two-line mdui-typo-caption noselect"
-            style="font-weight: 200; opacity: 87%; padding-top: 2px; white-space: normal"
+            class="profile-motto mdui-list-item-three-line mdui-typo-caption noselect"
+            :title="userStore.currentUser?.motto ?? '还没有签名'"
           >
             {{ userStore.currentUser?.motto ?? '还没有签名' }}
           </div>
-          <div class="mdui-typo-title mdui-p-t-2 noselect" style="font-weight: 400; display: flex; align-items: center;">
+          <div class="profile-name mdui-typo-title noselect">
             {{ userStore.currentUser?.nickname ?? '未登录' }}
           </div>
         </div>
@@ -246,13 +266,56 @@ function closePanel(panelName: string) {
   cursor: pointer;
 }
 
+.sidebar-profile {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
 /* 头像 + 在线状态指示器 */
 .avatar-wrapper {
   position: relative;
-  display: inline-block;
+  flex: 0 0 80px;
   width: 80px;
   height: 80px;
-  vertical-align: top;
+}
+
+.avatar-wrapper img {
+  display: block;
+}
+
+.profile-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 80px;
+  overflow: hidden;
+}
+
+.profile-motto {
+  height: 48px;
+  max-height: 48px;
+  max-width: 100%;
+  overflow: hidden;
+  opacity: 0.87;
+  padding-top: 2px;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 3;
+  line-height: 16px;
+  white-space: normal;
+  font-weight: 200;
+}
+
+.profile-name {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin-top: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
 }
 
 .online-dot {

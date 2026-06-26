@@ -42,6 +42,9 @@ export interface IUser extends Document {
   // ── 资产 ──
   likes: number // 赞
   money: number // 金钱
+  bankDeposit: number // 银行存款
+  bankInterestSettledAt: Date // 上次存款利息结算时间
+  bankPassiveMinutes: number // 尚未结算的在线收益分钟数
   visitCount: number // 访问量
   albums: string[] // 相册 photo_id[]
 }
@@ -82,6 +85,9 @@ const UserSchema = new Schema<IUser>(
 
     likes: { type: Number, default: 0 },
     money: { type: Number, default: 0 },
+    bankDeposit: { type: Number, default: 0 },
+    bankInterestSettledAt: { type: Date, default: Date.now },
+    bankPassiveMinutes: { type: Number, default: 0 },
     visitCount: { type: Number, default: 0 },
     albums: { type: [String], default: [] },
   },
