@@ -56,8 +56,8 @@ export function useAppInit() {
 
       roomStore.setActiveRoom(userStore.profile?.currentRoom)
 
-      // 3. 加载当前活跃房间的历史消息。默认房间始终是广场。
-      await chatStore.fetchRoomMessages({ roomId: roomStore.activeRoomId, limit: 50 })
+      // 3. 加载当前活跃房间的首屏历史消息。默认房间始终是广场。
+      await chatStore.fetchInitialRoomMessages(roomStore.activeRoomId)
 
       isReady.value = true
     } catch (e) {

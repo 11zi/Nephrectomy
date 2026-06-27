@@ -24,6 +24,7 @@ const props = defineProps<{
   item: MediaItem | null
   status: PlaybackStatus
   getTargetTime: () => number
+  background?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -99,7 +100,7 @@ async function syncYoutubeMedia() {
   const targetTime = props.getTargetTime()
   youtubePlayer = new window.YT!.Player(youtubeEl.value, {
     width: '100%',
-    height: '180',
+    height: '100%',
     videoId: props.item.youtubeVideoId,
     playerVars: {
       start: Math.floor(Math.max(0, targetTime)),
@@ -144,7 +145,7 @@ onBeforeUnmount(destroyYoutubePlayer)
 </script>
 
 <template>
-  <div class="media-player">
+  <div class="media-player" :class="{ 'background-player': background }">
     <div v-if="!item" class="empty-player">
       暂无正在播放
     </div>
@@ -157,7 +158,7 @@ onBeforeUnmount(destroyYoutubePlayer)
       ref="mediaEl"
       class="direct-player"
       :src="item.directUrl"
-      controls
+      :controls="!background || item.type === 'music'"
       playsinline
       @ended="emit('ended', item.id)"
     />
@@ -169,6 +170,18 @@ onBeforeUnmount(destroyYoutubePlayer)
   padding: 12px;
   background: rgba(255, 255, 255, 0.72);
   border-bottom: 1px solid rgba(84, 110, 122, 0.16);
+}
+
+.media-player.background-player {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border-bottom: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .empty-player {
@@ -185,10 +198,43 @@ onBeforeUnmount(destroyYoutubePlayer)
   min-height: 180px;
 }
 
+.background-player .youtube-player {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.background-player .youtube-player :deep(iframe) {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 .direct-player {
   width: 100%;
   max-height: 220px;
   display: block;
   background: #263238;
+}
+
+.background-player .direct-player {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+  background: transparent;
+}
+
+.background-player audio.direct-player {
+  width: min(560px, calc(100% - 32px));
+  height: 54px;
+  align-self: center;
+  background: rgba(255, 255, 255, 0.76);
+  border-radius: 6px;
 }
 </style>

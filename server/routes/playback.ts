@@ -61,6 +61,7 @@ router.post('/:roomId/playback/queue/:itemId/vote-remove', authRequired, async (
       ok: true,
       itemRemoved: result.itemRemoved,
       voteAdded: result.voteAdded,
+      requesterCut: result.requesterCut,
       playback: result,
     })
   } catch (err) {

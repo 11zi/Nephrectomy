@@ -58,6 +58,11 @@ export interface FetchRoomMessagesResult {
   room: RoomSummary
   messages: ChatMessage[]
   hasMore: boolean
+  page?: {
+    limit: number
+    hasMore: boolean
+    nextBeforeMessageId: MessageId | null
+  }
 }
 
 /** 房间树节点——用于房间列表的层级展示，继承核心 RoomSummary */

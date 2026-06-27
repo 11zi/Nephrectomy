@@ -19,6 +19,7 @@ export const usePlaybackStore = defineStore('playback', () => {
   const submitting = ref(false)
 
   const roomStore = useRoomStore()
+  let listenerCount = 0
 
   const currentItem = computed(() => {
     return queue.value.find(item => item.id === currentItemId.value) ?? null
@@ -87,12 +88,17 @@ export const usePlaybackStore = defineStore('playback', () => {
   }
 
   function startListening() {
-    window.removeEventListener(PLAYBACK_STATE_EVENT, handleSocketEvent)
-    window.addEventListener(PLAYBACK_STATE_EVENT, handleSocketEvent)
+    listenerCount += 1
+    if (listenerCount === 1) {
+      window.addEventListener(PLAYBACK_STATE_EVENT, handleSocketEvent)
+    }
   }
 
   function stopListening() {
-    window.removeEventListener(PLAYBACK_STATE_EVENT, handleSocketEvent)
+    listenerCount = Math.max(0, listenerCount - 1)
+    if (listenerCount === 0) {
+      window.removeEventListener(PLAYBACK_STATE_EVENT, handleSocketEvent)
+    }
   }
 
   return {

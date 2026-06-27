@@ -69,7 +69,7 @@ function openDialog(room: RoomNode) {
         close: true,
         onClick: async () => {
           await roomStore.enterRoom(room.id, { implicit: props.implicitTeleport })
-          await chatStore.fetchRoomMessages({ roomId: room.id, limit: 50 })
+          await chatStore.fetchInitialRoomMessages(room.id)
           contentStore.navigateTo('chat')
         },
       },

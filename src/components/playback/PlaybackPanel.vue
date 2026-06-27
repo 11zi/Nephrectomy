@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import MediaPlayer from './MediaPlayer.vue'
 import PlaybackInputBar from './PlaybackInputBar.vue'
 import PlaybackQueueCard from './PlaybackQueueCard.vue'
 import { usePlaybackStore } from '../../stores/usePlaybackStore'
@@ -43,12 +42,6 @@ async function voteRemove(itemId: string) {
   }
 }
 
-function handleEnded(itemId: string) {
-  playbackStore.notifyCurrentEnded(itemId).catch(() => {
-    snackbar.error('网络错误，请稍后再试')
-  })
-}
-
 onMounted(() => {
   playbackStore.startListening()
   playbackStore.fetchPlaybackState().catch(() => {
@@ -72,13 +65,6 @@ watch(
 
 <template>
   <section class="playback-panel">
-    <MediaPlayer
-      :item="playbackStore.currentItem"
-      :status="playbackStore.status"
-      :get-target-time="playbackStore.getEstimatedCurrentTime"
-      @ended="handleEnded"
-    />
-
     <div class="queue-header">
       <div>
         <div class="queue-heading">点播队列</div>

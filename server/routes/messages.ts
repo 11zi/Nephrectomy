@@ -6,31 +6,61 @@ import { authRequired } from '../auth/middleware'
 import { emitRoomMessageCreated, serializeMessage } from '../realtime'
 
 const router = Router()
+const DEFAULT_MESSAGE_PAGE_SIZE = 50
+const MAX_MESSAGE_PAGE_SIZE = 100
+
+function normalizeMessageLimit(value: unknown): number {
+  const limit = Number(value)
+  if (!Number.isFinite(limit) || limit <= 0) return DEFAULT_MESSAGE_PAGE_SIZE
+  return Math.min(Math.floor(limit), MAX_MESSAGE_PAGE_SIZE)
+}
+
+function serializeRoomMessage(message: any) {
+  return {
+    id: message.messageId,
+    roomId: message.roomId,
+    kind: message.kind,
+    sender: message.sender,
+    content: message.content,
+    createdAt: message.createdAt.toISOString(),
+    replyToId: message.replyToId,
+    mentionedUserIds: message.mentionedUserIds,
+    canRecall: message.canRecall,
+  }
+}
 
 // GET /api/rooms/:roomId/messages
 router.get('/:roomId/messages', async (req, res) => {
   try {
     const roomId = String(req.params.roomId)
     const beforeMessageId = req.query.beforeMessageId as string | undefined
-    const limit = Math.min(Number(req.query.limit) || 50, 100)
+    const limit = normalizeMessageLimit(req.query.limit)
 
     const room = await Room.findOne({ roomId }).lean()
     if (!room) return res.status(404).json({ error: '房间不存在' })
 
     const filter: any = { roomId }
     if (beforeMessageId) {
-      const anchor = await Message.findOne({ messageId: beforeMessageId }).lean()
-      if (anchor) {
-        filter.createdAt = { $lt: anchor.createdAt }
-      }
+      const anchor = await Message.findOne({ roomId, messageId: beforeMessageId })
+        .select({ createdAt: 1, _id: 1 })
+        .lean()
+      if (!anchor) return res.status(400).json({ error: '分页游标不存在' })
+
+      filter.$or = [
+        { createdAt: { $lt: anchor.createdAt } },
+        { createdAt: anchor.createdAt, _id: { $lt: anchor._id } },
+      ]
     }
 
     const messages = await Message.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(limit)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit + 1)
       .lean()
 
-    const total = await Message.countDocuments(filter)
+    const hasMore = messages.length > limit
+    const pageMessages = hasMore ? messages.slice(0, limit) : messages
+    const orderedMessages = pageMessages.reverse().map(serializeRoomMessage)
+    const oldestMessage = orderedMessages[0]
 
     res.json({
       room: {
@@ -40,20 +70,13 @@ router.get('/:roomId/messages', async (req, res) => {
         memberCount: room.memberCount,
         isActive: room.isActive,
       },
-      messages: messages
-        .reverse()
-        .map((m) => ({
-          id: m.messageId,
-          roomId: m.roomId,
-          kind: m.kind,
-          sender: m.sender,
-          content: m.content,
-          createdAt: m.createdAt.toISOString(),
-          replyToId: m.replyToId,
-          mentionedUserIds: m.mentionedUserIds,
-          canRecall: m.canRecall,
-        })),
-      hasMore: messages.length >= limit && limit < total,
+      messages: orderedMessages,
+      hasMore,
+      page: {
+        limit,
+        hasMore,
+        nextBeforeMessageId: hasMore && oldestMessage ? oldestMessage.id : null,
+      },
     })
   } catch (err) {
     res.status(500).json({ error: '获取消息失败' })

@@ -116,21 +116,26 @@ export function addMediaToQueue(roomId: string, url: string, userId: string): Pl
 export function voteRemoveMedia(roomId: string, itemId: string, userId: string): PlaybackStatePayload & {
   itemRemoved: boolean
   voteAdded: boolean
+  requesterCut: boolean
 } {
   const state = getMutableState(roomId)
   const item = state.queue.find(queueItem => queueItem.id === itemId)
   if (!item) throw new Error('点播项不存在')
 
   let voteAdded = false
-  const existingVoteIndex = item.removeVotes.indexOf(userId)
-  if (existingVoteIndex >= 0) {
-    item.removeVotes.splice(existingVoteIndex, 1)
-  } else {
-    item.removeVotes.push(userId)
-    voteAdded = true
+  const requesterCut = item.requestedBy === userId
+
+  if (!requesterCut) {
+    const existingVoteIndex = item.removeVotes.indexOf(userId)
+    if (existingVoteIndex >= 0) {
+      item.removeVotes.splice(existingVoteIndex, 1)
+    } else {
+      item.removeVotes.push(userId)
+      voteAdded = true
+    }
   }
 
-  const itemRemoved = item.removeVotes.length >= REMOVE_VOTE_THRESHOLD
+  const itemRemoved = requesterCut || item.removeVotes.length >= REMOVE_VOTE_THRESHOLD
   if (itemRemoved) {
     if (state.currentItemId === itemId) {
       switchToNextMedia(state, itemId)
@@ -146,6 +151,7 @@ export function voteRemoveMedia(roomId: string, itemId: string, userId: string):
     ...getPlaybackState(roomId),
     itemRemoved,
     voteAdded,
+    requesterCut,
   }
 }
 

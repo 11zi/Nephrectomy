@@ -12,6 +12,8 @@ import { useUserStore } from './useUserStore'
 import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 import { httpChatApi } from '../api/httpChatApi'
 
+const INITIAL_ROOM_MESSAGE_LIMIT = 50
+
 function createLocalMessageId() {
   return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
@@ -54,6 +56,10 @@ export const useChatStore = defineStore('chat', () => {
   const roomStore = useRoomStore()
 
   const messagesByRoom = ref<Record<RoomId, ChatMessage[]>>({})
+  const messagePaginationByRoom = ref<Record<RoomId, {
+    hasMore: boolean
+    nextBeforeMessageId: string | null
+  }>>({})
 
   const isLoadingMessages = ref(false)
   const isSendingMessage = ref(false)
@@ -96,18 +102,33 @@ export const useChatStore = defineStore('chat', () => {
   async function fetchRoomMessages(
     query: FetchRoomMessagesQuery = {
       roomId: roomStore.activeRoomId || DEFAULT_ROOM_ID,
-      limit: 50,
+      limit: INITIAL_ROOM_MESSAGE_LIMIT,
     },
   ): Promise<FetchRoomMessagesResult> {
     isLoadingMessages.value = true
     try {
       const result = await httpChatApi.fetchRoomMessages(query)
-      messagesByRoom.value[query.roomId] = result.messages
+      if (query.beforeMessageId) {
+        const existing = messagesByRoom.value[query.roomId] ?? []
+        const existingIds = new Set(existing.map(message => message.id))
+        const olderMessages = result.messages.filter(message => !existingIds.has(message.id))
+        messagesByRoom.value[query.roomId] = [...olderMessages, ...existing]
+      } else {
+        messagesByRoom.value[query.roomId] = result.messages
+      }
+      messagePaginationByRoom.value[query.roomId] = {
+        hasMore: result.page?.hasMore ?? result.hasMore,
+        nextBeforeMessageId: result.page?.nextBeforeMessageId ?? result.messages[0]?.id ?? null,
+      }
       return result
     } catch {
       // API 不可用，降级到本地数据
       const roomMessages = (messagesByRoom.value[query.roomId] ?? []).slice(-query.limit)
       const room = findRoomNode(roomStore.rooms, query.roomId)
+      messagePaginationByRoom.value[query.roomId] = {
+        hasMore: false,
+        nextBeforeMessageId: roomMessages[0]?.id ?? null,
+      }
       return {
         room: room
           ? {
@@ -124,6 +145,10 @@ export const useChatStore = defineStore('chat', () => {
     } finally {
       isLoadingMessages.value = false
     }
+  }
+
+  function fetchInitialRoomMessages(roomId: RoomId = roomStore.activeRoomId || DEFAULT_ROOM_ID) {
+    return fetchRoomMessages({ roomId, limit: INITIAL_ROOM_MESSAGE_LIMIT })
   }
 
   /** 发送消息到当前活跃房间 */
@@ -169,9 +194,11 @@ export const useChatStore = defineStore('chat', () => {
     isLoadingMessages,
     isSendingMessage,
     isInitialized,
+    messagePaginationByRoom,
     messages,
     messagesByRoom,
     appendMessage,
+    fetchInitialRoomMessages,
     fetchRoomMessages,
     sendMessage,
   }

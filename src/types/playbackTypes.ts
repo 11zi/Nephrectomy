@@ -50,6 +50,7 @@ export interface VoteRemovePlaybackItemResult {
   ok: true
   itemRemoved: boolean
   voteAdded: boolean
+  requesterCut: boolean
   playback: PlaybackStatePayload
 }
 
