@@ -8,8 +8,8 @@ export const SELL_TAX_RATE = 0.005
 const UPDATE_INTERVAL_SECONDS = 60
 const MEAN_REVERSION_TARGET = 1.0
 const MEAN_REVERSION_STRENGTH = 0.10
-const RANDOM_VOLATILITY = 0.02
-const RANDOM_BIAS = 0.001
+const RANDOM_VOLATILITY = 0.04
+const RANDOM_BIAS = 0.002
 const INITIAL_PRICE = 1.0
 const INITIAL_CRASH_PRICE = 0.10
 const INITIAL_PEAK_PRICE = 10.0
@@ -90,12 +90,37 @@ function updatePeakPrice(stock: IStock): number {
   return roundPrice(stock.peakPrice - Math.max(diff * PEAK_CATCHUP_SPEED, MIN_STEP))
 }
 
-function updateStockOnce(stock: IStock, now = new Date()): void {
+function resetStockState(stock: IStock, now = new Date()): void {
+  stock.price = INITIAL_PRICE
+  stock.crashPrice = INITIAL_CRASH_PRICE
+  stock.peakPrice = INITIAL_PEAK_PRICE
+  stock.isBull = false
+  stock.isCrashed = false
+  stock.priceHistory = [INITIAL_PRICE]
+  stock.consecutiveDown = 0
+  stock.prevPrice = INITIAL_PRICE
+  stock.lastUpdatedAt = now
+}
+
+async function resetMarketAfterCrash(stock: IStock, now = new Date()): Promise<void> {
+  await User.updateMany(
+    {},
+    {
+      $set: {
+        stockShares: 0,
+        stockAutoBuyPrice: null,
+        stockAutoSellPrice: null,
+      },
+    },
+  )
+  resetStockState(stock, now)
+  await stock.save()
+}
+
+function updateStockOnce(stock: IStock, now = new Date()): boolean {
   if (stock.isCrashed) {
-    stock.price = nextPrice(stock.price)
-    stock.crashPrice = updateCrashPrice(stock)
-    stock.lastUpdatedAt = now
-    return
+    resetStockState(stock, now)
+    return true
   }
 
   stock.price = nextPrice(stock.price)
@@ -109,7 +134,7 @@ function updateStockOnce(stock: IStock, now = new Date()): void {
     stock.isCrashed = true
     stock.isBull = false
     stock.lastUpdatedAt = now
-    return
+    return true
   }
 
   stock.peakPrice = updatePeakPrice(stock)
@@ -135,6 +160,7 @@ function updateStockOnce(stock: IStock, now = new Date()): void {
 
   stock.prevPrice = stock.price
   stock.lastUpdatedAt = now
+  return false
 }
 
 export function buyTotalFor(stock: Pick<IStock, 'price'>, shares: number) {
@@ -182,7 +208,12 @@ export async function updateStockDue(now = new Date()): Promise<IStock> {
   )
   const updates = Math.min(MAX_CATCH_UPDATES, Math.max(0, elapsedUpdates))
   for (let i = 0; i < updates; i += 1) {
-    updateStockOnce(stock, new Date(new Date(stock.lastUpdatedAt).getTime() + UPDATE_INTERVAL_SECONDS * 1000))
+    const updateTime = new Date(new Date(stock.lastUpdatedAt).getTime() + UPDATE_INTERVAL_SECONDS * 1000)
+    const crashed = updateStockOnce(stock, updateTime)
+    if (crashed) {
+      await resetMarketAfterCrash(stock, updateTime)
+      continue
+    }
   }
   if (updates > 0) {
     await stock.save()
@@ -193,7 +224,11 @@ export async function updateStockDue(now = new Date()): Promise<IStock> {
 
 export async function tickStock(now = new Date()): Promise<IStock> {
   const stock = await ensureStock()
-  updateStockOnce(stock, now)
+  const crashed = updateStockOnce(stock, now)
+  if (crashed) {
+    await resetMarketAfterCrash(stock, now)
+    return stock
+  }
   await stock.save()
   await runAutoTrades(stock)
   return stock

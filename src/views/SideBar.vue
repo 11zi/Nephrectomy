@@ -6,15 +6,19 @@ import BaseCard from './Card/BaseCard.vue'
 import BankPanel from './Card/BankPanel.vue'
 import DicePanel from './Card/DicePanel.vue'
 import StockPanel from './Card/StockPanel.vue'
+import PlaybackPanel from '../components/playback/PlaybackPanel.vue'
 import { useContentStore } from '../stores/useContentStore'
 import { useRoomStore } from '../stores/useRoomStore'
 import { useUserStore } from '../stores/useUserStore'
+import { useSnackbar } from '../composables/useSnackbar'
+import { requestInsertChatText } from '../composables/useChatInput'
 import type { ContentPage } from '../stores/useContentStore'
 import type { Component } from 'vue'
 
 const contentStore = useContentStore()
 const roomStore = useRoomStore()
 const userStore = useUserStore()
+const snackbar = useSnackbar()
 
 const components = [
   {
@@ -77,6 +81,7 @@ let openCount = 0
 
 const drawerEl = ref<HTMLElement | null>(null)
 const panelComponents: Record<string, Component> = {
+  点播: PlaybackPanel,
   银行: BankPanel,
   炒股: StockPanel,
   骰子: DicePanel,
@@ -117,6 +122,26 @@ async function handleLogout() {
   closeSideBar()
 }
 
+function formatCurrentTime() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+function insertCurrentTimeToChatInput() {
+  contentStore.navigateTo('chat')
+  requestAnimationFrame(() => {
+    requestInsertChatText(formatCurrentTime())
+  })
+  closeSideBar()
+}
+
 function handleItemClick(item: {
   name: string
   vueSrc: string
@@ -126,18 +151,33 @@ function handleItemClick(item: {
     handleLogout()
     return
   }
+  if (item.name === '时间') {
+    insertCurrentTimeToChatInput()
+    return
+  }
   if (item.navigate) {
     contentStore.navigateTo(item.navigate)
     closeSideBar()
-  } else {
+  } else if (panelComponents[item.name]) {
     togglePanel(item.name)
+  } else {
+    snackbar.show('此功能开发中^_^')
   }
 }
 
-function handleHeaderClick(item: { navigate?: ContentPage | null }) {
-  if (!item.navigate) return
+function handleHeaderClick(item: { child?: unknown[]; navigate?: ContentPage | null }) {
+  if (!item.navigate) {
+    if (!item.child?.length) {
+      snackbar.show('此功能开发中^_^')
+    }
+    return
+  }
   contentStore.navigateTo(item.navigate)
   closeSideBar()
+}
+
+function isHeaderClickable(item: { child?: unknown[]; navigate?: ContentPage | null }) {
+  return Boolean(item.navigate || !item.child?.length)
 }
 
 const assignedPanels = new Set<string>()
@@ -233,7 +273,7 @@ watch(
       <li></li>
       <li
         class="mdui-subheader noselect"
-        :class="{ 'mdui-ripple': item.navigate, 'clickable-header': item.navigate }"
+        :class="{ 'mdui-ripple': isHeaderClickable(item), 'clickable-header': isHeaderClickable(item) }"
         @click="handleHeaderClick(item)"
       >
         <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>

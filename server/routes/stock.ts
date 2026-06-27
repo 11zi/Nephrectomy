@@ -29,13 +29,18 @@ async function findCurrentUser(userId?: string) {
   return User.findOne({ uid: userId })
 }
 
+async function reloadUser(user: any) {
+  return User.findOne({ uid: user.uid })
+}
+
 router.get('/', authRequired, async (req, res) => {
   try {
     const user = await findCurrentUser(req.userId)
     if (!user) return res.status(404).json({ error: '用户不存在' })
 
     const stock = await updateStockDue()
-    res.json(stockStatusFrom(stock, user))
+    const currentUser = await reloadUser(user)
+    res.json(stockStatusFrom(stock, currentUser ?? user))
   } catch (err) {
     console.error('[stock] fetch error:', err)
     res.status(500).json({ error: '获取股票信息失败' })
@@ -51,21 +56,23 @@ router.post('/buy', authRequired, async (req, res) => {
     if (!user) return res.status(404).json({ error: '用户不存在' })
 
     const stock = await updateStockDue()
+    const currentUser = await reloadUser(user)
+    if (!currentUser) return res.status(404).json({ error: '用户不存在' })
     if (stock.isCrashed) {
       return res.status(400).json({ error: '股票已崩盘，只能卖出' })
     }
 
     const purchase = buyTotalFor(stock, shares)
-    if ((user.money ?? 0) < purchase.total) {
+    if ((currentUser.money ?? 0) < purchase.total) {
       return res.status(400).json({ error: '余额不足' })
     }
 
-    user.money = Math.floor((user.money ?? 0) - purchase.total)
-    user.stockShares = Math.floor(user.stockShares ?? 0) + shares
-    await user.save()
+    currentUser.money = Math.floor((currentUser.money ?? 0) - purchase.total)
+    currentUser.stockShares = Math.floor(currentUser.stockShares ?? 0) + shares
+    await currentUser.save()
 
     const result: TradeResult = {
-      ...stockStatusFrom(stock, user),
+      ...stockStatusFrom(stock, currentUser),
       trade: {
         kind: 'buy',
         shares,
@@ -88,18 +95,20 @@ router.post('/sell', authRequired, async (req, res) => {
 
     const user = await findCurrentUser(req.userId)
     if (!user) return res.status(404).json({ error: '用户不存在' })
-    if ((user.stockShares ?? 0) < shares) {
+    const stock = await updateStockDue()
+    const currentUser = await reloadUser(user)
+    if (!currentUser) return res.status(404).json({ error: '用户不存在' })
+    if ((currentUser.stockShares ?? 0) < shares) {
       return res.status(400).json({ error: '持股不足' })
     }
 
-    const stock = await updateStockDue()
     const sale = sellTotalFor(stock, shares)
-    user.stockShares = Math.floor(user.stockShares ?? 0) - shares
-    user.money = Math.floor((user.money ?? 0) + sale.total)
-    await user.save()
+    currentUser.stockShares = Math.floor(currentUser.stockShares ?? 0) - shares
+    currentUser.money = Math.floor((currentUser.money ?? 0) + sale.total)
+    await currentUser.save()
 
     const result: TradeResult = {
-      ...stockStatusFrom(stock, user),
+      ...stockStatusFrom(stock, currentUser),
       trade: {
         kind: 'sell',
         shares,
@@ -144,7 +153,8 @@ router.post('/auto', authRequired, async (req, res) => {
     await user.save()
 
     const stock = await updateStockDue()
-    res.json(stockStatusFrom(stock, user))
+    const currentUser = await reloadUser(user)
+    res.json(stockStatusFrom(stock, currentUser ?? user))
   } catch (err) {
     console.error('[stock] auto error:', err)
     res.status(500).json({ error: '自动价格设置失败' })

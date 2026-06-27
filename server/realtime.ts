@@ -3,6 +3,7 @@ import { Server } from 'socket.io'
 import { verifyToken } from './auth/jwt'
 import { User } from './models/User'
 import type { IMessage } from './models/Message'
+import type { PlaybackStatePayload } from './playback/types'
 
 let io: Server | null = null
 
@@ -89,4 +90,14 @@ export function emitRoomMessageCreated(message: IMessage | any): void {
   }
 
   io.to(roomChannel(message.roomId)).emit('message:created', payload)
+}
+
+export function emitRoomPlaybackState(roomId: string, playback: PlaybackStatePayload): void {
+  if (!io) return
+
+  io.to(roomChannel(roomId)).emit('playback:state', {
+    type: 'PLAYBACK_STATE',
+    playback,
+    serverNow: playback.serverNow,
+  })
 }

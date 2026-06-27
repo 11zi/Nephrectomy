@@ -3,8 +3,10 @@ import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import type { MessageCreatedEvent, RoomId } from '../types/chatTypes'
 import type { SysMsgSnackBarInstance } from '../components/SysMsgSnackBar.vue'
+import type { PlaybackSocketEvent } from '../types/playbackTypes'
 import { useChatStore } from './useChatStore'
 import { useSnackbar } from '../composables/useSnackbar'
+import { PLAYBACK_STATE_EVENT } from './usePlaybackStore'
 
 type RealtimeStatus = 'idle' | 'connecting' | 'connected' | 'disconnected'
 
@@ -97,6 +99,9 @@ export const useRealtimeStore = defineStore('realtime', () => {
       if (event.scope === 'room') {
         useChatStore().appendMessage(event.message)
       }
+    })
+    socket.on('playback:state', (event: PlaybackSocketEvent) => {
+      window.dispatchEvent(new CustomEvent(PLAYBACK_STATE_EVENT, { detail: event }))
     })
   }
 

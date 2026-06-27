@@ -57,7 +57,14 @@ async function loadBalance() {
     snackbar.error(err.message || '余额加载失败')
   } finally {
     isLoading.value = false
+    await refreshTextFields()
   }
+}
+
+async function refreshTextFields() {
+  await nextTick()
+  mdui.mutation()
+  mdui.updateTextFields?.()
 }
 
 async function rollDice() {
@@ -79,32 +86,55 @@ async function rollDice() {
     await loadBalance()
   } finally {
     isSubmitting.value = false
-    await nextTick()
+    await refreshTextFields()
     amountInput.value?.focus()
   }
 }
 
-onMounted(loadBalance)
+onMounted(() => {
+  loadBalance()
+  refreshTextFields()
+})
 </script>
 
 <template>
-  <div class="dice-panel">
-    <div class="balance-band">
-      <span class="metric-label">当前余额</span>
-      <strong>{{ formatMoney(currentBalance) }}</strong>
+  <div class="dice-panel mdui-p-a-2 mdui-text-color-blue-grey-900">
+    <div class="dice-header mdui-valign mdui-m-b-1">
+      <div class="dice-title">
+        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">骰子游戏</span>
+        <strong class="panel-title">下注试手气</strong>
+      </div>
+      <div class="mdui-chip dice-chip mdui-color-blue-grey-600">
+        <span class="mdui-chip-icon">
+          <i class="mdui-icon material-icons">casino</i>
+        </span>
+        <span class="mdui-chip-title">50%</span>
+      </div>
     </div>
 
-    <div class="dice-copy">
-      <i class="mdui-icon material-icons">casino</i>
-      <span>50% 概率获得下注额 1 倍，失败则失去下注额。</span>
+    <div class="balance-band mdui-color-blue-grey-50 mdui-p-a-2">
+      <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">当前余额</span>
+      <strong class="balance-value">{{ formatMoney(currentBalance) }}</strong>
     </div>
 
-    <form class="dice-form" @submit.prevent="rollDice">
+    <div class="dice-copy mdui-typo-caption mdui-text-color-blue-grey-500">
+      <span class="mdui-valign">
+        <i class="mdui-icon material-icons">payments</i>
+        成功获得下注额 1 倍
+      </span>
+      <span class="mdui-valign">
+        <i class="mdui-icon material-icons">remove_circle_outline</i>
+        失败失去下注额
+      </span>
+    </div>
+
+    <form class="dice-form mdui-m-t-1" @submit.prevent="rollDice">
       <div
-        class="mdui-textfield amount-field"
+        class="mdui-textfield mdui-textfield-floating-label amount-field"
         :class="{ 'mdui-textfield-invalid': validationMessage }"
       >
         <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
+        <label class="mdui-textfield-label">下注金额</label>
         <input
           ref="amountInput"
           v-model.trim="amountText"
@@ -112,18 +142,19 @@ onMounted(loadBalance)
           type="text"
           inputmode="numeric"
           pattern="[0-9]*"
-          placeholder="下注金额"
           :disabled="isLoading || isSubmitting"
         />
         <div class="mdui-textfield-error">{{ validationMessage }}</div>
       </div>
 
       <button
-        class="mdui-btn mdui-btn-raised mdui-ripple"
+        class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey-600 action-btn"
         type="submit"
         :disabled="!canSubmit"
       >
-        <i class="mdui-icon material-icons">check</i>
+        <i class="mdui-icon material-icons mdui-icon-left">
+          {{ isSubmitting ? 'hourglass_empty' : 'check' }}
+        </i>
         确定
       </button>
     </form>
@@ -133,40 +164,66 @@ onMounted(loadBalance)
 <style scoped>
 .dice-panel {
   width: min(360px, calc(100vw - 56px));
-  padding: 16px;
-  color: #37474f;
+  box-sizing: border-box;
+}
+
+.dice-header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dice-title {
+  min-width: 0;
 }
 
 .balance-band {
   border: 1px solid #d9e1e5;
-  border-radius: 8px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.82);
+  border-radius: 4px;
+  min-width: 0;
 }
 
 .metric-label {
   display: block;
   font-size: 12px;
-  color: #78909c;
   margin-bottom: 4px;
 }
 
-strong {
+.panel-title,
+.balance-value {
   display: block;
-  font-size: 26px;
   line-height: 1.2;
   font-weight: 600;
   color: #263238;
 }
 
+.panel-title {
+  font-size: 22px;
+}
+
+.balance-value {
+  font-size: 26px;
+}
+
+.dice-chip {
+  flex: 0 0 auto;
+  color: #fff;
+}
+
+.dice-chip .mdui-chip-icon {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .dice-copy {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  gap: 4px;
   margin: 12px 0 4px;
   font-size: 13px;
   line-height: 1.4;
-  color: #607d8b;
+}
+
+.dice-copy .mdui-icon {
+  margin-right: 6px;
+  font-size: 16px;
 }
 
 .dice-form {
@@ -177,13 +234,15 @@ strong {
 }
 
 .amount-field {
+  min-width: 0;
   padding-top: 0;
 }
 
-.mdui-btn {
+.action-btn {
   min-width: 86px;
+  height: 36px;
+  line-height: 36px;
   color: #fff;
-  background: #546e7a;
 }
 
 .mdui-btn[disabled] {
@@ -194,6 +253,10 @@ strong {
 @media (max-width: 480px) {
   .dice-form {
     grid-template-columns: 1fr;
+  }
+
+  .dice-header {
+    align-items: flex-start;
   }
 }
 </style>

@@ -12,19 +12,20 @@ const userStore = useUserStore()
 const snackbar = useSnackbar()
 
 const status = ref<StockStatus | null>(null)
-const sharesText = ref('')
-const autoBuyText = ref('')
-const autoSellText = ref('')
+const sharesText = ref<string | number>('')
+const autoBuyText = ref<string | number>('')
+const autoSellText = ref<string | number>('')
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 let refreshTimer: ReturnType<typeof setInterval> | null = null
 
 const parsedShares = computed(() => {
-  if (!/^\d+$/.test(sharesText.value.trim())) return null
-  return Number(sharesText.value)
+  const value = toInputText(sharesText.value)
+  if (!/^\d+$/.test(value)) return null
+  return Number(value)
 })
 const hasValidShares = computed(() => parsedShares.value !== null && parsedShares.value >= 1)
-const canTrade = computed(() => status.value !== null && hasValidShares.value && !isSubmitting.value)
+const canTrade = computed(() => hasValidShares.value && !isSubmitting.value)
 const buyPreview = computed(() => {
   if (!status.value || parsedShares.value === null) return 0
   return Math.ceil(status.value.price * parsedShares.value * (1 + BUY_TAX_RATE))
@@ -49,6 +50,10 @@ function formatDate(value: string | undefined): string {
     minute: '2-digit',
     second: '2-digit',
   }).format(new Date(value))
+}
+
+function toInputText(value: string | number | null | undefined): string {
+  return String(value ?? '').trim()
 }
 
 function syncProfile(nextStatus: StockStatus) {
@@ -89,7 +94,11 @@ async function loadStock({ silent = false } = {}) {
 }
 
 async function trade(kind: 'buy' | 'sell') {
-  if (!canTrade.value || parsedShares.value === null) return
+  if (isSubmitting.value) return
+  if (parsedShares.value === null) {
+    snackbar.error('股数需要是大于等于 1 的整数')
+    return
+  }
   isSubmitting.value = true
   try {
     const result = kind === 'buy'
@@ -109,9 +118,10 @@ async function trade(kind: 'buy' | 'sell') {
   }
 }
 
-function parseOptionalPrice(value: string): number | null {
-  if (!value.trim()) return null
-  const price = Number(value)
+function parseOptionalPrice(value: string | number): number | null {
+  const text = toInputText(value)
+  if (!text) return null
+  const price = Number(text)
   if (!Number.isFinite(price) || price <= 0) return null
   return Number(price.toFixed(4))
 }
@@ -119,11 +129,11 @@ function parseOptionalPrice(value: string): number | null {
 async function saveAutoPrices() {
   const autoBuyPrice = parseOptionalPrice(autoBuyText.value)
   const autoSellPrice = parseOptionalPrice(autoSellText.value)
-  if (autoBuyText.value.trim() && autoBuyPrice === null) {
+  if (toInputText(autoBuyText.value) && autoBuyPrice === null) {
     snackbar.error('自动买入价需要是大于 0 的数字')
     return
   }
-  if (autoSellText.value.trim() && autoSellPrice === null) {
+  if (toInputText(autoSellText.value) && autoSellPrice === null) {
     snackbar.error('自动卖出价需要是大于 0 的数字')
     return
   }
@@ -158,137 +168,170 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="stock-panel">
-    <div class="stock-header">
-      <div>
-        <span class="metric-label">{{ status?.symbol ?? 'NEPH' }}</span>
-        <strong>{{ status?.name ?? '肾股' }}</strong>
+  <div class="stock-panel mdui-p-a-2 mdui-text-color-blue-grey-900">
+    <div class="stock-header mdui-valign">
+      <div class="stock-title">
+        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">
+          {{ status?.symbol ?? 'NEPH' }}
+        </span>
+        <strong class="stock-name mdui-text-truncate">{{ status?.name ?? '肾股' }}</strong>
       </div>
-      <span
-        class="stock-badge"
-        :class="{ crashed: status?.isCrashed, bull: status?.isBull }"
+      <div
+        class="mdui-chip stock-badge"
+        :class="{
+          'mdui-color-red-700': status?.isCrashed,
+          'mdui-color-green-700': status?.isBull,
+          'mdui-color-blue-grey-600': !status?.isCrashed && !status?.isBull,
+        }"
       >
-        {{ status?.isCrashed ? '已崩盘' : status?.isBull ? '牛股' : '交易中' }}
-      </span>
+        <span class="mdui-chip-icon">
+          <i class="mdui-icon material-icons">
+            {{ status?.isCrashed ? 'trending_down' : status?.isBull ? 'trending_up' : 'show_chart' }}
+          </i>
+        </span>
+        <span class="mdui-chip-title">
+          {{ status?.isCrashed ? '已崩盘' : status?.isBull ? '牛股' : '交易中' }}
+        </span>
+      </div>
     </div>
 
     <div class="stock-grid">
-      <div class="stock-metric">
-        <span class="metric-label">当前股价</span>
-        <strong>{{ formatPrice(status?.price) }}</strong>
+      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
+        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">当前股价</span>
+        <strong class="metric-value">{{ formatPrice(status?.price) }}</strong>
       </div>
-      <div class="stock-metric">
-        <span class="metric-label">持股数</span>
-        <strong>{{ status?.user.shares ?? 0 }}</strong>
+      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
+        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">持股数</span>
+        <strong class="metric-value">{{ status?.user.shares ?? 0 }}</strong>
       </div>
-      <div class="stock-metric">
-        <span class="metric-label">买入价</span>
-        <strong>{{ formatPrice(status?.buyPrice) }}</strong>
+      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
+        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">买入价</span>
+        <strong class="metric-value">{{ formatPrice(status?.buyPrice) }}</strong>
       </div>
-      <div class="stock-metric">
-        <span class="metric-label">卖出价</span>
-        <strong>{{ formatPrice(status?.sellPrice) }}</strong>
+      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
+        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">卖出价</span>
+        <strong class="metric-value">{{ formatPrice(status?.sellPrice) }}</strong>
       </div>
     </div>
 
-    <div class="stock-meta">
-      <span>余额 {{ formatMoney(status?.user.cash) }}</span>
-      <span>更新 {{ formatDate(status?.updatedAt) }}</span>
-      <span>买税 1.5% / 卖税 0.5%</span>
+    <div class="stock-meta mdui-typo-caption mdui-text-color-blue-grey-900">
+      <span class="mdui-valign">
+        <i class="mdui-icon material-icons">account_balance_wallet</i>
+        余额 {{ formatMoney(status?.user.cash) }}
+      </span>
+      <span class="mdui-valign">
+        <i class="mdui-icon material-icons">update</i>
+        更新 {{ formatDate(status?.updatedAt) }}
+      </span>
+      <span class="mdui-valign">
+        买税 1.5% / 卖税 0.5%
+      </span>
+      <span class="mdui-valign">
+        买入将花费 {{ formatMoney(buyPreview) }}
+      </span>
+      <span class="mdui-valign">
+        卖出将获得 {{ formatMoney(sellPreview) }}
+      </span>
     </div>
 
-    <form class="trade-row" @submit.prevent="trade('buy')">
-      <div class="mdui-textfield amount-field">
+    <div class="trade-row">
+      <div class="mdui-textfield mdui-textfield-floating-label amount-field">
+        <i class="mdui-icon material-icons mdui-textfield-icon">confirmation_number</i>
+        <label class="mdui-textfield-label">股数</label>
         <input
-          v-model.trim="sharesText"
+          v-model="sharesText"
           class="mdui-textfield-input"
           type="number"
           min="1"
           step="1"
           inputmode="numeric"
-          placeholder="股数"
           :disabled="isSubmitting"
         />
       </div>
-      <button
-        class="mdui-btn mdui-btn-raised mdui-ripple buy-btn"
-        type="submit"
-        :disabled="!canTrade || status?.isCrashed"
-      >
-        买入
-      </button>
-      <button
-        class="mdui-btn mdui-btn-raised mdui-ripple sell-btn"
-        type="button"
-        :disabled="!canTrade"
-        @click="trade('sell')"
-      >
-        卖出
-      </button>
-    </form>
-
-    <div class="trade-preview">
-      <span>买入将花费 {{ formatMoney(buyPreview) }}</span>
-      <span>卖出将获得 {{ formatMoney(sellPreview) }}</span>
+      <div class="trade-actions">
+        <button
+          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-brown-600 action-btn"
+          type="button"
+          :disabled="isSubmitting"
+          @click.prevent="trade('sell')"
+        >
+          <i class="mdui-icon material-icons mdui-icon-left">call_received</i>
+          卖出
+        </button>
+        <button
+          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-green-700 action-btn"
+          type="button"
+          :disabled="isSubmitting || status?.isCrashed === true"
+          @click.prevent="trade('buy')"
+        >
+          <i class="mdui-icon material-icons mdui-icon-left">call_made</i>
+          买入
+        </button>
+      </div>
     </div>
 
-    <form class="auto-row" @submit.prevent="saveAutoPrices">
-      <div class="mdui-textfield amount-field">
+    <div class="auto-row">
+      <div class="mdui-textfield mdui-textfield-floating-label amount-field">
+        <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
+        <label class="mdui-textfield-label">自动买入价</label>
         <input
-          v-model.trim="autoBuyText"
+          v-model="autoBuyText"
           class="mdui-textfield-input"
           type="number"
           min="0"
           step="0.0001"
-          placeholder="自动买入价"
           :disabled="isSubmitting"
         />
       </div>
-      <div class="mdui-textfield amount-field">
+      <div class="mdui-textfield mdui-textfield-floating-label amount-field">
+        <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
+        <label class="mdui-textfield-label">自动卖出价</label>
         <input
-          v-model.trim="autoSellText"
+          v-model="autoSellText"
           class="mdui-textfield-input"
           type="number"
           min="0"
           step="0.0001"
-          placeholder="自动卖出价"
           :disabled="isSubmitting"
         />
       </div>
       <button
-        class="mdui-btn mdui-btn-raised mdui-ripple auto-btn"
-        type="submit"
+        class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey-600 action-btn"
+        type="button"
         :disabled="isSubmitting"
+        @click.prevent="saveAutoPrices"
       >
+        <i class="mdui-icon material-icons mdui-icon-left">save</i>
         保存
       </button>
-    </form>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .stock-panel {
   width: min(480px, calc(100vw - 56px));
-  padding: 16px;
-  color: #37474f;
+  box-sizing: border-box;
 }
 
 .stock-header {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
 }
 
+.stock-title {
+  min-width: 0;
+}
+
 .metric-label {
   display: block;
   font-size: 12px;
-  color: #78909c;
   margin-bottom: 4px;
 }
 
-strong {
+.stock-name,
+.metric-value {
   display: block;
   font-size: 22px;
   line-height: 1.2;
@@ -296,21 +339,17 @@ strong {
   color: #263238;
 }
 
+.stock-name {
+  max-width: 280px;
+}
+
 .stock-badge {
   flex: 0 0 auto;
-  border-radius: 999px;
-  padding: 4px 10px;
   color: #fff;
-  background: #607d8b;
-  font-size: 12px;
 }
 
-.stock-badge.bull {
-  background: #2e7d32;
-}
-
-.stock-badge.crashed {
-  background: #b71c1c;
+.stock-badge .mdui-chip-icon {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .stock-grid {
@@ -321,9 +360,8 @@ strong {
 
 .stock-metric {
   border: 1px solid #d9e1e5;
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.82);
+  border-radius: 4px;
+  min-width: 0;
 }
 
 .stock-meta,
@@ -332,46 +370,60 @@ strong {
   gap: 4px;
   margin: 12px 0 4px;
   font-size: 12px;
-  color: #78909c;
+}
+
+.trade-preview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+}
+
+.stock-meta .mdui-icon,
+.trade-preview .mdui-icon {
+  margin-right: 6px;
+  font-size: 16px;
 }
 
 .trade-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) auto auto;
+  grid-template-columns: minmax(150px, 1fr) auto;
   align-items: end;
-  gap: 8px;
+  column-gap: 12px;
+  margin-top: 4px;
+}
+
+.trade-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 0;
 }
 
 .auto-row {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
   align-items: end;
-  gap: 8px;
-  margin-top: 8px;
+  column-gap: 16px;
+  margin-top: 18px;
 }
 
 .amount-field {
-  padding-top: 0;
+  min-width: 0;
+  margin: 0;
+  padding-top: 8px;
+  width: 100%;
 }
 
-.mdui-btn {
-  min-width: 72px;
+.amount-field .mdui-textfield-icon {
+  overflow: hidden;
+  width: 24px;
+  pointer-events: none;
+}
+
+.action-btn {
+  min-width: 76px;
   height: 36px;
   line-height: 36px;
   color: #fff;
-  background: #546e7a;
-}
-
-.buy-btn {
-  background: #2e7d32;
-}
-
-.sell-btn {
-  background: #8a4b2a;
-}
-
-.auto-btn {
-  background: #546e7a;
 }
 
 .mdui-btn[disabled] {
@@ -382,8 +434,21 @@ strong {
 @media (max-width: 560px) {
   .stock-grid,
   .trade-row,
+  .trade-preview,
   .auto-row {
     grid-template-columns: 1fr;
+  }
+
+  .trade-actions {
+    justify-content: stretch;
+  }
+
+  .trade-actions .action-btn {
+    flex: 1 1 0;
+  }
+
+  .stock-header {
+    align-items: flex-start;
   }
 }
 </style>
