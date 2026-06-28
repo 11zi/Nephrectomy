@@ -10,6 +10,7 @@ import ChatRoom from './Content/Chat/ChatRoom.vue'
 import ChatRoomList from './Content/ChatRoomList.vue'
 import PrivateMessage from './Content/PrivateMessage.vue'
 import AccountEdit from './Content/AccountEdit.vue'
+import SettingsPage from './Content/SettingsPage.vue'
 import LoginPage from './Content/Login.vue'
 import RegisterPage from './Content/Register.vue'
 
@@ -19,6 +20,7 @@ const currentComponent = computed(() => {
     case 'implicit-room-list': return ChatRoomList
     case 'private-message':  return PrivateMessage
     case 'account-edit':     return AccountEdit
+    case 'settings':         return SettingsPage
     case 'login':            return LoginPage
     case 'register':         return RegisterPage
     case 'chat':
@@ -27,7 +29,7 @@ const currentComponent = computed(() => {
 })
 
 // 登录/注册页面不缓存（避免表单残留敏感数据）
-const cacheablePages = new Set(['chat', 'room-list', 'private-message', 'account-edit'])
+const cacheablePages = new Set(['chat', 'room-list', 'private-message', 'account-edit', 'settings'])
 const currentPage = computed(() => contentStore.currentPage)
 const isImplicitRoomList = computed(() => contentStore.currentPage === 'implicit-room-list')
 

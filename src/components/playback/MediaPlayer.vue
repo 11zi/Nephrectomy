@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { useSettingsStore } from '../../stores/useSettingsStore'
 import type { MediaItem, PlaybackStatus } from '../../types/playbackTypes'
 
 declare global {
@@ -18,6 +19,7 @@ interface YoutubePlayer {
   seekTo(seconds: number, allowSeekAhead: boolean): void
   playVideo(): void
   pauseVideo(): void
+  setVolume(volume: number): void
 }
 
 const props = defineProps<{
@@ -33,8 +35,12 @@ const emit = defineEmits<{
 
 const mediaEl = ref<HTMLVideoElement | HTMLAudioElement | null>(null)
 const youtubeEl = ref<HTMLElement | null>(null)
+const settingsStore = useSettingsStore()
 let youtubePlayer: YoutubePlayer | null = null
 let youtubeReadyPromise: Promise<void> | null = null
+
+const playbackAllowed = computed(() => settingsStore.isPlaybackAllowed(props.item))
+const playbackDisabledText = computed(() => settingsStore.getPlaybackDisabledText(props.item))
 
 const directMediaTag = computed(() => {
   if (!props.item?.directUrl) return null
@@ -67,6 +73,16 @@ function destroyYoutubePlayer() {
   youtubePlayer = null
 }
 
+function syncDirectVolume() {
+  if (mediaEl.value) {
+    mediaEl.value.volume = settingsStore.normalizedVolume
+  }
+}
+
+function syncYoutubeVolume() {
+  youtubePlayer?.setVolume(settingsStore.masterVolume)
+}
+
 async function syncDirectMedia() {
   await nextTick()
   const el = mediaEl.value
@@ -74,6 +90,7 @@ async function syncDirectMedia() {
 
   const targetTime = props.getTargetTime()
   const applySync = () => {
+    syncDirectVolume()
     if (Number.isFinite(targetTime)) {
       el.currentTime = Math.max(0, targetTime)
     }
@@ -109,6 +126,7 @@ async function syncYoutubeMedia() {
     events: {
       onReady: () => {
         if (!youtubePlayer) return
+        syncYoutubeVolume()
         youtubePlayer.seekTo(Math.max(0, targetTime), true)
         if (props.status === 'playing') {
           youtubePlayer.playVideo()
@@ -127,7 +145,10 @@ async function syncYoutubeMedia() {
 
 function syncCurrentMedia() {
   destroyYoutubePlayer()
-  if (!props.item) return
+  if (!props.item || !playbackAllowed.value) {
+    mediaEl.value?.pause()
+    return
+  }
   if (props.item.youtubeVideoId) {
     syncYoutubeMedia()
   } else if (props.item.directUrl) {
@@ -141,6 +162,19 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => playbackAllowed.value,
+  () => syncCurrentMedia(),
+)
+
+watch(
+  () => settingsStore.masterVolume,
+  () => {
+    syncDirectVolume()
+    syncYoutubeVolume()
+  },
+)
+
 onBeforeUnmount(destroyYoutubePlayer)
 </script>
 
@@ -148,6 +182,10 @@ onBeforeUnmount(destroyYoutubePlayer)
   <div class="media-player" :class="{ 'background-player': background }">
     <div v-if="!item" class="empty-player">
       暂无正在播放
+    </div>
+
+    <div v-else-if="!playbackAllowed" class="empty-player disabled-player">
+      {{ playbackDisabledText }}
     </div>
 
     <div v-else-if="item.youtubeVideoId" ref="youtubeEl" class="youtube-player"></div>

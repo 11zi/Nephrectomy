@@ -10,6 +10,7 @@ export type ContentPage =
   | 'implicit-room-list'
   | 'private-message'
   | 'account-edit'
+  | 'settings'
   | 'login'
   | 'register'
 

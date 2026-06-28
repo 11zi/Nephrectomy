@@ -66,7 +66,7 @@ const components = [
     index: '6',
     icon: 'settings',
     child: [
-      { name: '设置', vueSrc: '', index: '6-1', icon: 'settings',     navigate: null },
+      { name: '设置', vueSrc: '', index: '6-1', icon: 'settings',     navigate: 'settings' as ContentPage },
       { name: '关于', vueSrc: '', index: '6-2', icon: 'info_outline', navigate: null },
       { name: '重载', vueSrc: '', index: '6-3', icon: 'refresh',      navigate: null },
       { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app',  navigate: 'logout' as unknown as ContentPage },

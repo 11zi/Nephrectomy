@@ -97,6 +97,14 @@ watch(
     <!-- 顶部导航栏：用 mdui 已有类 + 少量 inline -->
     <div class="room-list-header">
       <button
+        class="mdui-btn mdui-btn-icon mdui-ripple"
+        @click="contentStore.navigateTo('chat')"
+        title="返回聊天室"
+      >
+        <i class="mdui-icon material-icons">close</i>
+      </button>
+
+      <button
         v-if="roomStore.navStack.length > 0"
         class="mdui-btn mdui-btn-icon mdui-ripple"
         @click="goBack"
@@ -119,15 +127,6 @@ watch(
           >{{ room.name }}</span>
         </template>
       </div>
-
-      <button
-        class="mdui-btn mdui-btn-icon mdui-ripple"
-        @click="contentStore.navigateTo('chat')"
-        title="返回聊天室"
-        style="margin-left: auto; flex-shrink: 0;"
-      >
-        <i class="mdui-icon material-icons">close</i>
-      </button>
     </div>
 
     <!-- 网格区域 -->
