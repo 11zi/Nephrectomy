@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import '../../../assets/js/marked.min.js'
+import { renderPresetChatEmojis } from '../../../utils/chatEmoji'
 import { isAllowedChatMediaElement, renderMessageMediaLinks } from '../../../utils/chatMedia'
 import type { ChatMessage } from '../../../types/chatTypes'
 
@@ -26,7 +27,7 @@ const quotedPreview = computed(() => {
 })
 
 function renderSafeHtml(content: string): string {
-  const parsed = marked.parse(renderMessageMediaLinks(content))
+  const parsed = marked.parse(renderPresetChatEmojis(renderMessageMediaLinks(content)))
   const sanitized = DOMPurify.sanitize(parsed, {
     ALLOWED_TAGS: [
       'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'code', 'pre',
@@ -64,6 +65,68 @@ function stripUntrustedMedia(html: string): string {
   })
 
   return template.innerHTML
+}
+
+function onMessageContentClick(event: MouseEvent) {
+  const target = event.target
+  if (!(target instanceof Element)) return
+
+  const anchor = target.closest('a[href]')
+  if (!(anchor instanceof HTMLAnchorElement)) return
+
+  const url = parseWebLink(anchor.getAttribute('href') ?? '')
+  if (!url) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  confirmOpenWebLink(url.href)
+}
+
+function parseWebLink(href: string): URL | null {
+  try {
+    const url = new URL(href, window.location.href)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url : null
+  } catch {
+    return null
+  }
+}
+
+function confirmOpenWebLink(url: string) {
+  mdui.dialog({
+    title: '确认访问链接',
+    content: `
+      <div class="link-confirm-content">
+        <div class="link-confirm-hint">即将在新标签页打开以下网页链接：</div>
+        <div class="mdui-dialog-content link-confirm-url">${escapeHtml(url)}</div>
+      </div>
+    `,
+    cssClass: 'link-confirm-dialog',
+    buttons: [
+      {
+        text: '取消',
+        close: true,
+      },
+      {
+        text: '访问',
+        bold: true,
+        close: true,
+        onClick: () => {
+          const opened = window.open(url, '_blank', 'noopener,noreferrer')
+          if (opened) opened.opener = null
+        },
+      },
+    ],
+    history: false,
+  })
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // ---- 右键菜单 ----
@@ -120,11 +183,11 @@ function handleAction(label: string | null) {
         <span class="msg-sender">{{ props.message.sender.nickname }}</span>
         <span v-if="props.timestamp" class="msg-time">{{ props.timestamp }}</span>
       </div>
-      <div v-if="props.quotedMessage" class="msg-quote">
+      <div v-if="props.quotedMessage" class="msg-quote" @click="onMessageContentClick">
         <div class="msg-quote-sender">{{ props.quotedMessage.sender.nickname }}</div>
         <div class="msg-quote-content mdui-typo" v-html="quotedPreview"></div>
       </div>
-      <div class="msg-bubble mdui-typo" v-html="safeHtml"></div>
+      <div class="msg-bubble mdui-typo" @click="onMessageContentClick" v-html="safeHtml"></div>
     </div>
   </div>
 </template>
@@ -178,6 +241,11 @@ function handleAction(label: string | null) {
 
 .msg-bubble p:first-child { margin-top: 0; }
 .msg-bubble p:last-child  { margin-bottom: 0; }
+
+.msg-bubble a,
+.msg-quote-content a {
+  cursor: pointer;
+}
 
 .msg-bubble .chat-media {
   display: block;
@@ -233,6 +301,15 @@ function handleAction(label: string | null) {
   background: transparent;
 }
 
+.msg-bubble .chat-preset-emoji,
+.msg-quote-content .chat-preset-emoji {
+  display: inline-block;
+  color: #546e7a;
+  font-size: 22px;
+  line-height: 1;
+  vertical-align: -5px;
+}
+
 /* 消息操作 dialog 宽度，用双 class 提高特异性覆盖 mdui */
 .mdui-dialog.msg-action-dialog {
   width: 400px;
@@ -242,6 +319,32 @@ function handleAction(label: string | null) {
 /* dialog 内菜单项样式 */
 .msg-action-item {
   cursor: pointer;
+}
+
+.mdui-dialog.link-confirm-dialog {
+  max-width: min(480px, calc(100vw - 32px));
+}
+
+.link-confirm-content {
+  padding: 2px 0 4px;
+}
+
+.link-confirm-hint {
+  color: #546e7a;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.link-confirm-url {
+  max-height: 128px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #eceff1;
+  color: #263238;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-all;
 }
 
 .anim_in {

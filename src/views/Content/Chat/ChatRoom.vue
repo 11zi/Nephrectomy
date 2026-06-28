@@ -322,15 +322,15 @@ onActivated(scrollMessagesToBottomAfterRender)
 
     <!-- 表情面板：独立 flex item，在输入框下方展开，完全在文档流中 -->
     <Transition name="emoji-panel">
-      <div v-if="inputBoxRef?.emojiPanelOpen" class="emoji-drawer mdui-color-blue-grey-50">
-        <div class="emoji-tabs">
+      <div v-if="inputBoxRef?.emojiPanelOpen" class="emoji-drawer mdui-color-white">
+        <div class="emoji-tabs mdui-tab">
           <button
-            class="emoji-tab"
+            class="emoji-tab mdui-ripple"
             :class="{ active: inputBoxRef?.emojiTab === 'preset' }"
             @click="inputBoxRef!.emojiTab = 'preset'"
           >预设表情</button>
           <button
-            class="emoji-tab"
+            class="emoji-tab mdui-ripple"
             :class="{ active: inputBoxRef?.emojiTab === 'custom' }"
             @click="inputBoxRef!.emojiTab = 'custom'"
           >我的表情</button>
@@ -348,18 +348,27 @@ onActivated(scrollMessagesToBottomAfterRender)
             </button>
           </template>
           <template v-else>
-            <div v-if="!inputBoxRef?.customEmojis?.length" class="emoji-empty">
-              暂无自定义表情包
-            </div>
             <button
-              v-for="icon in inputBoxRef?.customEmojis"
-              :key="icon"
-              class="emoji-item mdui-ripple"
-              @click="inputBoxRef?.insertEmoji(icon)"
-              :title="icon"
+              class="emoji-item emoji-add-item mdui-ripple"
+              type="button"
+              title="从链接添加表情"
+              @click="inputBoxRef?.openAddCustomEmojiDialog()"
             >
-              <i class="mdui-icon material-icons">{{ icon }}</i>
+              <i class="mdui-icon material-icons">add</i>
             </button>
+            <button
+              v-for="url in inputBoxRef?.customEmojis"
+              :key="url"
+              class="emoji-item mdui-ripple"
+              type="button"
+              @click="inputBoxRef?.insertCustomEmoji(url)"
+              :title="url"
+            >
+              <img class="emoji-custom-image" :src="url" alt="表情" loading="lazy" referrerpolicy="no-referrer" />
+            </button>
+            <div v-if="!inputBoxRef?.customEmojis?.length" class="emoji-empty">
+              暂无自定义表情
+            </div>
           </template>
         </div>
       </div>
@@ -407,40 +416,50 @@ onActivated(scrollMessagesToBottomAfterRender)
 
 .emoji-drawer {
   flex-shrink: 0;
-  background: #fff;
-  border-top: 1px solid #cfd8dc;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
   margin-right: 8px;
+  border-top: 1px solid #e0e0e0;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .emoji-tabs {
   display: flex;
-  border-bottom: 1px solid #eceff1;
+  height: 48px;
+  border-bottom: 1px solid #eeeeee;
 }
 
 .emoji-tab {
   flex: 1;
-  padding: 10px 0;
+  position: relative;
+  min-width: 72px;
+  padding: 0 16px;
   border: none;
   background: none;
+  color: rgba(0, 0, 0, 0.54);
   font-size: 13px;
-  color: #78909c;
+  line-height: 48px;
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color 0.15s;
 }
 .emoji-tab.active {
-  color: #546e7a;
-  border-bottom-color: #546e7a;
-  font-weight: 600;
+  color: #2196f3;
+}
+
+.emoji-tab.active::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: #2196f3;
+  content: '';
 }
 
 .emoji-grid {
   display: flex;
   flex-wrap: wrap;
-  padding: 8px;
-  gap: 4px;
-  max-height: 180px;
+  gap: 8px;
+  max-height: 188px;
+  padding: 12px;
   overflow-y: auto;
 }
 
@@ -450,22 +469,40 @@ onActivated(scrollMessagesToBottomAfterRender)
   border: none;
   background: none;
   border-radius: 4px;
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #546e7a;
-  transition: background 0.15s;
+  color: rgba(0, 0, 0, 0.66);
+  overflow: hidden;
+  transition: background 0.15s, color 0.15s;
 }
-.emoji-item:hover { background: #eceff1; }
+.emoji-item:hover {
+  background: #eeeeee;
+  color: #2196f3;
+}
 .emoji-item .mdui-icon { font-size: 28px; }
 
+.emoji-add-item {
+  border: 1px dashed #bdbdbd;
+  color: rgba(0, 0, 0, 0.46);
+}
+
+.emoji-custom-image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .emoji-empty {
-  width: 100%;
-  text-align: center;
-  padding: 24px 0;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 8px;
+  color: rgba(0, 0, 0, 0.38);
   font-size: 13px;
-  color: #b0bec5;
 }
 
 .new-message-badge {

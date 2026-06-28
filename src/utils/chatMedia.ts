@@ -11,13 +11,20 @@ const IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif'])
 const VIDEO_EXTENSIONS = new Set(['.mp4', '.webm', '.m3u8'])
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.ogg', '.wav', '.flac'])
 const BRACKET_LINK_RE = /\[(https?:\/\/[^\]\s]+)\]/gi
+const BARE_LINK_RE = /(^|\s)(https?:\/\/[^\s<>\]]+)/gi
 
 export function renderMessageMediaLinks(markdown: string): string {
-  return markdown.replace(BRACKET_LINK_RE, (token, rawUrl: string) => {
-    const embed = classifyChatMediaUrl(rawUrl)
-    if (!embed) return token
-    return `\n\n${renderChatMediaEmbed(embed)}\n\n`
-  })
+  return markdown
+    .replace(BARE_LINK_RE, (token, prefix: string, rawUrl: string) => {
+      const embed = classifyChatMediaUrl(rawUrl)
+      if (!embed) return token
+      return `${prefix}\n\n${renderChatMediaEmbed(embed)}\n\n`
+    })
+    .replace(BRACKET_LINK_RE, (token, rawUrl: string) => {
+      const embed = classifyChatMediaUrl(rawUrl)
+      if (!embed) return token
+      return `\n\n${renderChatMediaEmbed(embed)}\n\n`
+    })
 }
 
 export function classifyChatMediaUrl(rawUrl: string): ChatMediaEmbed | null {

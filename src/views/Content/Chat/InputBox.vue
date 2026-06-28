@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useUserStore } from '../../../stores/useUserStore'
+import { useSnackbar } from '../../../composables/useSnackbar'
 import { CHAT_INPUT_INSERT_TEXT_EVENT } from '../../../composables/useChatInput'
+import {
+  PRESET_CHAT_EMOJIS,
+  loadCustomChatEmojiUrls,
+  normalizeCustomChatEmojiUrl,
+  saveCustomChatEmojiUrls,
+} from '../../../utils/chatEmoji'
 import type { ChatMessage } from '../../../types/chatTypes'
 import '../../../assets/js/marked.min.js'
 
 const userStore = useUserStore()
+const snackbar = useSnackbar()
 const message_send = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const props = defineProps<{
@@ -19,17 +27,8 @@ const emit = defineEmits<{
 const emojiPanelOpen = ref(false)
 const emojiTab = ref<'preset' | 'custom'>('preset')
 
-const presetEmojis = [
-  'sentiment_very_satisfied', 'sentiment_satisfied', 'sentiment_neutral',
-  'sentiment_dissatisfied', 'sentiment_very_dissatisfied', 'mood',
-  'mood_bad', 'insert_emoticon', 'face', 'tag_faces',
-  'thumb_up', 'thumb_down', 'favorite', 'star', 'whatshot',
-  'cake', 'local_fire_department', 'bolt', 'water_drop', 'eco',
-]
-const customEmojis = [
-  'person', 'pets', 'child_care', 'elderly', 'accessibility',
-  'directions_run', 'self_improvement', 'sports_esports', 'music_note', 'brush',
-]
+const presetEmojis = PRESET_CHAT_EMOJIS
+const customEmojis = ref<string[]>([])
 
 function toggleEmojiPanel() {
   emojiPanelOpen.value = !emojiPanelOpen.value
@@ -54,6 +53,56 @@ async function insertTextAtCursor(text: string) {
 
 function insertEmoji(iconName: string) {
   insertTextAtCursor(`:${iconName}: `)
+}
+
+function insertCustomEmoji(url: string) {
+  insertTextAtCursor(`${url} `)
+}
+
+function openAddCustomEmojiDialog() {
+  let dialogController: { close: () => void } | null = null
+
+  mdui.dialog({
+    title: '添加表情',
+    content: `
+      <div class="mdui-textfield">
+        <label class="mdui-textfield-label">图片链接</label>
+        <input class="mdui-textfield-input custom-emoji-url-input" type="url" />
+        <div class="mdui-textfield-helper">支持 jpg、png、webp、gif 链接</div>
+      </div>
+    `,
+    buttons: [
+      {
+        text: '取消',
+        close: true,
+      },
+      {
+        text: '添加',
+        bold: true,
+        close: false,
+        onClick: () => {
+          const input = document.querySelector<HTMLInputElement>('.custom-emoji-url-input')
+          const url = normalizeCustomChatEmojiUrl(input?.value.trim() ?? '')
+          if (!url) {
+            snackbar.error('请输入可访问的图片链接')
+            return
+          }
+          if (!customEmojis.value.includes(url)) {
+            customEmojis.value = [url, ...customEmojis.value]
+            saveCustomChatEmojiUrls(customEmojis.value)
+          }
+          snackbar.success('表情已添加')
+          dialogController?.close()
+        },
+      },
+    ],
+    history: false,
+    onOpened: (dialog) => {
+      dialogController = dialog
+      mdui.updateTextFields?.()
+      document.querySelector<HTMLInputElement>('.custom-emoji-url-input')?.focus()
+    },
+  })
 }
 
 function handleInsertText(event: Event) {
@@ -81,10 +130,13 @@ defineExpose({
   presetEmojis,
   customEmojis,
   insertEmoji,
+  insertCustomEmoji,
+  openAddCustomEmojiDialog,
   insertTextAtCursor,
 })
 
 onMounted(() => {
+  customEmojis.value = loadCustomChatEmojiUrls()
   window.addEventListener(CHAT_INPUT_INSERT_TEXT_EVENT, handleInsertText)
 })
 
