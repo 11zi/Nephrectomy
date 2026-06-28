@@ -1,12 +1,24 @@
 <!-- src/views/SideBar.vue -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
+import BankPanel from './Card/BankPanel.vue'
+import DicePanel from './Card/DicePanel.vue'
+import StockPanel from './Card/StockPanel.vue'
+import PlaybackPanel from '../components/playback/PlaybackPanel.vue'
 import { useContentStore } from '../stores/useContentStore'
+import { useRoomStore } from '../stores/useRoomStore'
+import { useUserStore } from '../stores/useUserStore'
+import { useSnackbar } from '../composables/useSnackbar'
+import { requestInsertChatText } from '../composables/useChatInput'
 import type { ContentPage } from '../stores/useContentStore'
+import type { Component } from 'vue'
 
 const contentStore = useContentStore()
+const roomStore = useRoomStore()
+const userStore = useUserStore()
+const snackbar = useSnackbar()
 
 const components = [
   {
@@ -17,8 +29,7 @@ const components = [
     child: [
       { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: null },
       { name: '房间列表',  vueSrc: '', index: '1-2', icon: 'map',          navigate: 'room-list' as ContentPage },
-      { name: '注册/编辑', vueSrc: '', index: '1-3', icon: 'exit_to_app',  navigate: 'account-edit' as ContentPage },
-      { name: '帮助',      vueSrc: '', index: '1-4', icon: 'help_outline', navigate: null },
+      { name: '编辑资料',   vueSrc: '', index: '1-3', icon: 'edit',        navigate: 'account-edit' as ContentPage },
     ],
   },
   {
@@ -44,7 +55,7 @@ const components = [
       { name: '解析',     vueSrc: '../Card/BaseCard.vue', index: '3-3', icon: 'sd_card',        navigate: null },
       { name: '吃饭',     vueSrc: '',                    index: '3-4', icon: 'restaurant_menu', navigate: null },
       { name: '时间',     vueSrc: '',                    index: '3-6', icon: 'access_time',     navigate: null },
-      { name: '隐式传送', vueSrc: '',                    index: '3-5', icon: 'blur_on',         navigate: null },
+      { name: '隐式传送', vueSrc: '',                    index: '3-5', icon: 'blur_on',         navigate: 'implicit-room-list' as ContentPage },
     ],
   },
   { name: '好友', vueSrc: '', index: '4', icon: 'account_box', child: [] },
@@ -55,10 +66,10 @@ const components = [
     index: '6',
     icon: 'settings',
     child: [
-      { name: '设置', vueSrc: '', index: '6-1', icon: 'settings',     navigate: null },
+      { name: '设置', vueSrc: '', index: '6-1', icon: 'settings',     navigate: 'settings' as ContentPage },
       { name: '关于', vueSrc: '', index: '6-2', icon: 'info_outline', navigate: null },
       { name: '重载', vueSrc: '', index: '6-3', icon: 'refresh',      navigate: null },
-      { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app',  navigate: null },
+      { name: '登出', vueSrc: '', index: '6-4', icon: 'exit_to_app',  navigate: 'logout' as unknown as ContentPage },
     ],
   },
 ]
@@ -68,8 +79,13 @@ const isActive = ref<Record<string, boolean>>({})
 const stackIndexMap = ref<Record<string, number>>({})
 let openCount = 0
 
-const drawer: any = null
 const drawerEl = ref<HTMLElement | null>(null)
+const panelComponents: Record<string, Component> = {
+  点播: PlaybackPanel,
+  银行: BankPanel,
+  炒股: StockPanel,
+  骰子: DicePanel,
+}
 
 const sidebarClass = ref([
   'mdui-drawer',
@@ -100,17 +116,68 @@ function closeSideBar() {
   mdui.mutation()
 }
 
+async function handleLogout() {
+  await userStore.logout()
+  contentStore.navigateTo('login' as ContentPage)
+  closeSideBar()
+}
+
+function formatCurrentTime() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
+function insertCurrentTimeToChatInput() {
+  contentStore.navigateTo('chat')
+  requestAnimationFrame(() => {
+    requestInsertChatText(formatCurrentTime())
+  })
+  closeSideBar()
+}
+
 function handleItemClick(item: {
   name: string
   vueSrc: string
   navigate?: ContentPage | null
 }) {
+  if (item.navigate === ('logout' as ContentPage)) {
+    handleLogout()
+    return
+  }
+  if (item.name === '时间') {
+    insertCurrentTimeToChatInput()
+    return
+  }
   if (item.navigate) {
     contentStore.navigateTo(item.navigate)
     closeSideBar()
-  } else {
+  } else if (panelComponents[item.name]) {
     togglePanel(item.name)
+  } else {
+    snackbar.show('此功能开发中^_^')
   }
+}
+
+function handleHeaderClick(item: { child?: unknown[]; navigate?: ContentPage | null }) {
+  if (!item.navigate) {
+    if (!item.child?.length) {
+      snackbar.show('此功能开发中^_^')
+    }
+    return
+  }
+  contentStore.navigateTo(item.navigate)
+  closeSideBar()
+}
+
+function isHeaderClickable(item: { child?: unknown[]; navigate?: ContentPage | null }) {
+  return Boolean(item.navigate || !item.child?.length)
 }
 
 const assignedPanels = new Set<string>()
@@ -132,6 +199,19 @@ function togglePanel(panelName: string) {
 function closePanel(panelName: string) {
   isActive.value[panelName] = false
 }
+
+function closeAllPanels() {
+  for (const panelName of Object.keys(isActive.value)) {
+    isActive.value[panelName] = false
+  }
+}
+
+watch(
+  () => roomStore.activeRoomId,
+  () => {
+    closeAllPanels()
+  },
+)
 </script>
 
 <template>
@@ -150,6 +230,7 @@ function closePanel(panelName: string) {
           @closePanel="closePanel(_item.name)"
           :panelName="_item.name"
           :stackIndex="stackIndexMap[_item.name]"
+          :contentComponent="panelComponents[_item.name] ?? null"
         />
       </div>
     </div>
@@ -158,27 +239,31 @@ function closePanel(panelName: string) {
   <!-- 侧边栏 -->
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
     <div class="mdui-container mdui-p-a-2">
-      <div class="mdui-row">
-        <img
-          src="../assets/static_image/r19.png"
-          alt="avatar"
-          class="mdui-img-rounded mdui-shadow-2"
-          style="position: absolute"
-          width="80"
-          height="80"
-        />
-        <div
-          class="mdui-col-sm-7 mdui-col-offset-sm-5 mdui-col-xs-8 mdui-col-offset-xs-4"
-          style="height: 100%"
-        >
+      <div class="sidebar-profile">
+        <div class="avatar-wrapper">
+          <img
+            :src="userStore.currentUser?.avatarUrl"
+            alt="avatar"
+            class="mdui-img-rounded mdui-shadow-2"
+            width="80"
+            height="80"
+          />
+          <!-- 在线状态指示灯 -->
+          <span
+            class="online-dot"
+            :class="{ online: userStore.isOnline }"
+            :title="userStore.isOnline ? '在线' : '离线'"
+          ></span>
+        </div>
+        <div class="profile-text">
           <div
-            class="mdui-list-item-two-line mdui-typo-caption noselect"
-            style="font-weight: 200; opacity: 87%; padding-top: 2px; white-space: normal"
+            class="profile-motto mdui-list-item-three-line mdui-typo-caption noselect"
+            :title="userStore.currentUser?.motto ?? '还没有签名'"
           >
-            凡是被那把武器伤害的人，都会遭到席卷全身的诅咒
+            {{ userStore.currentUser?.motto ?? '还没有签名' }}
           </div>
-          <div class="mdui-typo-title mdui-p-t-2 noselect" style="font-weight: 400">
-            哈米斯基
+          <div class="profile-name mdui-typo-title noselect">
+            {{ userStore.currentUser?.nickname ?? '未登录' }}
           </div>
         </div>
       </div>
@@ -188,8 +273,8 @@ function closePanel(panelName: string) {
       <li></li>
       <li
         class="mdui-subheader noselect"
-        :class="{ 'mdui-ripple': item.navigate, 'clickable-header': item.navigate }"
-        @click="item.navigate && contentStore.navigateTo(item.navigate) && closeSideBar()"
+        :class="{ 'mdui-ripple': isHeaderClickable(item), 'clickable-header': isHeaderClickable(item) }"
+        @click="handleHeaderClick(item)"
       >
         <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>
         {{ item.name }}
@@ -221,5 +306,73 @@ function closePanel(panelName: string) {
 }
 .clickable-header {
   cursor: pointer;
+}
+
+.sidebar-profile {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+/* 头像 + 在线状态指示器 */
+.avatar-wrapper {
+  position: relative;
+  flex: 0 0 80px;
+  width: 80px;
+  height: 80px;
+}
+
+.avatar-wrapper img {
+  display: block;
+}
+
+.profile-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 80px;
+  overflow: hidden;
+}
+
+.profile-motto {
+  height: 48px;
+  max-height: 48px;
+  max-width: 100%;
+  overflow: hidden;
+  opacity: 0.87;
+  padding-top: 2px;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 3;
+  line-height: 16px;
+  white-space: normal;
+  font-weight: 200;
+}
+
+.profile-name {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  margin-top: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.online-dot {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #bdbdbd;
+  border: 2px solid #fff;
+  transition: background 0.3s;
+}
+
+.online-dot.online {
+  background: #4caf50;
 }
 </style>

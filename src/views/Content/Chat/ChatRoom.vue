@@ -1,25 +1,133 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import InputBox from './InputBox.vue'
 import Message from './Message.vue'
+import StateMessage from './StateMessage.vue'
+import MediaPlayer from '../../../components/playback/MediaPlayer.vue'
+import { useChatStore } from '../../../stores/useChatStore'
+import { useRoomStore } from '../../../stores/useRoomStore'
+import { usePlaybackStore } from '../../../stores/usePlaybackStore'
+import { useSnackbar } from '../../../composables/useSnackbar'
 
-const enums = ref([
-  { count: '1', msg: '你。。' },
-  { count: '2', msg: '## 你说你不想在这里！' },
-  { count: '3', msg: '# 我也不想在这里！' },
-  { count: '4', msg: '### 但天黑' },
-])
-
-const avatar_url_ = 'src/assets/static_image/r19.png'
+const chatStore = useChatStore()
+const roomStore = useRoomStore()
+const playbackStore = usePlaybackStore()
+const snackbar = useSnackbar()
 const inputBoxRef = ref<InstanceType<typeof InputBox> | null>(null)
+const messageScrollRef = ref<HTMLElement | null>(null)
+const isPinnedToBottom = ref(true)
+const unreadMessageCount = ref(0)
 
-function sendMsg(_msg: string) {
-  enums.value.push({
-    count: enums.value.length.toString(),
-    msg: _msg,
-  })
+function isAtMessageBottom() {
+  const el = messageScrollRef.value
+  if (!el) return true
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= 8
+}
+
+function scrollMessagesToBottom() {
+  const el = messageScrollRef.value
+  if (!el) return
+  el.scrollTop = el.scrollHeight
+  isPinnedToBottom.value = true
+  unreadMessageCount.value = 0
+}
+
+async function scrollMessagesToBottomAfterRender() {
+  await nextTick()
+  requestAnimationFrame(scrollMessagesToBottom)
+}
+
+function handleMessageScroll() {
+  isPinnedToBottom.value = isAtMessageBottom()
+  if (isPinnedToBottom.value) unreadMessageCount.value = 0
+}
+
+function showLatestMessages() {
+  scrollMessagesToBottomAfterRender()
+}
+
+async function sendMsg(message: string) {
+  if (message.trim().toLowerCase() === 'cut') {
+    await cutCurrentPlayback()
+    return
+  }
+
+  const result = await chatStore.sendMessage(message)
+  if (!result) return
   mdui.mutation()
 }
+
+async function cutCurrentPlayback() {
+  const currentItem = playbackStore.currentItem
+  if (!currentItem) {
+    snackbar.show('暂无正在播放')
+    return
+  }
+
+  try {
+    const result = await playbackStore.voteRemove(currentItem.id)
+    if (!result) return
+    if (result.itemRemoved) {
+      snackbar.show('该媒体已被投票切除')
+    } else {
+      snackbar.show(result.voteAdded ? '已投票切除' : '已取消切除投票')
+    }
+  } catch (err) {
+    snackbar.error(err instanceof Error ? err.message : '网络错误，请稍后再试')
+  }
+}
+
+function handlePlaybackEnded(itemId: string) {
+  playbackStore.notifyCurrentEnded(itemId).catch(() => {
+    snackbar.error('网络错误，请稍后再试')
+  })
+}
+
+function formatMessageTime(createdAt: string) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(createdAt))
+}
+
+watch(
+  () => roomStore.activeRoomId,
+  () => {
+    isPinnedToBottom.value = true
+    unreadMessageCount.value = 0
+    playbackStore.fetchPlaybackState().catch(() => {
+      snackbar.error('点播状态加载失败')
+    })
+    scrollMessagesToBottomAfterRender()
+  },
+)
+
+watch(
+  () => chatStore.activeRoomMessages.length,
+  (newLength, oldLength) => {
+    const addedCount = Math.max(0, newLength - oldLength)
+    if (isPinnedToBottom.value) {
+      scrollMessagesToBottomAfterRender()
+    } else if (addedCount > 0) {
+      unreadMessageCount.value += addedCount
+    }
+  },
+  { flush: 'post' },
+)
+
+onMounted(() => {
+  playbackStore.startListening()
+  playbackStore.fetchPlaybackState().catch(() => {
+    snackbar.error('点播状态加载失败')
+  })
+  scrollMessagesToBottomAfterRender()
+})
+
+onBeforeUnmount(() => {
+  playbackStore.stopListening()
+})
+
+onActivated(scrollMessagesToBottomAfterRender)
 </script>
 
 <template>
@@ -32,20 +140,82 @@ function sendMsg(_msg: string) {
       flex-direction: column;
     "
   >
-    <!-- 消息滚动区，flex: 1 占满剩余空间 -->
+    <!-- 房间标题栏 -->
     <div
-      class="mdui-row"
-      style="flex: 1; overflow-y: auto; width: -webkit-fill-available; min-height: 0"
+      style="
+        flex-shrink: 0;
+        padding: 12px 16px;
+        background: transparent;
+        border-bottom: 1px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      "
     >
-      <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2" style="width: 100%">
-        <div
-          class="mdui-row mdui-m-a-1"
-          v-for="_message in enums"
-          :key="_message.count"
-          style="padding-right: 32px"
-        >
-          <Message :raw_msg="_message.msg" :avatar_url="avatar_url_" />
+      <span style="font-size: 16px; font-weight: 600; color: #37474f">
+        {{ chatStore.activeRoom.name }}
+      </span>
+      <span
+        style="font-size: 12px; color: #90a4ae"
+      >
+        {{ chatStore.activeRoom.memberCount }} 人在线
+      </span>
+    </div>
+
+    <!-- 消息滚动区，flex: 1 占满剩余空间 -->
+    <div class="chat-body">
+      <div v-if="playbackStore.currentItem" class="chat-playback-background">
+        <MediaPlayer
+          background
+          :item="playbackStore.currentItem"
+          :status="playbackStore.status"
+          :get-target-time="playbackStore.getEstimatedCurrentTime"
+          @ended="handlePlaybackEnded"
+        />
+      </div>
+
+      <div
+        ref="messageScrollRef"
+        class="mdui-row message-scroll"
+        @scroll="handleMessageScroll"
+      >
+        <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2 message-list" style="width: 100%">
+          <div
+            class="mdui-row mdui-m-a-1"
+            v-for="message in chatStore.activeRoomMessages"
+            :key="message.id"
+            style="padding-right: 32px"
+          >
+            <!-- 用户消息 -->
+            <Message
+              v-if="message.kind === 'user'"
+              :raw_msg="message.content"
+              :avatar_url="message.sender.avatarUrl"
+              :sender_name="message.sender.nickname"
+              :timestamp="formatMessageTime(message.createdAt)"
+            />
+            <!-- 状态消息 -->
+            <StateMessage
+              v-else-if="message.kind === 'state'"
+              :content="message.content"
+              :timestamp="formatMessageTime(message.createdAt)"
+            />
+            <!-- 命令消息（预留） -->
+            <StateMessage
+              v-else-if="message.kind === 'command'"
+              :content="message.content"
+              :timestamp="formatMessageTime(message.createdAt)"
+            />
+          </div>
         </div>
+        <button
+          v-if="unreadMessageCount > 0"
+          class="new-message-badge mdui-ripple"
+          type="button"
+          @click="showLatestMessages"
+        >
+          {{ unreadMessageCount }}
+        </button>
       </div>
     </div>
 
@@ -103,6 +273,42 @@ function sendMsg(_msg: string) {
 </template>
 
 <style scoped>
+.chat-body {
+  flex: 1;
+  width: -webkit-fill-available;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-scroll {
+  position: relative;
+  z-index: 1;
+  width: -webkit-fill-available;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.chat-playback-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.82;
+}
+
+.chat-playback-background :deep(audio) {
+  pointer-events: auto;
+}
+
+.message-list {
+  position: relative;
+  z-index: 1;
+}
+
 .emoji-drawer {
   flex-shrink: 0;
   background: #fff;
@@ -164,6 +370,27 @@ function sendMsg(_msg: string) {
   padding: 24px 0;
   font-size: 13px;
   color: #b0bec5;
+}
+
+.new-message-badge {
+  position: sticky;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: block;
+  min-width: 32px;
+  height: 28px;
+  margin: 0 auto 8px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 14px;
+  background: #546e7a;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 28px;
+  box-shadow: 0 2px 8px rgba(38, 50, 56, 0.22);
+  cursor: pointer;
 }
 
 .emoji-panel-enter-active,

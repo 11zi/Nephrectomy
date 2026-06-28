@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import '../../../assets/js/marked.min.js'
+import { isAllowedChatMediaElement, renderMessageMediaLinks } from '../../../utils/chatMedia'
 
 const props = defineProps({
   raw_msg: String,
@@ -18,23 +19,50 @@ const props = defineProps({
 
 const safeHtml = computed(() => {
   if (!props.raw_msg) return ''
-  const parsed = marked.parse(props.raw_msg)
-  return DOMPurify.sanitize(parsed, {
+  const parsed = marked.parse(renderMessageMediaLinks(props.raw_msg))
+  const sanitized = DOMPurify.sanitize(parsed, {
     ALLOWED_TAGS: [
       'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'code', 'pre',
       'blockquote', 'ul', 'ol', 'li',
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       'hr', 'del', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'img', 'video', 'audio', 'iframe',
     ],
-    ALLOWED_ATTR: ['href', 'title', 'target'],
+    ALLOWED_ATTR: [
+      'href', 'title', 'target',
+      'src', 'alt', 'class', 'controls', 'preload', 'playsinline',
+      'loading', 'referrerpolicy', 'allow', 'allowfullscreen',
+      'data-chat-media',
+    ],
     FORCE_BODY: true,
   })
+  return stripUntrustedMedia(sanitized)
 })
+
+function stripUntrustedMedia(html: string): string {
+  const template = document.createElement('template')
+  template.innerHTML = html
+
+  template.content.querySelectorAll('img, video, audio, iframe').forEach((element) => {
+    const src = element.getAttribute('src') ?? ''
+    const isGeneratedMedia = element.getAttribute('data-chat-media') === 'true'
+    const isAllowedSource = isAllowedChatMediaElement(element.tagName, src)
+
+    if (!isGeneratedMedia || !isAllowedSource) {
+      element.replaceWith(document.createTextNode(src))
+      return
+    }
+
+    element.removeAttribute('data-chat-media')
+  })
+
+  return template.innerHTML
+}
 
 // ---- 右键菜单 ----
 const menuItems = [
   { icon: 'reply',        label: '引用' },
-  { icon: 'person',       label: 'At' },
+  { icon: 'person',       label: '@他' },
   { icon: 'content_copy', label: '复读' },
   { icon: 'undo',         label: '撤回' },
 ]
@@ -135,6 +163,35 @@ function handleAction(label: string | null) {
 
 .msg-bubble p:first-child { margin-top: 0; }
 .msg-bubble p:last-child  { margin-bottom: 0; }
+
+.msg-bubble .chat-media {
+  display: block;
+  max-width: min(520px, 100%);
+  margin: 6px 0;
+  border-radius: 6px;
+  background: #000;
+}
+
+.msg-bubble .chat-media-image {
+  height: auto;
+  background: transparent;
+}
+
+.msg-bubble .chat-media-video,
+.msg-bubble .chat-media-audio {
+  width: min(520px, 100%);
+}
+
+.msg-bubble .chat-media-iframe {
+  width: min(520px, 100%);
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+.msg-bubble .chat-media-audio {
+  height: 36px;
+  background: transparent;
+}
 
 /* 消息操作 dialog 宽度，用双 class 提高特异性覆盖 mdui */
 .mdui-dialog.msg-action-dialog {

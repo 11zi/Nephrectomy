@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useUserStore } from '../../../stores/useUserStore'
+import { CHAT_INPUT_INSERT_TEXT_EVENT } from '../../../composables/useChatInput'
 import '../../../assets/js/marked.min.js'
 
+const userStore = useUserStore()
 const message_send = ref('')
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const emit = defineEmits(['sendMsg'])
 
 const emojiPanelOpen = ref(false)
@@ -24,8 +28,30 @@ function toggleEmojiPanel() {
   emojiPanelOpen.value = !emojiPanelOpen.value
 }
 
+async function insertTextAtCursor(text: string) {
+  const textarea = textareaRef.value
+  if (!textarea) {
+    message_send.value += text
+    return
+  }
+
+  const start = textarea.selectionStart ?? message_send.value.length
+  const end = textarea.selectionEnd ?? message_send.value.length
+  message_send.value = `${message_send.value.slice(0, start)}${text}${message_send.value.slice(end)}`
+
+  await nextTick()
+  textarea.focus()
+  const cursorPosition = start + text.length
+  textarea.setSelectionRange(cursorPosition, cursorPosition)
+}
+
 function insertEmoji(iconName: string) {
-  message_send.value += `:${iconName}: `
+  insertTextAtCursor(`:${iconName}: `)
+}
+
+function handleInsertText(event: Event) {
+  const text = (event as CustomEvent<string>).detail
+  if (text) insertTextAtCursor(text)
 }
 
 function sendMsg(msgEvent: KeyboardEvent | MouseEvent | null) {
@@ -48,6 +74,15 @@ defineExpose({
   presetEmojis,
   customEmojis,
   insertEmoji,
+  insertTextAtCursor,
+})
+
+onMounted(() => {
+  window.addEventListener(CHAT_INPUT_INSERT_TEXT_EVENT, handleInsertText)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(CHAT_INPUT_INSERT_TEXT_EVENT, handleInsertText)
 })
 </script>
 
@@ -55,7 +90,7 @@ defineExpose({
   <div class="mdui-row" style="position: relative; width: 100%">
     <div class="mdui-textfield">
       <img
-        src="../../../assets/static_image/r19.png"
+        :src="userStore.currentUser?.avatarUrl"
         alt="avatar"
         class="mdui-img-rounded mdui-shadow-1 mdui-m-a-1"
         style="position: absolute; bottom: 0px; cursor: pointer"
@@ -70,6 +105,7 @@ defineExpose({
         @click="sendMsg(null)"
       >send</i>
       <textarea
+        ref="textareaRef"
         class="mdui-textfield-input"
         id="msg_textarea"
         v-model="message_send"

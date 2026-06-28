@@ -1,0 +1,13 @@
+import "/src/assets/css/mdui.min.css";
+import "/src/assets/js/mdui.min.js";
+import "/src/assets/main.css";
+import { createApp } from "/node_modules/.vite/deps/vue.js?v=03178351";
+import { createPinia } from "/node_modules/.vite/deps/pinia.js?v=96b55a26";
+import router from "/src/router/index.ts";
+import App from "/src/App.vue?t=1782317738564";
+const Nephrectomy = createApp(App);
+Nephrectomy.use(createPinia());
+Nephrectomy.use(router);
+Nephrectomy.mount("#app");
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIm1haW4udHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0ICcuL2Fzc2V0cy9jc3MvbWR1aS5taW4uY3NzJ1xyXG5pbXBvcnQgJy4vYXNzZXRzL2pzL21kdWkubWluLmpzJ1xyXG5pbXBvcnQgJy4vYXNzZXRzL21haW4uY3NzJ1xyXG5cclxuaW1wb3J0IHsgY3JlYXRlQXBwIH0gZnJvbSAndnVlJ1xyXG5pbXBvcnQgeyBjcmVhdGVQaW5pYSB9IGZyb20gJ3BpbmlhJ1xyXG5cclxuaW1wb3J0IHJvdXRlciBmcm9tICcuL3JvdXRlcidcclxuaW1wb3J0IEFwcCBmcm9tICcuL0FwcC52dWUnXHJcblxyXG5jb25zdCBOZXBocmVjdG9teSA9IGNyZWF0ZUFwcChBcHApXHJcblxyXG5OZXBocmVjdG9teS51c2UoY3JlYXRlUGluaWEoKSlcclxuTmVwaHJlY3RvbXkudXNlKHJvdXRlcilcclxuXHJcbk5lcGhyZWN0b215Lm1vdW50KCcjYXBwJylcclxuIl0sIm1hcHBpbmdzIjoiQUFBQSxPQUFPO0FBQ1AsT0FBTztBQUNQLE9BQU87QUFFUCxTQUFTLGlCQUFpQjtBQUMxQixTQUFTLG1CQUFtQjtBQUU1QixPQUFPLFlBQVk7QUFDbkIsT0FBTyxTQUFTO0FBRWhCLE1BQU0sY0FBYyxVQUFVLEdBQUc7QUFFakMsWUFBWSxJQUFJLFlBQVksQ0FBQztBQUM3QixZQUFZLElBQUksTUFBTTtBQUV0QixZQUFZLE1BQU0sTUFBTTsiLCJuYW1lcyI6W119
