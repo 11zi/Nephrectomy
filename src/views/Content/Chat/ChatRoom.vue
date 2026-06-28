@@ -1,22 +1,34 @@
 <script setup lang="ts">
-import { nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import InputBox from './InputBox.vue'
 import Message from './Message.vue'
 import StateMessage from './StateMessage.vue'
+import BaseCard from '../../Card/BaseCard.vue'
+import UserInfoCard from '../../Card/UserInfoCard.vue'
 import MediaPlayer from '../../../components/playback/MediaPlayer.vue'
 import { useChatStore } from '../../../stores/useChatStore'
 import { useRoomStore } from '../../../stores/useRoomStore'
 import { usePlaybackStore } from '../../../stores/usePlaybackStore'
+import { useUserStore } from '../../../stores/useUserStore'
 import { useSnackbar } from '../../../composables/useSnackbar'
+import type { ChatMessage, UserSummary } from '../../../types/chatTypes'
 
 const chatStore = useChatStore()
 const roomStore = useRoomStore()
 const playbackStore = usePlaybackStore()
+const userStore = useUserStore()
 const snackbar = useSnackbar()
 const inputBoxRef = ref<InstanceType<typeof InputBox> | null>(null)
 const messageScrollRef = ref<HTMLElement | null>(null)
 const isPinnedToBottom = ref(true)
 const unreadMessageCount = ref(0)
+const replyTarget = ref<ChatMessage | null>(null)
+const pendingMentionUserIds = ref<string[]>([])
+const profileCardUser = ref<UserSummary | null>(null)
+
+const messagesById = computed(() => {
+  return new Map(chatStore.activeRoomMessages.map(message => [message.id, message]))
+})
 
 function isAtMessageBottom() {
   const el = messageScrollRef.value
@@ -52,9 +64,78 @@ async function sendMsg(message: string) {
     return
   }
 
-  const result = await chatStore.sendMessage(message)
+  const result = await chatStore.sendMessage(message, {
+    replyToId: replyTarget.value?.id ?? null,
+    mentionedUserIds: pendingMentionUserIds.value,
+  })
   if (!result) return
+  replyTarget.value = null
+  pendingMentionUserIds.value = []
   mdui.mutation()
+}
+
+function quoteMessage(message: ChatMessage) {
+  replyTarget.value = message
+  inputBoxRef.value?.insertTextAtCursor('')
+}
+
+function mentionMessageSender(message: ChatMessage) {
+  const senderId = message.sender.id
+  if (!pendingMentionUserIds.value.includes(senderId)) {
+    pendingMentionUserIds.value.push(senderId)
+  }
+  inputBoxRef.value?.insertTextAtCursor(`@${message.sender.nickname} `)
+}
+
+async function repeatMessage(message: ChatMessage) {
+  try {
+    await chatStore.sendMessage(message.content)
+  } catch (err) {
+    snackbar.error(err instanceof Error ? err.message : '复读失败')
+  }
+}
+
+function isCurrentUserPrivileged() {
+  const profile = userStore.profile
+  if (!profile) return false
+  return profile.accountStatus > 0
+    || profile.titles.some(title => /管理员|房管|admin|moderator/i.test(title))
+}
+
+function canCurrentUserRecall(message: ChatMessage) {
+  if (isCurrentUserPrivileged()) return true
+  const currentUserId = userStore.currentUser?.id
+  if (!currentUserId || message.sender.id !== currentUserId) return false
+  return Date.now() - new Date(message.createdAt).getTime() <= 2 * 60 * 1000
+}
+
+async function recallMessage(message: ChatMessage) {
+  if (!canCurrentUserRecall(message)) {
+    snackbar.error('只能撤回自己 2 分钟内发出的消息')
+    return
+  }
+
+  try {
+    await chatStore.recallMessage(message)
+    snackbar.show('消息已撤回')
+  } catch (err) {
+    snackbar.error(err instanceof Error ? err.message : '撤回失败')
+  }
+}
+
+function handleMessageAction(action: '引用' | '@他' | '复读' | '撤回', message: ChatMessage) {
+  if (action === '引用') quoteMessage(message)
+  if (action === '@他') mentionMessageSender(message)
+  if (action === '复读') repeatMessage(message)
+  if (action === '撤回') recallMessage(message)
+}
+
+function openProfileCard(message: ChatMessage) {
+  profileCardUser.value = message.sender
+}
+
+function closeProfileCard() {
+  profileCardUser.value = null
 }
 
 async function cutCurrentPlayback() {
@@ -140,6 +221,15 @@ onActivated(scrollMessagesToBottomAfterRender)
       flex-direction: column;
     "
   >
+    <BaseCard
+      v-if="profileCardUser"
+      panel-name="用户资料"
+      :stack-index="0"
+      :content-component="UserInfoCard"
+      :content-props="{ user: profileCardUser, onClose: closeProfileCard }"
+      @close-panel="closeProfileCard"
+    />
+
     <!-- 房间标题栏 -->
     <div
       style="
@@ -189,10 +279,11 @@ onActivated(scrollMessagesToBottomAfterRender)
             <!-- 用户消息 -->
             <Message
               v-if="message.kind === 'user'"
-              :raw_msg="message.content"
-              :avatar_url="message.sender.avatarUrl"
-              :sender_name="message.sender.nickname"
+              :message="message"
+              :quoted-message="message.replyToId ? messagesById.get(message.replyToId) ?? null : null"
               :timestamp="formatMessageTime(message.createdAt)"
+              @action="handleMessageAction"
+              @avatar-click="openProfileCard"
             />
             <!-- 状态消息 -->
             <StateMessage
@@ -221,7 +312,12 @@ onActivated(scrollMessagesToBottomAfterRender)
 
     <!-- 输入栏，flex-shrink: 0 固定在底部 -->
     <div style="flex-shrink: 0">
-      <InputBox ref="inputBoxRef" @sendMsg="sendMsg" />
+      <InputBox
+        ref="inputBoxRef"
+        :reply-target="replyTarget"
+        @sendMsg="sendMsg"
+        @cancel-reply="replyTarget = null"
+      />
     </div>
 
     <!-- 表情面板：独立 flex item，在输入框下方展开，完全在文档流中 -->

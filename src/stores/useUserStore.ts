@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserSummary } from '../types/chatTypes'
-import type { AccountProfile } from '../types/accountTypes'
+import type { AccountProfile, PublicProfile } from '../types/accountTypes'
 import { httpChatApi } from '../api/httpChatApi'
 import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 
@@ -218,6 +218,14 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  function fetchPublicProfile(userId: string): Promise<PublicProfile> {
+    return httpChatApi.fetchPublicProfile(userId)
+  }
+
+  function likeProfile(userId: string): Promise<PublicProfile> {
+    return httpChatApi.likeProfile(userId)
+  }
+
   function syncCurrentUser(p: AccountProfile) {
     if (!currentUser.value) return
     currentUser.value = {
@@ -250,5 +258,7 @@ export const useUserStore = defineStore('user', () => {
     clearAuth,
     loadProfile,
     saveProfile,
+    fetchPublicProfile,
+    likeProfile,
   }
 })

@@ -3,23 +3,30 @@ import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import '../../../assets/js/marked.min.js'
 import { isAllowedChatMediaElement, renderMessageMediaLinks } from '../../../utils/chatMedia'
+import type { ChatMessage } from '../../../types/chatTypes'
 
-const props = defineProps({
-  raw_msg: String,
-  avatar_url: String,
-  sender_name: {
-    type: String,
-    default: '哈米斯基',
-  },
-  timestamp: {
-    type: String,
-    default: '',
-  },
+type MessageAction = '引用' | '@他' | '复读' | '撤回'
+
+const props = defineProps<{
+  message: ChatMessage
+  timestamp?: string
+  quotedMessage?: ChatMessage | null
+}>()
+
+const emit = defineEmits<{
+  action: [action: MessageAction, message: ChatMessage]
+  avatarClick: [message: ChatMessage]
+}>()
+
+const safeHtml = computed(() => renderSafeHtml(props.message.content))
+
+const quotedPreview = computed(() => {
+  if (!props.quotedMessage) return ''
+  return renderSafeHtml(props.quotedMessage.content)
 })
 
-const safeHtml = computed(() => {
-  if (!props.raw_msg) return ''
-  const parsed = marked.parse(renderMessageMediaLinks(props.raw_msg))
+function renderSafeHtml(content: string): string {
+  const parsed = marked.parse(renderMessageMediaLinks(content))
   const sanitized = DOMPurify.sanitize(parsed, {
     ALLOWED_TAGS: [
       'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'code', 'pre',
@@ -37,7 +44,7 @@ const safeHtml = computed(() => {
     FORCE_BODY: true,
   })
   return stripUntrustedMedia(sanitized)
-})
+}
 
 function stripUntrustedMedia(html: string): string {
   const template = document.createElement('template')
@@ -61,10 +68,10 @@ function stripUntrustedMedia(html: string): string {
 
 // ---- 右键菜单 ----
 const menuItems = [
-  { icon: 'reply',        label: '引用' },
-  { icon: 'person',       label: '@他' },
-  { icon: 'content_copy', label: '复读' },
-  { icon: 'undo',         label: '撤回' },
+  { icon: 'reply',        label: '引用' as const },
+  { icon: 'person',       label: '@他' as const },
+  { icon: 'content_copy', label: '复读' as const },
+  { icon: 'undo',         label: '撤回' as const },
 ]
 
 function onContextMenu(e: MouseEvent) {
@@ -91,24 +98,31 @@ function onContextMenu(e: MouseEvent) {
 }
 
 function handleAction(label: string | null) {
-  // TODO: 实现各项功能
+  const item = menuItems.find(menuItem => menuItem.label === label)
+  if (!item) return
+  emit('action', item.label, props.message)
 }
 </script>
 
 <template>
   <div class="msg-row anim_in" @contextmenu="onContextMenu">
     <img
-      :src="props.avatar_url"
+      :src="props.message.sender.avatarUrl"
       alt="avatar"
       class="mdui-img-circle msg-avatar"
       width="40"
       height="40"
+      @click="emit('avatarClick', props.message)"
     />
 
     <div class="msg-body">
       <div class="msg-meta">
-        <span class="msg-sender">{{ props.sender_name }}</span>
+        <span class="msg-sender">{{ props.message.sender.nickname }}</span>
         <span v-if="props.timestamp" class="msg-time">{{ props.timestamp }}</span>
+      </div>
+      <div v-if="props.quotedMessage" class="msg-quote">
+        <div class="msg-quote-sender">{{ props.quotedMessage.sender.nickname }}</div>
+        <div class="msg-quote-content mdui-typo" v-html="quotedPreview"></div>
       </div>
       <div class="msg-bubble mdui-typo" v-html="safeHtml"></div>
     </div>
@@ -126,6 +140,7 @@ function handleAction(label: string | null) {
 .msg-avatar {
   flex-shrink: 0;
   margin-top: 2px;
+  cursor: pointer;
 }
 
 .msg-body {
@@ -171,6 +186,31 @@ function handleAction(label: string | null) {
   border-radius: 6px;
   background: #000;
 }
+
+.msg-quote {
+  max-width: min(520px, 100%);
+  padding: 6px 10px;
+  border-left: 3px solid #90a4ae;
+  border-radius: 0 6px 6px 0;
+  background: rgba(236, 239, 241, 0.72);
+  color: #607d8b;
+}
+
+.msg-quote-sender {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.msg-quote-content {
+  font-size: 12px;
+  line-height: 1.35;
+  max-height: 42px;
+  overflow: hidden;
+}
+
+.msg-quote-content p:first-child { margin-top: 0; }
+.msg-quote-content p:last-child { margin-bottom: 0; }
 
 .msg-bubble .chat-media-image {
   height: auto;

@@ -5,6 +5,7 @@ import type {
   FetchRoomMessagesQuery,
   FetchRoomMessagesResult,
   HeartbeatResult,
+  MessageId,
   RegisterPayload,
   RoomId,
   RoomNode,
@@ -12,7 +13,7 @@ import type {
   SendMessagePayload,
   SendMessageResult,
 } from '../types/chatTypes'
-import type { AccountProfile } from '../types/accountTypes'
+import type { AccountProfile, PublicProfile } from '../types/accountTypes'
 import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
 import type {
   StockAutoPayload,
@@ -97,6 +98,12 @@ export const httpChatApi: ChatApi = {
     })
   },
 
+  async recallMessage(roomId: RoomId, messageId: MessageId): Promise<{ success: boolean; messageId: MessageId }> {
+    return request<{ success: boolean; messageId: MessageId }>(`/rooms/${roomId}/messages/${messageId}`, {
+      method: 'DELETE',
+    })
+  },
+
   async enterRoom(roomId: RoomId, options: { implicit?: boolean } = {}): Promise<RoomSummary> {
     return request<RoomSummary>(`/rooms/${roomId}/enter`, {
       method: 'POST',
@@ -112,6 +119,16 @@ export const httpChatApi: ChatApi = {
 
   async fetchProfile(): Promise<AccountProfile> {
     return request<AccountProfile>('/profile')
+  },
+
+  async fetchPublicProfile(userId: string): Promise<PublicProfile> {
+    return request<PublicProfile>(`/profile/${userId}`)
+  },
+
+  async likeProfile(userId: string): Promise<PublicProfile> {
+    return request<PublicProfile>(`/profile/${userId}/like`, {
+      method: 'POST',
+    })
   },
 
   async saveProfile(profile: AccountProfile): Promise<AccountProfile> {

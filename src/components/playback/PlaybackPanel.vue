@@ -119,7 +119,7 @@ watch(
 .queue-subtitle {
   margin-top: 2px;
   font-size: 12px;
-  color: #607d8b;
+  color: var(--app-text-muted);
 }
 
 .queue-count {
@@ -129,10 +129,10 @@ watch(
   min-width: 26px;
   height: 26px;
   border-radius: 13px;
-  background: rgba(84, 110, 122, 0.16);
+  background: var(--app-accent-soft);
   font-size: 13px;
   font-weight: 600;
-  color: #455a64;
+  color: var(--app-text-soft);
 }
 
 .queue-list {
@@ -152,8 +152,8 @@ watch(
   min-height: 104px;
   border: 1px dashed rgba(84, 110, 122, 0.28);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.5);
-  color: #78909c;
+  background: rgba(247, 250, 251, 0.48);
+  color: var(--app-text-muted);
   font-size: 13px;
 }
 </style>

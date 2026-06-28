@@ -9,6 +9,8 @@ import { connectDb } from './db'
 import { Room } from './models/Room'
 import { User } from './models/User'
 import { Message } from './models/Message'
+import { ProfileLike } from './models/ProfileLike'
+import { ProfileVisit } from './models/ProfileVisit'
 
 const rooms = [
   { roomId: 'plaza',    name: '广场', description: '所有人闲聊的大厅',   memberCount: 35, heat: 70, isActive: true,  parentId: null, cover: '#546e7a', colSpan: 2, rowSpan: 2 },
@@ -42,7 +44,7 @@ const users = [
     following: [],
     followers: [],
     peerId: '',
-    likes: 128,
+    likes: 0,
     money: 5200,
     bankDeposit: 12000,
     bankInterestSettledAt: new Date(),
@@ -50,7 +52,7 @@ const users = [
     stockShares: 0,
     stockAutoBuyPrice: null,
     stockAutoSellPrice: null,
-    visitCount: 1024,
+    visitCount: 0,
     albums: [],
   },
 ]
@@ -129,6 +131,8 @@ async function seed() {
   await Room.deleteMany({})
   await User.deleteMany({})
   await Message.deleteMany({})
+  await ProfileLike.deleteMany({})
+  await ProfileVisit.deleteMany({})
 
   await Room.insertMany(rooms)
   console.log(`[seed] rooms:     ${rooms.length}`)

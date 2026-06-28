@@ -26,7 +26,7 @@ const hasVoted = computed(() => {
 </script>
 
 <template>
-  <article class="queue-card" :class="{ current: isCurrent }">
+  <article class="queue-card app-stat-card" :class="{ current: isCurrent }">
     <div class="queue-main">
       <div class="queue-title">
         <span class="queue-index">#{{ index + 1 }}</span>
@@ -60,15 +60,12 @@ const hasVoted = computed(() => {
   justify-content: space-between;
   gap: 10px;
   padding: 10px;
-  border: 1px solid rgba(84, 110, 122, 0.16);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.68);
-  color: #263238;
+  color: var(--app-text);
 }
 
 .queue-card.current {
   border-color: rgba(69, 90, 100, 0.58);
-  background: rgba(236, 239, 241, 0.92);
+  background: var(--app-surface-strong);
 }
 
 .queue-main {
@@ -84,7 +81,7 @@ const hasVoted = computed(() => {
 }
 
 .queue-index {
-  color: #607d8b;
+  color: var(--app-text-muted);
 }
 
 .queue-name {
@@ -97,7 +94,7 @@ const hasVoted = computed(() => {
 .queue-meta {
   margin-top: 4px;
   font-size: 12px;
-  color: #607d8b;
+  color: var(--app-text-muted);
 }
 
 .queue-actions {
@@ -111,12 +108,12 @@ const hasVoted = computed(() => {
 
 .queue-status {
   font-size: 12px;
-  color: #455a64;
+  color: var(--app-text-soft);
   font-weight: 600;
 }
 
 .vote-button {
-  color: #455a64;
+  color: var(--app-text-soft);
   font-size: 12px;
 }
 </style>

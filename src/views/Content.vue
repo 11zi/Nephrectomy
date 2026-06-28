@@ -2,14 +2,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useContentStore } from '../stores/useContentStore'
+import { useSettingsStore } from '../stores/useSettingsStore'
 
 const contentStore = useContentStore()
+const settingsStore = useSettingsStore()
 
 // 动态导入避免循环依赖
 import ChatRoom from './Content/Chat/ChatRoom.vue'
 import ChatRoomList from './Content/ChatRoomList.vue'
 import PrivateMessage from './Content/PrivateMessage.vue'
 import AccountEdit from './Content/AccountEdit.vue'
+import UserProfile from './Content/UserProfile.vue'
 import SettingsPage from './Content/SettingsPage.vue'
 import LoginPage from './Content/Login.vue'
 import RegisterPage from './Content/Register.vue'
@@ -20,6 +23,7 @@ const currentComponent = computed(() => {
     case 'implicit-room-list': return ChatRoomList
     case 'private-message':  return PrivateMessage
     case 'account-edit':     return AccountEdit
+    case 'user-profile':     return UserProfile
     case 'settings':         return SettingsPage
     case 'login':            return LoginPage
     case 'register':         return RegisterPage
@@ -58,11 +62,15 @@ function onTouchEnd(e: TouchEvent) {
     sidebar.classList.remove('mdui-drawer-close')
     sidebar.classList.add('mdui-drawer-open')
     document.body.style.paddingLeft = '240px'
+    document.documentElement.style.setProperty('--sidebar-width', '240px')
   } else if (dx < -SWIPE_MIN_X) {
+    if (settingsStore.keepSidebarOpen) return
+
     // 左滑：关闭侧边栏
     sidebar.classList.remove('mdui-drawer-open')
     sidebar.classList.add('mdui-drawer-close')
     document.body.style.paddingLeft = '0px'
+    document.documentElement.style.setProperty('--sidebar-width', '0px')
   }
 }
 </script>

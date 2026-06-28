@@ -35,6 +35,16 @@ export interface AccountProfile {
   peerId: string
 }
 
+export interface PublicLikeUser {
+  uid: string
+  nickname: string
+}
+
+export interface PublicProfile extends AccountProfile {
+  likedToday: boolean
+  recentLikeUsers: PublicLikeUser[]
+}
+
 // ── 校验 ──
 
 export interface ValidationError {

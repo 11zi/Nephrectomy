@@ -35,6 +35,7 @@ export interface SendMessagePayload {
   roomId: RoomId
   content: string
   replyToId?: MessageId
+  mentionedUserIds?: UserId[]
 }
 
 export interface SendMessageResult {
@@ -46,6 +47,12 @@ export interface MessageCreatedEvent {
   roomId?: RoomId
   conversationId?: string
   message: ChatMessage
+}
+
+export interface MessageDeletedEvent {
+  scope: 'room'
+  roomId: RoomId
+  messageId: MessageId
 }
 
 export interface FetchRoomMessagesQuery {

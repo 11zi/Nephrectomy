@@ -2,18 +2,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useChatStore } from '../useChatStore'
 
+const apiMocks = vi.hoisted(() => ({
+  fetchRoomMessages: vi.fn(),
+  sendMessage: vi.fn(),
+  enterRoom: vi.fn(),
+}))
+
 // 本地存储 token 模拟
 localStorage.setItem('auth_token', 'mock-token')
 
-// mock httpApi，让所有请求返回失败，触发 fallback
+// mock httpApi：需要落库的数据必须由服务端成功返回后才写入 store
 vi.mock('../../api/httpChatApi', () => ({
   httpChatApi: {
-    fetchRoomMessages: vi.fn().mockRejectedValue(new Error('offline')),
-    sendMessage: vi.fn().mockRejectedValue(new Error('offline')),
-    enterRoom: vi.fn().mockRejectedValue(new Error('offline')),
+    fetchRoomMessages: apiMocks.fetchRoomMessages,
+    sendMessage: apiMocks.sendMessage,
+    enterRoom: apiMocks.enterRoom,
     fetchRoomList: vi.fn().mockRejectedValue(new Error('offline')),
     fetchProfile: vi.fn().mockRejectedValue(new Error('offline')),
+    fetchPublicProfile: vi.fn().mockRejectedValue(new Error('offline')),
+    likeProfile: vi.fn().mockRejectedValue(new Error('offline')),
     saveProfile: vi.fn().mockRejectedValue(new Error('offline')),
+    recallMessage: vi.fn().mockRejectedValue(new Error('offline')),
     // auth methods
     login: vi.fn().mockRejectedValue(new Error('offline')),
     register: vi.fn().mockRejectedValue(new Error('offline')),
@@ -49,6 +58,8 @@ vi.mock('../../api/httpChatApi', () => ({
       onlineDuration: 0,
       registeredAt: '',
       peerId: '',
+      likedToday: false,
+      recentLikeUsers: [],
     }),
     heartbeat: vi.fn().mockResolvedValue({ success: true }),
     fetchBankStatus: vi.fn().mockRejectedValue(new Error('offline')),
@@ -85,12 +96,20 @@ vi.mock('../useUserStore', async () => {
       clearAuth: vi.fn(),
       loadProfile: vi.fn(),
       saveProfile: vi.fn(),
+      fetchPublicProfile: vi.fn(),
+      likeProfile: vi.fn(),
     }),
   }
 })
 
-describe('useChatStore (API fallback)', () => {
+describe('useChatStore', () => {
   beforeEach(() => {
+    apiMocks.fetchRoomMessages.mockReset()
+    apiMocks.sendMessage.mockReset()
+    apiMocks.enterRoom.mockReset()
+    apiMocks.fetchRoomMessages.mockRejectedValue(new Error('offline'))
+    apiMocks.sendMessage.mockRejectedValue(new Error('offline'))
+    apiMocks.enterRoom.mockRejectedValue(new Error('offline'))
     setActivePinia(createPinia())
   })
 
@@ -112,16 +131,42 @@ describe('useChatStore (API fallback)', () => {
     expect(chatStore.messages).toHaveLength(beforeCount)
   })
 
-  it('adds a user message to the active room (fallback to local)', async () => {
+  it('does not add a message when server send fails', async () => {
     const chatStore = useChatStore()
     const { useRoomStore } = await import('../useRoomStore')
     const roomStore = useRoomStore()
 
-    // Set active room first
     roomStore.activeRoomId = 'plaza'
 
-    const result = await chatStore.sendMessage('新的消息')
+    await expect(chatStore.sendMessage('新的消息')).rejects.toThrow('offline')
+    expect(chatStore.activeRoomMessages).toHaveLength(0)
+  })
 
+  it('adds a user message returned by the server', async () => {
+    const chatStore = useChatStore()
+    const { useRoomStore } = await import('../useRoomStore')
+    const roomStore = useRoomStore()
+
+    roomStore.activeRoomId = 'plaza'
+    apiMocks.sendMessage.mockResolvedValue({
+      message: {
+        id: 'msg-test',
+        roomId: 'plaza',
+        kind: 'user',
+        sender: {
+          id: 'user-test',
+          nickname: '测试用户',
+          avatarUrl: '',
+          motto: '',
+        },
+        content: '新的消息',
+        createdAt: new Date().toISOString(),
+        mentionedUserIds: [],
+        canRecall: true,
+      },
+    })
+
+    const result = await chatStore.sendMessage('新的消息')
     expect(result?.message).toMatchObject({
       roomId: 'plaza',
       kind: 'user',
@@ -131,23 +176,38 @@ describe('useChatStore (API fallback)', () => {
     expect(chatStore.activeRoomMessages.at(-1)?.content).toBe('新的消息')
   })
 
-  it('can switch rooms and messages are isolated', async () => {
+  it('keeps messages isolated by room when server sends succeed', async () => {
     const chatStore = useChatStore()
     const { useRoomStore } = await import('../useRoomStore')
     const roomStore = useRoomStore()
 
-    // Set active room and pre-populate plaza messages
     roomStore.activeRoomId = 'plaza'
+    apiMocks.sendMessage.mockImplementation(async (payload) => ({
+      message: {
+        id: `msg-${payload.roomId}-${payload.content}`,
+        roomId: payload.roomId,
+        kind: 'user',
+        sender: {
+          id: 'user-test',
+          nickname: '测试用户',
+          avatarUrl: '',
+          motto: '',
+        },
+        content: payload.content,
+        createdAt: new Date().toISOString(),
+        replyToId: payload.replyToId,
+        mentionedUserIds: payload.mentionedUserIds ?? [],
+        canRecall: true,
+      },
+    }))
+
     await chatStore.sendMessage('广场消息')
     expect(chatStore.activeRoomMessages).toHaveLength(1)
 
-    // Switch to a different room
-    await roomStore.enterRoom('teahouse')
+    roomStore.activeRoomId = 'teahouse'
 
-    // New room should have no messages initially (may have mock rooms loaded)
     const teahouseMsgCount = chatStore.activeRoomMessages.length
 
-    // Send a message in the new room
     await chatStore.sendMessage('茶馆里好')
     expect(chatStore.activeRoomMessages).toHaveLength(teahouseMsgCount + 1)
     expect(chatStore.activeRoomMessages.at(-1)?.content).toBe('茶馆里好')

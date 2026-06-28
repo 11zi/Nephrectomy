@@ -92,10 +92,10 @@ watch(
 </script>
 
 <template>
-  <div class="room-list-root" :class="{ 'implicit-room-list': props.implicitTeleport }">
+  <div class="app-page room-list-root" :class="{ 'implicit-room-list': props.implicitTeleport }">
 
-    <!-- 顶部导航栏：用 mdui 已有类 + 少量 inline -->
-    <div class="room-list-header">
+    <!-- 顶部导航栏 -->
+    <div class="app-page-header" :class="{ 'app-page-header-bordered': props.implicitTeleport }">
       <button
         class="mdui-btn mdui-btn-icon mdui-ripple"
         @click="contentStore.navigateTo('chat')"
@@ -114,15 +114,15 @@ watch(
       </button>
 
       <!-- 面包屑 -->
-      <div class="breadcrumb">
-        <span class="breadcrumb-item" @click="roomStore.navStack = []">
+      <div class="app-page-breadcrumb">
+        <span class="app-page-breadcrumb-item" @click="roomStore.navStack = []">
           {{ props.implicitTeleport ? '隐式传送' : '房间列表' }}
         </span>
         <template v-for="(room, i) in roomStore.navStack" :key="room.id">
-          <i class="mdui-icon material-icons breadcrumb-sep">chevron_right</i>
+          <i class="mdui-icon material-icons app-page-breadcrumb-sep">chevron_right</i>
           <span
-            class="breadcrumb-item"
-            :class="{ 'breadcrumb-current': i === roomStore.navStack.length - 1 }"
+            class="app-page-breadcrumb-item"
+            :class="{ 'app-page-breadcrumb-current': i === roomStore.navStack.length - 1 }"
             @click="goToLevel(i)"
           >{{ room.name }}</span>
         </template>
@@ -168,66 +168,11 @@ watch(
 
 <style scoped>
 .room-list-root {
-  height: 100%;
-  width: -webkit-fill-available;
-  display: flex;
-  flex-direction: column;
-  background: #eceff1;
-  overflow: hidden;
+  background: var(--app-bg-soft);
 }
 
 .room-list-root.implicit-room-list {
-  background: #eef2f3;
-}
-
-/* ── 顶部导航：透明占位背景，仅显示文字 ── */
-.room-list-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 12px 16px;
-  background: transparent;
-  border-bottom: 1px solid transparent;
-  flex-shrink: 0;
-  min-height: 52px;
-}
-
-.implicit-room-list .room-list-header {
-  border-bottom-color: rgba(84, 110, 122, 0.18);
-}
-
-/* ── 面包屑 ── */
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 2px;
-  font-size: 14px;
-  overflow: hidden;
-}
-
-.breadcrumb-item {
-  color: #78909c;
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-  white-space: nowrap;
-  transition: color 0.15s, background 0.15s;
-}
-.breadcrumb-item:hover {
-  color: #37474f;
-  background: #eceff1;
-}
-.breadcrumb-current {
-  color: #37474f;
-  font-weight: 500;
-  cursor: default;
-}
-.breadcrumb-current:hover { background: none; }
-
-.breadcrumb-sep {
-  font-size: 16px;
-  color: #b0bec5;
+  background: var(--app-bg-raised);
 }
 
 /* ── 网格 ── */

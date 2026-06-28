@@ -4,6 +4,7 @@ import type {
   ChatMessage,
   FetchRoomMessagesQuery,
   FetchRoomMessagesResult,
+  MessageId,
   RoomId,
   SendMessagePayload,
   SendMessageResult,
@@ -13,29 +14,6 @@ import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 import { httpChatApi } from '../api/httpChatApi'
 
 const INITIAL_ROOM_MESSAGE_LIMIT = 50
-
-function createLocalMessageId() {
-  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-}
-
-function createMessage(
-  id: string,
-  roomId: string,
-  content: string,
-  sender: { id: string; nickname: string; avatarUrl: string; motto?: string },
-  createdAt = new Date().toISOString(),
-): ChatMessage {
-  return {
-    id,
-    roomId,
-    kind: 'user',
-    sender,
-    content,
-    createdAt,
-    mentionedUserIds: [],
-    canRecall: true,
-  }
-}
 
 function findRoomNode(
   nodes: import('../types/chatTypes').RoomNode[],
@@ -98,6 +76,12 @@ export const useChatStore = defineStore('chat', () => {
     }
   }
 
+  function removeMessage(roomId: RoomId, messageId: MessageId): void {
+    const roomMessages = messagesByRoom.value[roomId]
+    if (!roomMessages) return
+    messagesByRoom.value[roomId] = roomMessages.filter(message => message.id !== messageId)
+  }
+
   /** 获取房间历史消息 */
   async function fetchRoomMessages(
     query: FetchRoomMessagesQuery = {
@@ -121,27 +105,6 @@ export const useChatStore = defineStore('chat', () => {
         nextBeforeMessageId: result.page?.nextBeforeMessageId ?? result.messages[0]?.id ?? null,
       }
       return result
-    } catch {
-      // API 不可用，降级到本地数据
-      const roomMessages = (messagesByRoom.value[query.roomId] ?? []).slice(-query.limit)
-      const room = findRoomNode(roomStore.rooms, query.roomId)
-      messagePaginationByRoom.value[query.roomId] = {
-        hasMore: false,
-        nextBeforeMessageId: roomMessages[0]?.id ?? null,
-      }
-      return {
-        room: room
-          ? {
-              id: room.id,
-              name: room.name,
-              description: room.description,
-              memberCount: room.memberCount,
-              isActive: room.isActive,
-            }
-          : { id: query.roomId, name: query.roomId, description: '', memberCount: 0, isActive: false },
-        messages: roomMessages,
-        hasMore: false,
-      }
     } finally {
       isLoadingMessages.value = false
     }
@@ -152,7 +115,10 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   /** 发送消息到当前活跃房间 */
-  async function sendMessage(content: string): Promise<SendMessageResult | null> {
+  async function sendMessage(
+    content: string,
+    options: { replyToId?: MessageId | null; mentionedUserIds?: string[] } = {},
+  ): Promise<SendMessageResult | null> {
     const trimmedContent = content.trim()
     if (!trimmedContent) return null
 
@@ -167,24 +133,26 @@ export const useChatStore = defineStore('chat', () => {
         roomId,
         content: trimmedContent,
       }
-
-      try {
-        const result = await httpChatApi.sendMessage(payload)
-        appendMessage(result.message)
-        return result
-      } catch {
-        // API 不可用，本地模拟
-        const message = createMessage(
-          createLocalMessageId(),
-          payload.roomId,
-          payload.content,
-          userStore.currentUser,
-        )
-        appendMessage(message)
-        return { message }
+      if (options.replyToId) payload.replyToId = options.replyToId
+      if (options.mentionedUserIds?.length) {
+        payload.mentionedUserIds = Array.from(new Set(options.mentionedUserIds))
       }
+
+      const result = await httpChatApi.sendMessage(payload)
+      appendMessage(result.message)
+      return result
     } finally {
       isSendingMessage.value = false
+    }
+  }
+
+  async function recallMessage(message: ChatMessage): Promise<boolean> {
+    try {
+      await httpChatApi.recallMessage(message.roomId, message.id)
+      removeMessage(message.roomId, message.id)
+      return true
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('撤回失败')
     }
   }
 
@@ -198,8 +166,10 @@ export const useChatStore = defineStore('chat', () => {
     messages,
     messagesByRoom,
     appendMessage,
+    removeMessage,
     fetchInitialRoomMessages,
     fetchRoomMessages,
+    recallMessage,
     sendMessage,
   }
 })

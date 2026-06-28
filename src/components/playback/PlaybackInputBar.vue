@@ -34,7 +34,7 @@ defineExpose({ clear })
       />
     </div>
     <button
-      class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey"
+      class="mdui-btn mdui-btn-raised mdui-ripple app-button"
       type="button"
       :disabled="submitting"
       @click="submit"
@@ -51,7 +51,7 @@ defineExpose({ clear })
   align-items: flex-end;
   padding: 10px 12px 12px;
   border-top: 1px solid rgba(84, 110, 122, 0.18);
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(247, 250, 251, 0.72);
 }
 
 .playback-input {

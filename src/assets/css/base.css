@@ -1,0 +1,29 @@
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+body ::selection {
+  background: rgba(84, 110, 122, 0.22);
+}
+
+body ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+body ::-webkit-scrollbar-thumb {
+  background: rgba(84, 110, 122, 0.28);
+  border-radius: 4px;
+}
+
+body ::-webkit-scrollbar-thumb:hover {
+  background: rgba(84, 110, 122, 0.4);
+}

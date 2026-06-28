@@ -92,6 +92,16 @@ export function emitRoomMessageCreated(message: IMessage | any): void {
   io.to(roomChannel(message.roomId)).emit('message:created', payload)
 }
 
+export function emitRoomMessageDeleted(roomId: string, messageId: string): void {
+  if (!io) return
+
+  io.to(roomChannel(roomId)).emit('message:deleted', {
+    scope: 'room',
+    roomId,
+    messageId,
+  })
+}
+
 export function emitRoomPlaybackState(roomId: string, playback: PlaybackStatePayload): void {
   if (!io) return
 

@@ -16,6 +16,10 @@ const props = defineProps({
     type: Object as () => Component | null,
     default: null,
   },
+  contentProps: {
+    type: Object,
+    default: () => ({}),
+  },
 })
 const _emit = defineEmits(['closePanel'])
 
@@ -88,17 +92,17 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="mdui-card float-card"
+    class="mdui-card float-card app-floating-card"
     :style="{ zIndex: currentZIndex }"
     @mousedown="bringToFront"
   >
-    <div class="card-surface">
+    <div class="app-panel-shell">
       <div
-        class="mdui-card-actions drag-handle"
+        class="mdui-card-actions app-drag-header"
         @mousedown="m_d($event)"
         @touchstart="onTouchStart($event)"
       >
-        <div class="mdui-card-primary-title mdui-p-l-1">
+        <div class="mdui-card-primary-title app-drag-title">
           {{ panelName }}
         </div>
         <button
@@ -110,8 +114,8 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="card-content">
-        <component v-if="contentComponent" :is="contentComponent" />
+      <div class="app-panel-content">
+        <component v-if="contentComponent" :is="contentComponent" v-bind="contentProps" />
         <slot v-else></slot>
       </div>
     </div>
@@ -137,76 +141,17 @@ onUnmounted(() => {
   }
 }
 
-.drag-handle {
-  cursor: grab;
-  user-select: none;
-  min-height: 48px;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #263238;
-  background: rgba(255, 255, 255, 0.78);
-  border-bottom: 1px solid rgba(84, 110, 122, 0.16);
-}
-.drag-handle .mdui-card-primary-title {
+.app-drag-header .mdui-card-primary-title {
   flex: 1 1 auto;
   min-width: 0;
 }
-.drag-handle .mdui-btn {
+.app-drag-header .mdui-btn {
   flex: 0 0 auto;
   margin-left: auto;
 }
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-/* ── 程序化背景：渐变底色 + 噪声颗粒 + 暗角 ── */
-.card-surface {
-  width: 100%;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
-  overflow: hidden;
-  position: relative;
-
-  /* 底层：线性渐变，上方亮（暖灰）→ 底部暗（带紫） */
-  background: linear-gradient(-180deg, #cfd8dc 0%, #607d8b 75%);
-}
-
-/* 噪声颗粒 — 底图作为 overlay 叠加，opacity 控制强度 */
-.card-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('../../assets/static_image/noise_pic.png') center / 256px 256px repeat;
-  opacity: 0.10;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
-
-/* 暗角 — 径向渐变，中心透明，边缘暗紫 */
-.card-surface::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at 40% 45%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.15) 70%,
-    rgba(10, 5, 20, 0.55) 100%
-  );
-  pointer-events: none;
-}
-
-.card-content {
-  position: relative;
-  max-height: calc(100vh - 104px);
-  overflow: auto;
-}
 
 @media (max-width: 768px) {
-  .card-surface {
+  .app-panel-shell {
     max-width: calc(100vw - 20px);
   }
 }
