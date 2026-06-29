@@ -231,7 +231,7 @@ const genderOptions = [
       </div>
 
       <!-- 基本信息卡片 -->
-      <div class="mdui-card">
+      <div class="mdui-card ae-card">
         <div
           class="mdui-list-item-one-line"
           style="
@@ -330,7 +330,7 @@ const genderOptions = [
       </div>
 
       <!-- 爱好卡片 -->
-      <div class="mdui-card">
+      <div class="mdui-card ae-card">
         <div
           class="mdui-list-item-one-line"
           style="
@@ -348,6 +348,7 @@ const genderOptions = [
         <div style="padding: 0 8px">
           <!-- 爱好输入 -->
           <div
+            class="ae-hobby-input-row"
             style="
               display: flex;
               gap: 8px;
@@ -403,7 +404,7 @@ const genderOptions = [
       </div>
 
       <!-- 联系方式卡片 -->
-      <div class="mdui-card">
+      <div class="mdui-card ae-card">
         <div
           class="mdui-list-item-one-line"
           style="
@@ -476,6 +477,13 @@ const genderOptions = [
   background: var(--app-bg-soft);
 }
 
+.ae-body {
+  max-width: 760px;
+  margin: 0 auto;
+  width: 100%;
+  padding-bottom: calc(24px + var(--app-safe-area-bottom));
+}
+
 /* 头像相关 — mdui v1 无对应组件，保留少量自定义 */
 .ae-avatar-section {
   display: flex;
@@ -519,8 +527,9 @@ const genderOptions = [
   margin-top: 8px;
 }
 
-/* 卡片内部留白微调 */
-.mdui-card {
+.ae-card {
+  width: 100%;
+  margin-bottom: 14px;
   padding: 16px;
 }
 
@@ -547,5 +556,53 @@ const genderOptions = [
   font-weight: 500;
   margin-right: 8px;
   white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .app-page-header {
+    padding: 8px 10px;
+  }
+
+  .app-page-action-button {
+    min-width: 64px;
+    padding: 0 10px;
+  }
+
+  .ae-body {
+    padding: 10px;
+    padding-bottom: calc(20px + var(--app-safe-area-bottom));
+  }
+
+  .ae-avatar-section {
+    padding: 14px 0 6px;
+  }
+
+  .ae-avatar-wrap {
+    width: 84px;
+    height: 84px;
+  }
+
+  .ae-card {
+    margin-bottom: 10px;
+    padding: 12px;
+  }
+
+  .ae-field-row {
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 44px;
+  }
+
+  .ae-field-row input[type='date'] {
+    min-width: 150px;
+  }
+
+  .ae-hobby-input-row {
+    gap: 6px !important;
+  }
+
+  .ae-hobby-input-row .mdui-btn-icon {
+    flex: 0 0 44px;
+  }
 }
 </style>

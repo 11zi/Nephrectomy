@@ -8,12 +8,14 @@ import { useAppInit } from './stores/useAppInit'
 import { useUserStore } from './stores/useUserStore'
 import { useRoomStore } from './stores/useRoomStore'
 import { useRealtimeStore } from './stores/useRealtimeStore'
+import { useSidebar } from './composables/useSidebar'
 
 const snackbarRef = ref<InstanceType<typeof SysMsgSnackBar> | null>(null)
 const { isReady, isLoading, error, initApp } = useAppInit()
 const userStore = useUserStore()
 const roomStore = useRoomStore()
 const realtimeStore = useRealtimeStore()
+const { isSidebarOpen, toggleSidebar } = useSidebar()
 
 onMounted(() => {
   if (snackbarRef.value) {
@@ -61,6 +63,15 @@ watch(
   <!-- 已认证：显示完整布局 -->
   <template v-else-if="isReady && userStore.isAuthenticated">
     <SideBar />
+    <button
+      class="mdui-btn mdui-btn-icon mdui-ripple app-mobile-menu-button"
+      :class="{ 'app-mobile-menu-button-hidden': isSidebarOpen }"
+      type="button"
+      title="打开侧边栏"
+      @click="toggleSidebar"
+    >
+      <i class="mdui-icon material-icons">menu</i>
+    </button>
     <Content />
   </template>
 

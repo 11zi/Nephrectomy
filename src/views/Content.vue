@@ -3,9 +3,11 @@
 import { computed } from 'vue'
 import { useContentStore } from '../stores/useContentStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
+import { useSidebar } from '../composables/useSidebar'
 
 const contentStore = useContentStore()
 const settingsStore = useSettingsStore()
+const { openSidebar, closeSidebar, isMobileViewport } = useSidebar()
 
 // 动态导入避免循环依赖
 import ChatRoom from './Content/Chat/ChatRoom.vue'
@@ -54,23 +56,11 @@ function onTouchEnd(e: TouchEvent) {
   const dy = e.changedTouches[0].clientY - touchStartY
   if (Math.abs(dy) > SWIPE_MAX_Y) return
 
-  const sidebar = document.querySelector('.mdui-drawer') as HTMLElement | null
-  if (!sidebar) return
-
   if (dx > SWIPE_MIN_X) {
-    // 右滑：开启侧边栏
-    sidebar.classList.remove('mdui-drawer-close')
-    sidebar.classList.add('mdui-drawer-open')
-    document.body.style.paddingLeft = '240px'
-    document.documentElement.style.setProperty('--sidebar-width', '240px')
+    openSidebar()
   } else if (dx < -SWIPE_MIN_X) {
-    if (settingsStore.keepSidebarOpen) return
-
-    // 左滑：关闭侧边栏
-    sidebar.classList.remove('mdui-drawer-open')
-    sidebar.classList.add('mdui-drawer-close')
-    document.body.style.paddingLeft = '0px'
-    document.documentElement.style.setProperty('--sidebar-width', '0px')
+    if (settingsStore.keepSidebarOpen && !isMobileViewport()) return
+    closeSidebar()
   }
 }
 </script>

@@ -289,4 +289,15 @@ watch(
   }
   .room-grid-wrap { padding: 10px; }
 }
+
+@media (max-width: 360px) {
+  .room-grid {
+    grid-template-columns: 1fr;
+    grid-auto-rows: 96px;
+  }
+
+  .room-cell {
+    grid-column: span 1 !important;
+  }
+}
 </style>

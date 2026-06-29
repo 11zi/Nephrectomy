@@ -15,7 +15,7 @@ function normalizeVolumeInput(event: Event) {
 </script>
 
 <template>
-  <div class="app-page">
+  <div class="app-page settings-page">
     <div class="app-page-header">
       <button
         class="mdui-btn mdui-btn-icon mdui-ripple"
@@ -31,7 +31,7 @@ function normalizeVolumeInput(event: Event) {
       </div>
     </div>
 
-    <div class="app-scroll">
+    <div class="app-scroll settings-scroll">
       <section class="app-panel">
         <div class="app-panel-header">
           <i class="mdui-icon material-icons">playlist_play</i>
@@ -103,6 +103,20 @@ function normalizeVolumeInput(event: Event) {
 </template>
 
 <style scoped>
+.settings-scroll {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding-bottom: calc(16px + var(--app-safe-area-bottom));
+}
+
+.settings-scroll .app-panel {
+  max-width: 100%;
+}
+
 .settings-volume-row {
   align-items: flex-start;
 }
@@ -113,6 +127,11 @@ function normalizeVolumeInput(event: Event) {
 }
 
 @media (max-width: 600px) {
+  .settings-scroll {
+    padding: 10px;
+    padding-bottom: calc(16px + var(--app-safe-area-bottom));
+  }
+
   .settings-volume-control {
     width: 100%;
   }

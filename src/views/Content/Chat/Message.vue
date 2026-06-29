@@ -210,6 +210,7 @@ function handleAction(label: string | null) {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
   max-width: 100%;
 }
 
@@ -232,6 +233,7 @@ function handleAction(label: string | null) {
 
 .msg-bubble {
   display: inline-block;
+  max-width: 100%;
   background: #eceff1;
   border-radius: 0 8px 8px 8px;
   padding: 8px 12px;
@@ -301,6 +303,11 @@ function handleAction(label: string | null) {
   background: transparent;
 }
 
+.msg-bubble pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .msg-bubble .chat-preset-emoji,
 .msg-quote-content .chat-preset-emoji {
   display: inline-block;
@@ -361,6 +368,36 @@ function handleAction(label: string | null) {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 600px) {
+  .msg-row {
+    gap: 8px;
+    padding: 3px 0;
+  }
+
+  .msg-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .msg-bubble {
+    padding: 7px 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .msg-quote {
+    max-width: 100%;
+  }
+
+  .msg-bubble .chat-media {
+    max-width: 100%;
+  }
+
+  .mdui-dialog.msg-action-dialog {
+    width: min(360px, calc(100vw - 32px));
   }
 }
 </style>

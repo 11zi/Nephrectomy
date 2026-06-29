@@ -4,9 +4,3 @@
 @import './css/controls.css';
 @import './css/navigation.css';
 @import './css/utilities.css';
-
-html,
-body {
-  height: 100%;
-  width: 100%;
-}

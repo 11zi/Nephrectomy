@@ -404,6 +404,73 @@ watch(targetUserId, loadProfile)
   }
 }
 
+@media (max-width: 600px) {
+  .user-profile-body {
+    padding: 10px;
+    padding-bottom: calc(18px + var(--app-safe-area-bottom));
+  }
+
+  .user-profile-hero {
+    gap: 10px;
+    padding: 8px 0 4px;
+  }
+
+  .user-profile-identity {
+    align-items: center;
+    text-align: center;
+  }
+
+  .user-profile-avatar {
+    width: 82px;
+    height: 82px;
+  }
+
+  .user-profile-name {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .user-profile-motto {
+    text-align: center;
+  }
+
+  .user-profile-cover {
+    min-height: 112px;
+  }
+
+  .user-profile-grid {
+    gap: 10px;
+    padding: 0;
+  }
+
+  .user-profile-section {
+    padding: 12px;
+  }
+
+  .user-profile-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .user-like-button {
+    width: 100%;
+  }
+
+  .user-profile-field {
+    grid-template-columns: 26px 58px minmax(0, 1fr);
+    font-size: 13px;
+  }
+
+  .user-profile-field strong {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (min-width: 1100px) {
   .user-profile-grid > .user-profile-section {
     grid-column: span 4;

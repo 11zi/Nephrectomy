@@ -212,15 +212,7 @@ onActivated(scrollMessagesToBottomAfterRender)
 </script>
 
 <template>
-  <div
-    class="mdui-container-fluid mdui-m-l-5"
-    style="
-      height: 100%;
-      width: -webkit-fill-available;
-      display: flex;
-      flex-direction: column;
-    "
-  >
+  <div class="chat-room">
     <BaseCard
       v-if="profileCardUser"
       panel-name="用户资料"
@@ -231,23 +223,11 @@ onActivated(scrollMessagesToBottomAfterRender)
     />
 
     <!-- 房间标题栏 -->
-    <div
-      style="
-        flex-shrink: 0;
-        padding: 12px 16px;
-        background: transparent;
-        border-bottom: 1px solid transparent;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      "
-    >
-      <span style="font-size: 16px; font-weight: 600; color: #37474f">
+    <div class="chat-header">
+      <span class="chat-room-name">
         {{ chatStore.activeRoom.name }}
       </span>
-      <span
-        style="font-size: 12px; color: #90a4ae"
-      >
+      <span class="chat-room-presence">
         {{ chatStore.activeRoom.memberCount }} 人在线
       </span>
     </div>
@@ -271,10 +251,9 @@ onActivated(scrollMessagesToBottomAfterRender)
       >
         <div class="mdui-col-md-6 mdui-col-xs-10 mdui-m-b-2 message-list" style="width: 100%">
           <div
-            class="mdui-row mdui-m-a-1"
+            class="mdui-row mdui-m-a-1 message-row-wrap"
             v-for="message in chatStore.activeRoomMessages"
             :key="message.id"
-            style="padding-right: 32px"
           >
             <!-- 用户消息 -->
             <Message
@@ -311,7 +290,7 @@ onActivated(scrollMessagesToBottomAfterRender)
     </div>
 
     <!-- 输入栏，flex-shrink: 0 固定在底部 -->
-    <div style="flex-shrink: 0">
+    <div class="chat-input-shell">
       <InputBox
         ref="inputBoxRef"
         :reply-target="replyTarget"
@@ -378,9 +357,47 @@ onActivated(scrollMessagesToBottomAfterRender)
 </template>
 
 <style scoped>
+.chat-room {
+  height: 100%;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  flex-shrink: 0;
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+}
+
+.chat-room-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #37474f;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-room-presence {
+  flex: 0 0 auto;
+  color: #90a4ae;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .chat-body {
   flex: 1;
-  width: -webkit-fill-available;
+  width: 100%;
   min-height: 0;
   position: relative;
   overflow: hidden;
@@ -389,10 +406,11 @@ onActivated(scrollMessagesToBottomAfterRender)
 .message-scroll {
   position: relative;
   z-index: 1;
-  width: -webkit-fill-available;
+  width: 100%;
   height: 100%;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .chat-playback-background {
@@ -412,6 +430,16 @@ onActivated(scrollMessagesToBottomAfterRender)
 .message-list {
   position: relative;
   z-index: 1;
+}
+
+.message-row-wrap {
+  padding-right: 32px;
+}
+
+.chat-input-shell {
+  flex: 0 0 auto;
+  padding-bottom: var(--app-safe-area-bottom);
+  background: rgba(236, 239, 241, 0.86);
 }
 
 .emoji-drawer {
@@ -536,5 +564,54 @@ onActivated(scrollMessagesToBottomAfterRender)
 .emoji-panel-leave-to {
   max-height: 0;
   opacity: 0;
+}
+
+@media (max-width: 600px) {
+  .chat-header {
+    min-height: 56px;
+    padding: 10px 12px 10px 64px;
+    border-bottom-color: rgba(84, 110, 122, 0.12);
+  }
+
+  .chat-room-name {
+    font-size: 15px;
+  }
+
+  .message-list {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .message-row-wrap {
+    margin: 4px 6px !important;
+    padding-right: 0;
+  }
+
+  .chat-input-shell {
+    border-top: 1px solid rgba(84, 110, 122, 0.14);
+  }
+
+  .emoji-drawer {
+    margin-right: 0;
+  }
+
+  .emoji-tabs {
+    height: 44px;
+  }
+
+  .emoji-tab {
+    line-height: 44px;
+  }
+
+  .emoji-grid {
+    gap: 6px;
+    max-height: min(36dvh, 220px);
+    padding: 10px;
+  }
+
+  .emoji-item {
+    width: 42px;
+    height: 42px;
+  }
 }
 </style>

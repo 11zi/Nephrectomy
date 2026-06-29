@@ -135,7 +135,11 @@ function goToLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  min-height: 100%;
+  overflow-y: auto;
+  padding: 24px 16px;
+  padding-top: calc(24px + var(--app-safe-area-top));
+  padding-bottom: calc(24px + var(--app-safe-area-bottom));
   background: #eceff1;
 }
 
@@ -213,5 +217,30 @@ function goToLogin() {
 
 .auth-link:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .auth-page {
+    align-items: flex-start;
+    padding: 16px 10px;
+    padding-top: calc(16px + var(--app-safe-area-top));
+    padding-bottom: calc(16px + var(--app-safe-area-bottom));
+  }
+
+  .auth-card {
+    max-width: 100%;
+  }
+
+  .auth-header {
+    padding: 20px 18px 6px;
+  }
+
+  .auth-body {
+    padding: 12px 18px 18px;
+  }
+
+  .auth-footer {
+    padding: 12px 18px;
+  }
 }
 </style>

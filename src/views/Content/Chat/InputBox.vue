@@ -146,7 +146,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="mdui-row" style="position: relative; width: 100%">
+  <div class="chat-input-root">
     <div v-if="props.replyTarget" class="input-reply-preview">
       <div class="input-reply-copy">
         <span class="input-reply-label">引用 {{ props.replyTarget.sender.nickname }}</span>
@@ -161,22 +161,22 @@ onBeforeUnmount(() => {
         <i class="mdui-icon material-icons">close</i>
       </button>
     </div>
-    <div class="mdui-textfield">
-      <img
-        :src="userStore.currentUser?.avatarUrl"
-        alt="avatar"
-        class="mdui-img-rounded mdui-shadow-1 mdui-m-a-1"
-        style="position: absolute; bottom: 0px; cursor: pointer"
-        width="48"
-        height="48"
+    <div class="chat-input-row">
+      <button
+        class="chat-input-avatar-button mdui-ripple"
+        type="button"
         @click="toggleEmojiPanel"
         :title="emojiPanelOpen ? '收起表情' : '打开表情'"
-      />
-      <i
-        class="mdui-icon material-icons mdui-ripple icon-plus-round mdui-p-a-1"
-        style="right: 8px; border-radius: 50%"
-        @click="sendMsg(null)"
-      >send</i>
+      >
+        <img
+          :src="userStore.currentUser?.avatarUrl"
+          alt="avatar"
+          class="mdui-img-rounded mdui-shadow-1 chat-input-avatar"
+          width="48"
+          height="48"
+        />
+      </button>
+      <div class="mdui-textfield chat-input-field">
       <textarea
         ref="textareaRef"
         class="mdui-textfield-input"
@@ -185,18 +185,82 @@ onBeforeUnmount(() => {
         @keydown.enter="sendMsg($event)"
         placeholder="说点什么...!"
         rows="2"
-        style="margin-left: 64px"
       ></textarea>
+      </div>
+      <button
+        class="chat-input-send mdui-ripple"
+        type="button"
+        title="发送"
+        @click="sendMsg(null)"
+      >
+        <i class="mdui-icon material-icons">send</i>
+      </button>
     </div>
   </div>
 </template>
 
 <style scoped>
+.chat-input-root {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px 8px;
+}
+
+.chat-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.chat-input-avatar-button,
+.chat-input-send {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chat-input-avatar {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+}
+
+.chat-input-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding-top: 0;
+}
+
+.chat-input-field textarea {
+  min-height: 48px;
+  max-height: 128px;
+  resize: none;
+}
+
+.chat-input-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #546e7a;
+  box-shadow: 0 2px 6px rgba(38, 50, 56, 0.2);
+}
+
 .input-reply-preview {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 8px 0 64px;
+  margin: 0 56px 6px;
   padding: 6px 8px;
   border-left: 3px solid #78909c;
   border-radius: 0 6px 6px 0;
@@ -227,5 +291,35 @@ onBeforeUnmount(() => {
 
 .input-reply-close {
   flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .chat-input-root {
+    padding: 6px 8px 8px;
+  }
+
+  .chat-input-row {
+    gap: 6px;
+  }
+
+  .chat-input-avatar-button,
+  .chat-input-send {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chat-input-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chat-input-field textarea {
+    min-height: 44px;
+    max-height: 104px;
+  }
+
+  .input-reply-preview {
+    margin: 0 50px 6px;
+  }
 }
 </style>

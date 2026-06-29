@@ -1,6 +1,6 @@
 <!-- src/views/SideBar.vue -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
 import BankPanel from './Card/BankPanel.vue'
@@ -13,6 +13,7 @@ import { useSettingsStore } from '../stores/useSettingsStore'
 import { useUserStore } from '../stores/useUserStore'
 import { useSnackbar } from '../composables/useSnackbar'
 import { requestInsertChatText } from '../composables/useChatInput'
+import { useSidebar } from '../composables/useSidebar'
 import type { ContentPage } from '../stores/useContentStore'
 import type { Component } from 'vue'
 
@@ -21,6 +22,7 @@ const roomStore = useRoomStore()
 const settingsStore = useSettingsStore()
 const userStore = useUserStore()
 const snackbar = useSnackbar()
+const { isSidebarOpen, isMobileViewport, openSidebar, closeSidebar } = useSidebar()
 
 const components = [
   {
@@ -76,12 +78,10 @@ const components = [
   },
 ]
 
-const isSidebarOpen = ref(false)
 const isActive = ref<Record<string, boolean>>({})
 const stackIndexMap = ref<Record<string, number>>({})
 let openCount = 0
 
-const drawerEl = ref<HTMLElement | null>(null)
 const panelComponents: Record<string, Component> = {
   点播: PlaybackPanel,
   银行: BankPanel,
@@ -89,12 +89,12 @@ const panelComponents: Record<string, Component> = {
   骰子: DicePanel,
 }
 
-const sidebarClass = ref([
+const sidebarClass = computed(() => [
   'mdui-drawer',
-  'mdui-drawer-close',
+  isSidebarOpen.value ? 'mdui-drawer-open' : 'mdui-drawer-close',
   'app-sidebar',
 ])
-const sidebar = ref(null)
+const sidebar = ref<HTMLElement | null>(null)
 
 onClickOutside(sidebar, () => closeSideBar())
 for (const item of components) {
@@ -105,19 +105,12 @@ for (const item of components) {
 }
 
 function openSideBar() {
-  isSidebarOpen.value = true
-  document.body.style.paddingLeft = '240px'
-  document.documentElement.style.setProperty('--sidebar-width', '240px')
-  sidebarClass.value[1] = 'mdui-drawer-open'
+  openSidebar()
 }
 function closeSideBar(force = false) {
-  if (settingsStore.keepSidebarOpen && !force) return
+  if (settingsStore.keepSidebarOpen && !force && !isMobileViewport()) return
 
-  isSidebarOpen.value = false
-  document.body.style.paddingLeft = '0px'
-  document.documentElement.style.setProperty('--sidebar-width', '0px')
-  sidebarClass.value[1] = 'mdui-drawer-close'
-  mdui.mutation()
+  closeSidebar()
 }
 
 async function handleLogout() {
@@ -235,7 +228,7 @@ watch(
 watch(
   () => settingsStore.keepSidebarOpen,
   (keepSidebarOpen) => {
-    if (keepSidebarOpen) {
+    if (keepSidebarOpen && !isMobileViewport()) {
       openSideBar()
     }
   },
@@ -244,7 +237,7 @@ watch(
 
 <template>
   <div
-    style="height: 100%; width: 1px; position: absolute; left: 0px"
+    class="app-sidebar-edge-trigger"
     @mouseenter="openSideBar"
   ></div>
 
