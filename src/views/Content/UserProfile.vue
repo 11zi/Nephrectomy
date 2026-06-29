@@ -17,11 +17,50 @@ const targetUserId = computed(() => contentStore.profileUserId || userStore.curr
 const isSelf = computed(() => targetUserId.value === userStore.currentUser?.id)
 const backgroundImage = computed(() => profile.value?.albums?.[0] || '')
 
+function getPresenceStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    eating: '吃饭',
+    sleeping: '睡觉',
+    bathing: '洗澡',
+    away: '外出',
+    dead: '似',
+  }
+  return labels[status] ?? status
+}
+
+const presenceText = computed(() => {
+  const p = profile.value
+  if (!p?.presenceStatus || !p.presenceUntil) return p?.isOnline ? '在线' : '离线'
+
+  const remainingMs = new Date(p.presenceUntil).getTime() - Date.now()
+  if (remainingMs <= 0) return p.isOnline ? '在线' : '离线'
+
+  const label = getPresenceStatusLabel(p.presenceStatus)
+  const detail = p.presenceDetail ? `：${p.presenceDetail}` : ''
+  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60_000))
+  return `${label}${detail}，约 ${remainingMinutes} 分钟后结束`
+})
+
+const hasActivePresence = computed(() => Boolean(profile.value?.presenceStatus && profile.value?.presenceUntil))
+
 function formatDate(value?: string) {
   if (!value) return '未填写'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
   return date.toLocaleDateString('zh-CN')
+}
+
+function formatMoney(value: number) {
+  return Math.floor(value).toLocaleString('zh-CN')
+}
+
+function formatDuration(minutes: number) {
+  const totalMinutes = Math.max(0, Math.floor(minutes || 0))
+  const hours = Math.floor(totalMinutes / 60)
+  const mins = totalMinutes % 60
+  if (hours <= 0) return `${mins} 分钟`
+  if (mins <= 0) return `${hours} 小时`
+  return `${hours} 小时 ${mins} 分钟`
 }
 
 async function loadProfile() {
@@ -82,6 +121,7 @@ watch(targetUserId, loadProfile)
           <div class="user-profile-identity">
             <img :src="profile.avatarUrl" alt="avatar" class="user-profile-avatar" />
             <div class="user-profile-name">{{ profile.nickname }}</div>
+            <div class="user-profile-status" :class="{ active: hasActivePresence }">{{ presenceText }}</div>
             <div class="user-profile-motto">{{ profile.motto || '还没有签名' }}</div>
           </div>
 
@@ -113,19 +153,54 @@ watch(targetUserId, loadProfile)
                 <span>住址</span>
                 <strong>{{ profile.address || '未填写' }}</strong>
               </div>
+              <div class="user-profile-field">
+                <i class="mdui-icon material-icons">event</i>
+                <span>注册</span>
+                <strong>{{ formatDate(profile.registeredAt) }}</strong>
+              </div>
             </div>
           </section>
 
           <section class="mdui-card user-profile-section user-profile-stats-section">
             <div class="user-profile-section-title">统计</div>
             <div class="user-profile-stats">
-              <div>
+              <div class="user-profile-like-stat">
                 <span>点赞</span>
                 <strong>{{ profile.likes }}</strong>
+                <button
+                  class="mdui-btn mdui-btn-raised mdui-ripple user-like-button"
+                  :class="{ 'mdui-color-blue-grey': !profile.likedToday && !isSelf }"
+                  type="button"
+                  :disabled="isSelf || profile.likedToday || isLiking"
+                  @click="likeProfile"
+                >
+                  <i class="mdui-icon material-icons mdui-icon-left">thumb_up</i>
+                  {{ isSelf ? '自己的资料' : profile.likedToday ? '今日已点赞' : '点赞' }}
+                </button>
+                <div class="user-profile-like-list">
+                  <span v-if="!profile.recentLikeUsers.length" class="user-profile-muted">暂无点赞</span>
+                  <button
+                    v-for="user in profile.recentLikeUsers"
+                    :key="user.uid"
+                    class="mdui-chip user-like-user"
+                    type="button"
+                    @click="openUserProfile(user.uid)"
+                  >
+                    <span class="mdui-chip-title">{{ user.nickname }}</span>
+                  </button>
+                </div>
               </div>
               <div>
                 <span>访问</span>
                 <strong>{{ profile.visitCount }}</strong>
+              </div>
+              <div>
+                <span>总财富</span>
+                <strong>{{ formatMoney(profile.money + profile.bankDeposit) }}</strong>
+              </div>
+              <div>
+                <span>在线时长</span>
+                <strong>{{ formatDuration(profile.onlineDuration) }}</strong>
               </div>
             </div>
           </section>
@@ -140,42 +215,9 @@ watch(targetUserId, loadProfile)
             </div>
           </section>
 
-          <section class="mdui-card user-profile-section user-profile-likes-section">
-            <div class="user-profile-section-head">
-              <div class="user-profile-section-title">最近点赞</div>
-              <button
-                class="mdui-btn mdui-btn-raised mdui-ripple user-like-button"
-                :class="{ 'mdui-color-blue-grey': !profile.likedToday && !isSelf }"
-                type="button"
-                :disabled="isSelf || profile.likedToday || isLiking"
-                @click="likeProfile"
-              >
-                <i class="mdui-icon material-icons mdui-icon-left">thumb_up</i>
-                {{ isSelf ? '自己的资料' : profile.likedToday ? '今日已点赞' : '点赞' }}
-              </button>
-            </div>
-            <div class="user-profile-chips">
-              <span v-if="!profile.recentLikeUsers.length" class="user-profile-muted">暂无点赞</span>
-              <button
-                v-for="user in profile.recentLikeUsers"
-                :key="user.uid"
-                class="mdui-chip user-like-user"
-                type="button"
-                @click="openUserProfile(user.uid)"
-              >
-                <span class="mdui-chip-title">{{ user.nickname }}</span>
-              </button>
-            </div>
-          </section>
-
           <section class="mdui-card user-profile-section user-profile-contact-section">
             <div class="user-profile-section-title">联系</div>
             <div class="user-profile-fields">
-              <div class="user-profile-field">
-                <i class="mdui-icon material-icons">email</i>
-                <span>邮箱</span>
-                <strong>{{ profile.email || '未填写' }}</strong>
-              </div>
               <div class="user-profile-field">
                 <i class="mdui-icon material-icons">link</i>
                 <span>个人网站</span>
@@ -196,13 +238,15 @@ watch(targetUserId, loadProfile)
 
 .user-profile-body {
   --profile-content-max: 1180px;
+  position: relative;
+  padding-top: 12px;
   padding-bottom: 24px;
 }
 
 .user-profile-empty {
   padding: 40px 0;
   text-align: center;
-  color: #90a4ae;
+  color: #455a64;
 }
 
 .user-profile-hero {
@@ -240,9 +284,20 @@ watch(targetUserId, loadProfile)
 .user-profile-motto {
   max-width: min(420px, 100%);
   margin-top: 4px;
-  color: #78909c;
+  color: #455a64;
   font-size: 13px;
   text-align: left;
+}
+
+.user-profile-status {
+  margin-top: 4px;
+  color: #455a64;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.user-profile-status.active {
+  color: #ef6c00;
 }
 
 .user-profile-cover {
@@ -256,7 +311,7 @@ watch(targetUserId, loadProfile)
   background-color: rgba(236, 239, 241, 0.66);
   background-position: center;
   background-size: cover;
-  color: #b0bec5;
+  color: #455a64;
   font-size: 12px;
   font-weight: 600;
 }
@@ -286,13 +341,12 @@ watch(targetUserId, loadProfile)
   grid-column: span 3 !important;
 }
 
-.user-profile-likes-section,
 .user-profile-contact-section {
   grid-column: span 6 !important;
 }
 
 .user-profile-section-title {
-  color: #546e7a;
+  color: #37474f;
   font-size: 12px;
   font-weight: 700;
 }
@@ -315,6 +369,7 @@ watch(targetUserId, loadProfile)
 
 .user-like-button {
   flex: 0 0 auto;
+  margin-top: 8px;
 }
 
 .user-profile-stats {
@@ -323,24 +378,35 @@ watch(targetUserId, loadProfile)
   gap: 10px;
 }
 
-.user-profile-stats div {
+.user-profile-stats > div {
   min-width: 0;
   padding: 10px;
   border-radius: 6px;
   background: #eceff1;
 }
 
-.user-profile-stats span,
-.user-profile-stats strong {
+.user-profile-like-stat {
+  grid-row: span 2;
+}
+
+.user-profile-like-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.user-profile-stats > div > span,
+.user-profile-stats > div > strong {
   display: block;
 }
 
-.user-profile-stats span {
-  color: #90a4ae;
+.user-profile-stats > div > span {
+  color: #455a64;
   font-size: 11px;
 }
 
-.user-profile-stats strong {
+.user-profile-stats > div > strong {
   margin-top: 2px;
   color: #37474f;
   font-size: 18px;
@@ -356,11 +422,11 @@ watch(targetUserId, loadProfile)
   grid-template-columns: 28px 72px minmax(0, 1fr);
   align-items: center;
   min-height: 36px;
-  color: #78909c;
+  color: #455a64;
 }
 
 .user-profile-field .mdui-icon {
-  color: #78909c;
+  color: #455a64;
   font-size: 22px;
 }
 
@@ -382,7 +448,7 @@ watch(targetUserId, loadProfile)
 }
 
 .user-profile-muted {
-  color: #b0bec5;
+  color: #455a64;
   font-size: 13px;
 }
 
@@ -398,7 +464,6 @@ watch(targetUserId, loadProfile)
 
   .user-profile-grid > .user-profile-section,
   .user-profile-stats-section,
-  .user-profile-likes-section,
   .user-profile-contact-section {
     grid-column: 1 / -1 !important;
   }
@@ -474,10 +539,6 @@ watch(targetUserId, loadProfile)
 @media (min-width: 1100px) {
   .user-profile-grid > .user-profile-section {
     grid-column: span 4;
-  }
-
-  .user-profile-likes-section {
-    grid-column: span 5 !important;
   }
 
   .user-profile-contact-section {

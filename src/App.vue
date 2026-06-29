@@ -97,7 +97,7 @@ watch(
 }
 
 .init-text {
-  color: #90a4ae;
+  color: #455a64;
   font-size: 14px;
   margin: 0;
 }

@@ -38,6 +38,10 @@ const profile = ref<AccountProfile>({
   albums: [],
   visitCount: 0,
   accountStatus: 0,
+  isOnline: false,
+  presenceStatus: '',
+  presenceDetail: '',
+  presenceUntil: null,
   currentRoom: DEFAULT_ROOM_ID,
   lastOnline: '',
   onlineDuration: 0,
@@ -218,7 +222,7 @@ const genderOptions = [
             >
           </div>
         </div>
-        <p class="ae-avatar-hint mdui-typo-caption" style="color: #78909c">
+        <p class="ae-avatar-hint mdui-typo-caption" style="color: #455a64">
           点击更换头像（≤5MB，自动压缩）
         </p>
         <input
@@ -384,7 +388,7 @@ const genderOptions = [
             <span
               v-if="profile.hobbies.length === 0"
               class="mdui-typo-caption"
-              style="color: #b0bec5; align-self: center"
+              style="color: #455a64; align-self: center"
               >暂无爱好</span
             >
             <div v-for="(h, i) in profile.hobbies" :key="i" class="mdui-chip">
@@ -545,14 +549,14 @@ const genderOptions = [
 }
 .ae-field-row > .ae-field-icon {
   font-size: 24px;
-  color: #78909c;
+  color: #455a64;
   flex-shrink: 0;
   width: 24px;
   text-align: center;
 }
 .ae-field-label {
   font-size: 12px;
-  color: #78909c;
+  color: #455a64;
   font-weight: 500;
   margin-right: 8px;
   white-space: nowrap;

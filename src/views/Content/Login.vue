@@ -84,7 +84,7 @@ function goToRegister() {
       </div>
 
       <div class="auth-footer">
-        <span class="mdui-typo-caption" style="color: #78909c;">没有账号？</span>
+        <span class="mdui-typo-caption" style="color: #455a64;">没有账号？</span>
         <a class="auth-link" @click="goToRegister">去注册</a>
       </div>
     </div>
@@ -125,7 +125,7 @@ function goToRegister() {
 
 .auth-subtitle {
   margin-top: 4px;
-  color: #90a4ae;
+  color: #455a64;
 }
 
 .auth-body {

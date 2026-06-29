@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
 import type { PublicProfile } from '../../types/accountTypes'
@@ -16,6 +16,30 @@ const contentStore = useContentStore()
 const userStore = useUserStore()
 const profile = ref<PublicProfile | null>(null)
 const isLoading = ref(false)
+
+function getPresenceStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    eating: '吃饭',
+    sleeping: '睡觉',
+    bathing: '洗澡',
+    away: '外出',
+    dead: '似',
+  }
+  return labels[status] ?? status
+}
+
+const presenceText = computed(() => {
+  const p = profile.value
+  if (!p?.presenceStatus || !p.presenceUntil) return p?.isOnline ? '在线' : '离线'
+
+  const remainingMs = new Date(p.presenceUntil).getTime() - Date.now()
+  if (remainingMs <= 0) return p.isOnline ? '在线' : '离线'
+
+  const label = getPresenceStatusLabel(p.presenceStatus)
+  return p.presenceDetail ? `${label}：${p.presenceDetail}` : label
+})
+
+const hasActivePresence = computed(() => Boolean(profile.value?.presenceStatus && profile.value?.presenceUntil))
 
 async function loadProfile() {
   isLoading.value = true
@@ -43,6 +67,7 @@ watch(() => props.user.id, loadProfile)
       <img :src="profile?.avatarUrl || props.user.avatarUrl" alt="avatar" class="user-info-avatar" />
       <div class="user-info-main">
         <div class="user-info-name">{{ profile?.nickname || props.user.nickname }}</div>
+        <div class="user-info-status" :class="{ active: hasActivePresence }">{{ presenceText }}</div>
         <div class="user-info-motto">{{ profile?.motto || props.user.motto || '还没有签名' }}</div>
       </div>
     </div>
@@ -111,11 +136,22 @@ watch(() => props.user.id, loadProfile)
   display: -webkit-box;
   margin-top: 4px;
   overflow: hidden;
-  color: #78909c;
+  color: #455a64;
   font-size: 12px;
   line-height: 1.4;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.user-info-status {
+  margin-top: 2px;
+  color: #455a64;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.user-info-status.active {
+  color: #ef6c00;
 }
 
 .user-info-grid {
@@ -141,7 +177,7 @@ watch(() => props.user.id, loadProfile)
 }
 
 .user-info-grid span {
-  color: #90a4ae;
+  color: #455a64;
   font-size: 11px;
 }
 

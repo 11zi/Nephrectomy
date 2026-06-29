@@ -7,6 +7,8 @@ import { defineStore } from 'pinia'
 export type ContentPage =
   | 'chat'
   | 'room-list'
+  | 'room-info'
+  | 'shop'
   | 'implicit-room-list'
   | 'private-message'
   | 'account-edit'
@@ -19,9 +21,15 @@ export const useContentStore = defineStore('content', () => {
   const currentPage = ref<ContentPage>('chat')
   const previousPages = ref<ContentPage[]>([])
   const profileUserId = ref<string | null>(null)
+  const roomInfoRoomId = ref<string | null>(null)
 
   function navigateTo(page: ContentPage) {
     currentPage.value = page
+  }
+
+  function navigateToRoomInfo(roomId: string) {
+    roomInfoRoomId.value = roomId
+    currentPage.value = 'room-info'
   }
 
   function navigateToUserProfile(userId: string) {
@@ -40,7 +48,9 @@ export const useContentStore = defineStore('content', () => {
   return {
     currentPage,
     profileUserId,
+    roomInfoRoomId,
     navigateTo,
+    navigateToRoomInfo,
     navigateToUserProfile,
     goBack,
   }

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { RoomId, RoomNode, RoomSummary } from '../types/chatTypes'
+import type { BuyRoomPayload, BuyRoomResult, RoomDetail, RoomId, RoomNode, RoomSummary } from '../types/chatTypes'
 import { httpChatApi } from '../api/httpChatApi'
 
 export const DEFAULT_ROOM_ID: RoomId = 'plaza'
@@ -10,6 +10,8 @@ export const useRoomStore = defineStore('room', () => {
   const navStack = ref<RoomNode[]>([])
   const activeRoomId = ref<RoomId>(DEFAULT_ROOM_ID)
   const isLoadingRooms = ref(false)
+  const selectedRoomInfo = ref<RoomDetail | null>(null)
+  const isLoadingRoomInfo = ref(false)
 
   /** 当前面包屑层级可见的房间列表 */
   const currentRooms = computed<RoomNode[]>(() =>
@@ -41,6 +43,29 @@ export const useRoomStore = defineStore('room', () => {
     }
   }
 
+  async function fetchRoomInfo(roomId: RoomId): Promise<RoomDetail> {
+    isLoadingRoomInfo.value = true
+    try {
+      const detail = await httpChatApi.fetchRoomInfo(roomId)
+      selectedRoomInfo.value = detail
+      return detail
+    } finally {
+      isLoadingRoomInfo.value = false
+    }
+  }
+
+  async function repayRoomLoan(roomId: RoomId, amount: number): Promise<RoomDetail> {
+    const detail = await httpChatApi.repayRoomLoan(roomId, amount)
+    selectedRoomInfo.value = detail
+    return detail
+  }
+
+  async function buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult> {
+    const result = await httpChatApi.buyRoom(payload)
+    await fetchRoomList()
+    return result
+  }
+
   function setActiveRoom(roomId?: RoomId | null): void {
     activeRoomId.value = roomId || DEFAULT_ROOM_ID
   }
@@ -50,9 +75,14 @@ export const useRoomStore = defineStore('room', () => {
     navStack,
     activeRoomId,
     currentRooms,
+    selectedRoomInfo,
     isLoadingRooms,
+    isLoadingRoomInfo,
     fetchRoomList,
     enterRoom,
+    fetchRoomInfo,
+    repayRoomLoan,
+    buyRoom,
     setActiveRoom,
   }
 })

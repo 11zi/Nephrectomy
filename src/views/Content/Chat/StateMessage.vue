@@ -34,7 +34,7 @@ defineProps<{
 
 .state-icon {
   font-size: 14px;
-  color: #78909c;
+  color: #455a64;
   flex-shrink: 0;
 }
 
@@ -45,7 +45,7 @@ defineProps<{
 
 .state-msg-time {
   font-size: 11px;
-  color: #90a4ae;
+  color: #455a64;
   margin-left: 4px;
   white-space: nowrap;
 }

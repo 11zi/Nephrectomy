@@ -40,6 +40,10 @@ function makeDefaultProfile(user: UserSummary): AccountProfile {
     albums: [],
     visitCount: 0,
     accountStatus: 0,
+    isOnline: false,
+    presenceStatus: '',
+    presenceDetail: '',
+    presenceUntil: null,
     currentRoom: DEFAULT_ROOM_ID,
     lastOnline: '',
     onlineDuration: 0,
@@ -226,6 +230,22 @@ export const useUserStore = defineStore('user', () => {
     return httpChatApi.likeProfile(userId)
   }
 
+  async function setPresenceStatus(payload: { status: string; detail?: string; durationMinutes?: number }): Promise<AccountProfile> {
+    const saved = await httpChatApi.setPresenceStatus(payload)
+    profile.value = { ...saved }
+    syncCurrentRoom(saved)
+    syncCurrentUser(saved)
+    return { ...saved }
+  }
+
+  async function clearPresenceStatus(): Promise<AccountProfile> {
+    const saved = await httpChatApi.clearPresenceStatus()
+    profile.value = { ...saved }
+    syncCurrentRoom(saved)
+    syncCurrentUser(saved)
+    return { ...saved }
+  }
+
   function syncCurrentUser(p: AccountProfile) {
     if (!currentUser.value) return
     currentUser.value = {
@@ -260,5 +280,7 @@ export const useUserStore = defineStore('user', () => {
     saveProfile,
     fetchPublicProfile,
     likeProfile,
+    setPresenceStatus,
+    clearPresenceStatus,
   }
 })

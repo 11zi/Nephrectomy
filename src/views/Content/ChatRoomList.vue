@@ -43,11 +43,11 @@ function openDialog(room: RoomNode) {
     content: `
       <div style="padding: 8px 0">
         <p style="color:#546e7a; margin:0 0 12px">${room.description}</p>
-        <p style="margin:0; font-size:13px; color:#90a4ae">
+        <p style="margin:0; font-size:13px; color:#455a64">
           <i class="mdui-icon material-icons" style="font-size:16px;vertical-align:-3px">people</i>
           ${room.memberCount} 名成员
           &nbsp;&nbsp;
-          <span style="color:${room.isActive ? '#4caf50' : '#b0bec5'}">
+          <span style="color:${room.isActive ? '#4caf50' : '#546e7a'}">
             <i class="mdui-icon material-icons" style="font-size:16px;vertical-align:-3px">fiber_manual_record</i>
             ${room.isActive ? '有人在线' : '暂无人在线'}
           </span>
@@ -60,7 +60,7 @@ function openDialog(room: RoomNode) {
         bold: false,
         close: true,
         onClick: () => {
-          console.log('查看房间信息:', room.id)
+          contentStore.navigateToRoomInfo(room.id)
         },
       },
       {

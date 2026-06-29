@@ -20,6 +20,11 @@ function todayKey(): string {
 }
 
 function serializeProfile(user: any, likedToday = false, recentLikeUsers: Array<{ uid: string; nickname: string }> = []) {
+  const presenceUntil = user.presenceUntil ? new Date(user.presenceUntil) : null
+  const hasPresenceStatus = Boolean(
+    user.presenceStatus && presenceUntil && presenceUntil.getTime() > Date.now(),
+  )
+
   return {
     uid: user.uid,
     nickname: user.nickname,
@@ -33,6 +38,10 @@ function serializeProfile(user: any, likedToday = false, recentLikeUsers: Array<
     website: user.website,
     community: user.community,
     accountStatus: user.accountStatus,
+    isOnline: Boolean(user.isOnline),
+    presenceStatus: hasPresenceStatus ? user.presenceStatus ?? '' : '',
+    presenceDetail: hasPresenceStatus ? user.presenceDetail ?? '' : '',
+    presenceUntil: hasPresenceStatus ? presenceUntil?.toISOString() : null,
     currentRoom: normalizeCurrentRoom(user.currentRoom),
     lastOnline: user.lastOnline,
     onlineDuration: user.onlineDuration,
@@ -112,6 +121,65 @@ router.get('/', authRequired, async (req, res) => {
     res.json(serializeProfile(user))
   } catch (err) {
     res.status(500).json({ error: '获取资料失败' })
+  }
+})
+
+// POST /api/profile/status
+router.post('/status', authRequired, async (req, res) => {
+  try {
+    const status = typeof req.body?.status === 'string'
+      ? req.body.status.trim().slice(0, 24)
+      : ''
+    const detail = typeof req.body?.detail === 'string'
+      ? req.body.detail.trim().slice(0, 80)
+      : ''
+    const requestedDuration = Math.floor(Number(req.body?.durationMinutes ?? 60))
+    if (!status) return res.status(400).json({ error: '请选择状态' })
+    if (status === 'eating' && !detail) return res.status(400).json({ error: '请填写正在吃什么' })
+    if (!Number.isFinite(requestedDuration) || requestedDuration <= 0) {
+      return res.status(400).json({ error: '状态持续时间需要是正整数分钟' })
+    }
+
+    const maxDuration = status === 'eating' ? 60 : 24 * 60
+    const presenceUntil = new Date(Date.now() + Math.min(requestedDuration, maxDuration) * 60 * 1000)
+    const user = await User.findOneAndUpdate(
+      { uid: req.userId },
+      {
+        $set: {
+          presenceStatus: status,
+          presenceDetail: detail,
+          presenceUntil,
+        },
+      },
+      { new: true },
+    ).lean()
+
+    if (!user) return res.status(404).json({ error: '用户不存在' })
+    res.json(serializeProfile(user))
+  } catch (err) {
+    res.status(500).json({ error: '设置状态失败' })
+  }
+})
+
+// DELETE /api/profile/status
+router.delete('/status', authRequired, async (req, res) => {
+  try {
+    const user = await User.findOneAndUpdate(
+      { uid: req.userId },
+      {
+        $set: {
+          presenceStatus: '',
+          presenceDetail: '',
+          presenceUntil: null,
+        },
+      },
+      { new: true },
+    ).lean()
+
+    if (!user) return res.status(404).json({ error: '用户不存在' })
+    res.json(serializeProfile(user))
+  } catch (err) {
+    res.status(500).json({ error: '结束状态失败' })
   }
 })
 

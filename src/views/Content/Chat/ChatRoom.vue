@@ -218,7 +218,7 @@ onActivated(scrollMessagesToBottomAfterRender)
       panel-name="用户资料"
       :stack-index="0"
       :content-component="UserInfoCard"
-      :content-props="{ user: profileCardUser, onClose: closeProfileCard }"
+      :content-props="{ user: profileCardUser }"
       @close-panel="closeProfileCard"
     />
 
@@ -390,7 +390,7 @@ onActivated(scrollMessagesToBottomAfterRender)
 
 .chat-room-presence {
   flex: 0 0 auto;
-  color: #90a4ae;
+  color: #455a64;
   font-size: 12px;
   white-space: nowrap;
 }

@@ -28,6 +28,10 @@ export interface AccountProfile {
   albums: string[]
   visitCount: number
   accountStatus: number
+  isOnline: boolean
+  presenceStatus: string
+  presenceDetail: string
+  presenceUntil: string | null
   currentRoom: string
   lastOnline: string
   onlineDuration: number

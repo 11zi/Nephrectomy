@@ -5,8 +5,11 @@ import type {
   FetchRoomMessagesQuery,
   FetchRoomMessagesResult,
   HeartbeatResult,
+  BuyRoomPayload,
+  BuyRoomResult,
   MessageId,
   RegisterPayload,
+  RoomDetail,
   RoomId,
   RoomNode,
   RoomSummary,
@@ -115,6 +118,24 @@ export const httpChatApi: ChatApi = {
     return request<RoomNode[]>('/rooms')
   },
 
+  async fetchRoomInfo(roomId: RoomId): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}`)
+  },
+
+  async repayRoomLoan(roomId: RoomId, amount: number): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/repay`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    })
+  },
+
+  async buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult> {
+    return request<BuyRoomResult>('/shop/rooms', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
   // ── 用户资料 ──
 
   async fetchProfile(): Promise<AccountProfile> {
@@ -135,6 +156,19 @@ export const httpChatApi: ChatApi = {
     return request<AccountProfile>('/profile', {
       method: 'PUT',
       body: JSON.stringify(profile),
+    })
+  },
+
+  async setPresenceStatus(payload: { status: string; detail?: string; durationMinutes?: number }): Promise<AccountProfile> {
+    return request<AccountProfile>('/profile/status', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async clearPresenceStatus(): Promise<AccountProfile> {
+    return request<AccountProfile>('/profile/status', {
+      method: 'DELETE',
     })
   },
 

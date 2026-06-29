@@ -31,7 +31,7 @@ const components = [
     index: '1',
     icon: 'home',
     child: [
-      { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: null },
+      { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: 'room-info' as ContentPage },
       { name: '房间列表',  vueSrc: '', index: '1-2', icon: 'map',          navigate: 'room-list' as ContentPage },
       { name: '编辑资料',   vueSrc: '', index: '1-3', icon: 'edit',        navigate: 'account-edit' as ContentPage },
     ],
@@ -45,7 +45,7 @@ const components = [
       { name: '银行', vueSrc: '', index: '2-1', icon: 'account_balance',   navigate: null },
       { name: '炒股', vueSrc: '', index: '2-2', icon: 'timeline',          navigate: null },
       { name: '骰子', vueSrc: '', index: '2-3', icon: 'money_off',         navigate: null },
-      { name: '商城', vueSrc: '', index: '2-4', icon: 'add_shopping_cart', navigate: null },
+      { name: '商城', vueSrc: '', index: '2-4', icon: 'add_shopping_cart', navigate: 'shop' as ContentPage },
     ],
   },
   {
@@ -139,6 +139,144 @@ function insertCurrentTimeToChatInput() {
   closeSideBar()
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function getPresenceStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    eating: '吃饭',
+    sleeping: '睡觉',
+    bathing: '洗澡',
+    away: '外出',
+    dead: '似',
+  }
+  return labels[status] ?? status
+}
+
+function getPresenceSummary() {
+  const profile = userStore.profile
+  if (!profile?.presenceStatus || !profile.presenceUntil) return ''
+
+  const remainingMs = new Date(profile.presenceUntil).getTime() - Date.now()
+  if (remainingMs <= 0) return ''
+
+  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60_000))
+  const label = getPresenceStatusLabel(profile.presenceStatus)
+  const detail = profile.presenceDetail ? `：${profile.presenceDetail}` : ''
+  return `当前状态：${label}${detail}，约 ${remainingMinutes} 分钟后结束。`
+}
+
+const activePresenceStatus = computed(() => {
+  const profile = userStore.profile
+  if (!profile?.presenceStatus || !profile.presenceUntil) return ''
+
+  const remainingMs = new Date(profile.presenceUntil).getTime() - Date.now()
+  return remainingMs > 0 ? profile.presenceStatus : ''
+})
+
+const sidebarStatusDotClass = computed(() => ({
+  online: userStore.isOnline && !activePresenceStatus.value,
+  eating: activePresenceStatus.value === 'eating',
+  away: Boolean(activePresenceStatus.value && activePresenceStatus.value !== 'eating'),
+}))
+
+const sidebarStatusTitle = computed(() => {
+  const summary = getPresenceSummary()
+  if (summary) return summary
+  return userStore.isOnline ? '在线' : '离线'
+})
+
+function openEatingDialog() {
+  const inputId = `eating-food-${Date.now()}`
+  const currentSummary = getPresenceSummary()
+  let dialogController: { close: () => void } | null = null
+  const buttons: Array<{
+    text: string
+    bold?: boolean
+    close?: boolean
+    onClick?: () => void
+  }> = [
+    {
+      text: '取消',
+      close: true,
+    },
+  ]
+
+  if (currentSummary) {
+    buttons.push({
+      text: '结束当前状态',
+      close: false,
+      onClick: async () => {
+        try {
+          await userStore.clearPresenceStatus()
+          dialogController?.close()
+          snackbar.show('已结束当前状态')
+        } catch (err) {
+          snackbar.show(err instanceof Error ? err.message : '结束失败')
+        }
+      },
+    })
+  }
+
+  buttons.push({
+    text: '开始吃饭',
+    bold: true,
+    close: false,
+    onClick: async () => {
+      const input = document.getElementById(inputId) as HTMLInputElement | null
+      const food = input?.value.trim() ?? ''
+      if (!food) {
+        snackbar.show('请填写在吃什么东西')
+        input?.focus()
+        return
+      }
+
+      try {
+        dialogController?.close()
+        await userStore.setPresenceStatus({
+          status: 'eating',
+          detail: food,
+          durationMinutes: 60,
+        })
+        snackbar.show('已切换为吃饭状态，最多持续 1 小时')
+      } catch (err) {
+        snackbar.show(err instanceof Error ? err.message : '设置失败')
+      }
+    },
+  })
+
+  const summaryHtml = currentSummary
+    ? `<p style="margin:0 0 10px;color:#455a64;font-size:13px">${escapeHtml(currentSummary)}</p>`
+    : ''
+  mdui.dialog({
+    title: '吃饭',
+    content: `
+      <div style="padding-top:4px">
+        ${summaryHtml}
+        <div class="mdui-textfield" style="padding-top:0">
+          <label class="mdui-textfield-label">在吃什么</label>
+          <input id="${inputId}" class="mdui-textfield-input" type="text" maxlength="40" placeholder="例如：牛肉面" />
+        </div>
+      </div>
+    `,
+    buttons,
+    onOpened: (dialog) => {
+      dialogController = dialog
+      requestAnimationFrame(() => {
+        mdui.mutation()
+        document.getElementById(inputId)?.focus()
+      })
+    },
+  })
+  closeSideBar(true)
+}
+
 function openCurrentUserProfile() {
   if (!userStore.currentUser) return
   contentStore.navigateToUserProfile(userStore.currentUser.id)
@@ -156,6 +294,10 @@ function handleItemClick(item: {
   }
   if (item.name === '时间') {
     insertCurrentTimeToChatInput()
+    return
+  }
+  if (item.name === '吃饭') {
+    openEatingDialog()
     return
   }
   if (item.navigate) {
@@ -183,13 +325,8 @@ function isHeaderClickable(item: { child?: unknown[]; navigate?: ContentPage | n
   return Boolean(item.navigate || !item.child?.length)
 }
 
-function isHeaderActive(item: { navigate?: ContentPage | null }) {
-  return Boolean(item.navigate && item.navigate === contentStore.currentPage)
-}
-
-function isMenuItemActive(item: { name: string; navigate?: ContentPage | null }) {
-  if (item.navigate && item.navigate === contentStore.currentPage) return true
-  return Boolean(isActive.value[item.name])
+function isMenuItemActive(item: { name: string }) {
+  return Boolean(panelComponents[item.name] && isActive.value[item.name])
 }
 
 const assignedPanels = new Set<string>()
@@ -275,8 +412,8 @@ watch(
           <!-- 在线状态指示灯 -->
           <span
             class="app-sidebar-status-dot"
-            :class="{ online: userStore.isOnline }"
-            :title="userStore.isOnline ? '在线' : '离线'"
+            :class="sidebarStatusDotClass"
+            :title="sidebarStatusTitle"
           ></span>
         </div>
         <div class="app-sidebar-profile-text">
@@ -299,7 +436,6 @@ watch(
         :class="{
           'mdui-ripple': isHeaderClickable(item),
           'clickable-header': isHeaderClickable(item),
-          'app-sidebar-active': isHeaderActive(item),
         }"
         @click="handleHeaderClick(item)"
       >

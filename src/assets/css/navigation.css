@@ -49,8 +49,8 @@
 
 .app-sidebar-status-dot {
   position: absolute;
-  right: -2px;
-  bottom: 8px;
+  right: -5px;
+  bottom: -5px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -63,6 +63,16 @@
 .app-sidebar-status-dot.online {
   background: #76d275;
   box-shadow: 0 0 0 2px rgba(118, 210, 117, 0.2);
+}
+
+.app-sidebar-status-dot.eating {
+  background: #ff9800;
+  box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.24);
+}
+
+.app-sidebar-status-dot.away {
+  background: #ffd54f;
+  box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.22);
 }
 
 .app-sidebar-profile-text {

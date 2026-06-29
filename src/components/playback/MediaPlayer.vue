@@ -227,7 +227,7 @@ onBeforeUnmount(destroyYoutubePlayer)
   align-items: center;
   justify-content: center;
   height: 96px;
-  color: #78909c;
+  color: #455a64;
   font-size: 13px;
 }
 

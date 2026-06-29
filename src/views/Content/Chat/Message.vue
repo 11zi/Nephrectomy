@@ -228,7 +228,7 @@ function handleAction(label: string | null) {
 
 .msg-time {
   font-size: 11px;
-  color: #90a4ae;
+  color: #455a64;
 }
 
 .msg-bubble {
@@ -260,7 +260,7 @@ function handleAction(label: string | null) {
 .msg-quote {
   max-width: min(520px, 100%);
   padding: 6px 10px;
-  border-left: 3px solid #90a4ae;
+  border-left: 3px solid #455a64;
   border-radius: 0 6px 6px 0;
   background: rgba(236, 239, 241, 0.72);
   color: #607d8b;

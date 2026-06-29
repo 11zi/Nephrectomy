@@ -262,7 +262,7 @@ onBeforeUnmount(() => {
   gap: 8px;
   margin: 0 56px 6px;
   padding: 6px 8px;
-  border-left: 3px solid #78909c;
+  border-left: 3px solid #455a64;
   border-radius: 0 6px 6px 0;
   background: rgba(236, 239, 241, 0.9);
 }
@@ -283,7 +283,7 @@ onBeforeUnmount(() => {
 
 .input-reply-text {
   overflow: hidden;
-  color: #78909c;
+  color: #455a64;
   font-size: 12px;
   white-space: nowrap;
   text-overflow: ellipsis;

@@ -12,6 +12,8 @@ const { openSidebar, closeSidebar, isMobileViewport } = useSidebar()
 // 动态导入避免循环依赖
 import ChatRoom from './Content/Chat/ChatRoom.vue'
 import ChatRoomList from './Content/ChatRoomList.vue'
+import RoomInfoPage from './Content/RoomInfoPage.vue'
+import ShopPage from './Content/ShopPage.vue'
 import PrivateMessage from './Content/PrivateMessage.vue'
 import AccountEdit from './Content/AccountEdit.vue'
 import UserProfile from './Content/UserProfile.vue'
@@ -22,6 +24,8 @@ import RegisterPage from './Content/Register.vue'
 const currentComponent = computed(() => {
   switch (contentStore.currentPage) {
     case 'room-list':        return ChatRoomList
+    case 'room-info':        return RoomInfoPage
+    case 'shop':             return ShopPage
     case 'implicit-room-list': return ChatRoomList
     case 'private-message':  return PrivateMessage
     case 'account-edit':     return AccountEdit
@@ -35,7 +39,7 @@ const currentComponent = computed(() => {
 })
 
 // 登录/注册页面不缓存（避免表单残留敏感数据）
-const cacheablePages = new Set(['chat', 'room-list', 'private-message', 'account-edit', 'settings'])
+const cacheablePages = new Set(['chat', 'room-list', 'room-info', 'shop', 'private-message', 'account-edit', 'settings'])
 const currentPage = computed(() => contentStore.currentPage)
 const isImplicitRoomList = computed(() => contentStore.currentPage === 'implicit-room-list')
 

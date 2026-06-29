@@ -4,6 +4,9 @@ export interface IRoom extends Document {
   roomId: string
   name: string
   description: string
+  ownerId: string | null
+  loanBalance: number
+  downPayment: number
   memberCount: number
   heat: number
   isActive: boolean
@@ -18,6 +21,9 @@ const RoomSchema = new Schema<IRoom>(
     roomId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     description: { type: String, default: '' },
+    ownerId: { type: String, default: null },
+    loanBalance: { type: Number, default: 0 },
+    downPayment: { type: Number, default: 0 },
     memberCount: { type: Number, default: 0 },
     heat: { type: Number, default: 0 },
     isActive: { type: Boolean, default: false },
