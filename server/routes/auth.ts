@@ -26,6 +26,11 @@ function senderFromUser(user: any): ISenderSummary {
 
 /** 将 User document 序列化为前端需要的 profile 结构 */
 function serializeProfile(user: any) {
+  const presenceUntil = user.presenceUntil ? new Date(user.presenceUntil) : null
+  const hasPresenceStatus = Boolean(
+    user.presenceStatus && presenceUntil && presenceUntil.getTime() > Date.now(),
+  )
+
   return {
     uid: user.uid,
     nickname: user.nickname,
@@ -39,6 +44,10 @@ function serializeProfile(user: any) {
     website: user.website,
     community: user.community,
     accountStatus: user.accountStatus,
+    isOnline: Boolean(user.isOnline),
+    presenceStatus: hasPresenceStatus ? user.presenceStatus ?? '' : '',
+    presenceDetail: hasPresenceStatus ? user.presenceDetail ?? '' : '',
+    presenceUntil: hasPresenceStatus ? presenceUntil?.toISOString() : null,
     currentRoom: normalizeCurrentRoom(user.currentRoom),
     lastOnline: user.lastOnline,
     onlineDuration: user.onlineDuration,
@@ -117,6 +126,9 @@ router.post('/register', async (req, res) => {
       website: '',
       community: '',
       accountStatus: 1,
+      presenceStatus: '',
+      presenceDetail: '',
+      presenceUntil: null,
       currentRoom: DEFAULT_ROOM_ID,
       isOnline: true,
       lastSeenAt: new Date(),

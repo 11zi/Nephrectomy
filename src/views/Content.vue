@@ -2,14 +2,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useContentStore } from '../stores/useContentStore'
+import { useSettingsStore } from '../stores/useSettingsStore'
+import { useSidebar } from '../composables/useSidebar'
 
 const contentStore = useContentStore()
+const settingsStore = useSettingsStore()
+const { openSidebar, closeSidebar, isMobileViewport } = useSidebar()
 
 // 动态导入避免循环依赖
 import ChatRoom from './Content/Chat/ChatRoom.vue'
 import ChatRoomList from './Content/ChatRoomList.vue'
+import RoomInfoPage from './Content/RoomInfoPage.vue'
+import ShopPage from './Content/ShopPage.vue'
 import PrivateMessage from './Content/PrivateMessage.vue'
 import AccountEdit from './Content/AccountEdit.vue'
+import UserProfile from './Content/UserProfile.vue'
 import SettingsPage from './Content/SettingsPage.vue'
 import LoginPage from './Content/Login.vue'
 import RegisterPage from './Content/Register.vue'
@@ -17,9 +24,12 @@ import RegisterPage from './Content/Register.vue'
 const currentComponent = computed(() => {
   switch (contentStore.currentPage) {
     case 'room-list':        return ChatRoomList
+    case 'room-info':        return RoomInfoPage
+    case 'shop':             return ShopPage
     case 'implicit-room-list': return ChatRoomList
     case 'private-message':  return PrivateMessage
     case 'account-edit':     return AccountEdit
+    case 'user-profile':     return UserProfile
     case 'settings':         return SettingsPage
     case 'login':            return LoginPage
     case 'register':         return RegisterPage
@@ -29,7 +39,7 @@ const currentComponent = computed(() => {
 })
 
 // 登录/注册页面不缓存（避免表单残留敏感数据）
-const cacheablePages = new Set(['chat', 'room-list', 'private-message', 'account-edit', 'settings'])
+const cacheablePages = new Set(['chat', 'room-list', 'room-info', 'shop', 'private-message', 'account-edit', 'settings'])
 const currentPage = computed(() => contentStore.currentPage)
 const isImplicitRoomList = computed(() => contentStore.currentPage === 'implicit-room-list')
 
@@ -50,19 +60,11 @@ function onTouchEnd(e: TouchEvent) {
   const dy = e.changedTouches[0].clientY - touchStartY
   if (Math.abs(dy) > SWIPE_MAX_Y) return
 
-  const sidebar = document.querySelector('.mdui-drawer') as HTMLElement | null
-  if (!sidebar) return
-
   if (dx > SWIPE_MIN_X) {
-    // 右滑：开启侧边栏
-    sidebar.classList.remove('mdui-drawer-close')
-    sidebar.classList.add('mdui-drawer-open')
-    document.body.style.paddingLeft = '240px'
+    openSidebar()
   } else if (dx < -SWIPE_MIN_X) {
-    // 左滑：关闭侧边栏
-    sidebar.classList.remove('mdui-drawer-open')
-    sidebar.classList.add('mdui-drawer-close')
-    document.body.style.paddingLeft = '0px'
+    if (settingsStore.keepSidebarOpen && !isMobileViewport()) return
+    closeSidebar()
   }
 }
 </script>

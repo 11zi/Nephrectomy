@@ -75,34 +75,34 @@ onMounted(loadBankStatus)
 
 <template>
   <div class="bank-panel">
-    <div class="bank-balance-row">
-      <div class="bank-metric">
-        <span class="metric-label">余额</span>
-        <strong>{{ formatMoney(status?.cash) }}</strong>
+    <div class="app-stat-grid">
+      <div class="app-stat-card">
+        <span class="app-stat-label">余额</span>
+        <strong class="app-stat-value">{{ formatMoney(status?.cash) }}</strong>
       </div>
-      <div class="bank-metric">
-        <span class="metric-label">总资产</span>
-        <strong>{{ formatMoney(status?.totalAssets) }}</strong>
+      <div class="app-stat-card">
+        <span class="app-stat-label">总资产</span>
+        <strong class="app-stat-value">{{ formatMoney(status?.totalAssets) }}</strong>
       </div>
     </div>
 
-    <div class="deposit-band">
+    <div class="deposit-band app-stat-card app-stat-card-strong">
       <div>
-        <span class="metric-label">存款</span>
-        <strong>{{ formatMoney(status?.deposit) }}</strong>
+        <span class="app-stat-label">存款</span>
+        <strong class="app-stat-value">{{ formatMoney(status?.deposit) }}</strong>
       </div>
       <div class="interest-note">
         UTC 00:00 +1.2%
       </div>
     </div>
 
-    <div class="bank-meta">
+    <div class="bank-meta app-meta-list">
       <span>待结算在线时长 {{ Math.floor(status?.pendingPassiveMinutes ?? 0) }}/30 分钟</span>
       <span>上次利息 {{ formatDate(status?.lastInterestSettledAt) }}</span>
     </div>
 
-    <div class="transfer-row">
-      <div class="mdui-textfield amount-field">
+    <div class="app-action-row app-action-row-three transfer-row">
+      <div class="mdui-textfield app-field amount-field">
         <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
         <input
           v-model.number="amount"
@@ -115,7 +115,7 @@ onMounted(loadBankStatus)
         />
       </div>
       <button
-        class="mdui-btn mdui-btn-raised mdui-ripple"
+        class="mdui-btn mdui-btn-raised mdui-ripple app-button app-button-success"
         :disabled="!canSubmit || isSubmitting"
         @click="transfer('deposit')"
       >
@@ -123,7 +123,7 @@ onMounted(loadBankStatus)
         存入
       </button>
       <button
-        class="mdui-btn mdui-btn-raised mdui-ripple"
+        class="mdui-btn mdui-btn-raised mdui-ripple app-button"
         :disabled="!canSubmit || isSubmitting"
         @click="transfer('withdraw')"
       >
@@ -138,36 +138,7 @@ onMounted(loadBankStatus)
 .bank-panel {
   width: min(440px, calc(100vw - 56px));
   padding: 16px;
-  color: #37474f;
-}
-
-.bank-balance-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.bank-metric,
-.deposit-band {
-  border: 1px solid #d9e1e5;
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.82);
-}
-
-.metric-label {
-  display: block;
-  font-size: 12px;
-  color: #78909c;
-  margin-bottom: 4px;
-}
-
-strong {
-  display: block;
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 600;
-  color: #263238;
+  color: var(--app-text-soft);
 }
 
 .deposit-band {
@@ -181,45 +152,22 @@ strong {
 .interest-note {
   flex: 0 0 auto;
   font-size: 12px;
-  color: #607d8b;
+  color: var(--app-text-muted);
 }
 
 .bank-meta {
-  display: grid;
-  gap: 4px;
   margin: 12px 0 4px;
-  font-size: 12px;
-  color: #78909c;
 }
 
 .transfer-row {
-  display: grid;
-  grid-template-columns: minmax(120px, 1fr) auto auto;
-  align-items: end;
-  gap: 8px;
+  margin-top: 4px;
 }
 
 .amount-field {
   padding-top: 0;
 }
 
-.mdui-btn {
-  min-width: 78px;
-  color: #fff;
-  background: #546e7a;
-}
-
-.mdui-btn[disabled] {
-  color: rgba(0, 0, 0, 0.26);
-  background: rgba(0, 0, 0, 0.12);
-}
-
 @media (max-width: 560px) {
-  .bank-balance-row,
-  .transfer-row {
-    grid-template-columns: 1fr;
-  }
-
   .deposit-band {
     align-items: flex-start;
     flex-direction: column;

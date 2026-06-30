@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { UserSummary } from '../types/chatTypes'
-import type { AccountProfile } from '../types/accountTypes'
+import type { AccountProfile, PublicProfile } from '../types/accountTypes'
 import { httpChatApi } from '../api/httpChatApi'
 import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 
@@ -40,6 +40,10 @@ function makeDefaultProfile(user: UserSummary): AccountProfile {
     albums: [],
     visitCount: 0,
     accountStatus: 0,
+    isOnline: false,
+    presenceStatus: '',
+    presenceDetail: '',
+    presenceUntil: null,
     currentRoom: DEFAULT_ROOM_ID,
     lastOnline: '',
     onlineDuration: 0,
@@ -218,6 +222,30 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  function fetchPublicProfile(userId: string): Promise<PublicProfile> {
+    return httpChatApi.fetchPublicProfile(userId)
+  }
+
+  function likeProfile(userId: string): Promise<PublicProfile> {
+    return httpChatApi.likeProfile(userId)
+  }
+
+  async function setPresenceStatus(payload: { status: string; detail?: string; durationMinutes?: number }): Promise<AccountProfile> {
+    const saved = await httpChatApi.setPresenceStatus(payload)
+    profile.value = { ...saved }
+    syncCurrentRoom(saved)
+    syncCurrentUser(saved)
+    return { ...saved }
+  }
+
+  async function clearPresenceStatus(): Promise<AccountProfile> {
+    const saved = await httpChatApi.clearPresenceStatus()
+    profile.value = { ...saved }
+    syncCurrentRoom(saved)
+    syncCurrentUser(saved)
+    return { ...saved }
+  }
+
   function syncCurrentUser(p: AccountProfile) {
     if (!currentUser.value) return
     currentUser.value = {
@@ -250,5 +278,9 @@ export const useUserStore = defineStore('user', () => {
     clearAuth,
     loadProfile,
     saveProfile,
+    fetchPublicProfile,
+    likeProfile,
+    setPresenceStatus,
+    clearPresenceStatus,
   }
 })

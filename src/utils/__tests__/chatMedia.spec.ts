@@ -9,6 +9,13 @@ describe('chat media links', () => {
     expect(html).toContain('src="https://example.com/a.png?size=large"')
   })
 
+  it('renders bare image links as direct img embeds', () => {
+    const html = renderMessageMediaLinks('https://example.com/emoji.webp')
+
+    expect(html).toContain('<img')
+    expect(html).toContain('src="https://example.com/emoji.webp"')
+  })
+
   it('renders direct audio and video links without changing their host', () => {
     expect(classifyChatMediaUrl('https://cdn.example.com/movie.mp4')?.kind).toBe('video')
     expect(classifyChatMediaUrl('https://cdn.example.com/song.flac')?.kind).toBe('audio')

@@ -1,55 +1,17 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import type { RoomId, RoomNode, RoomSummary } from '../types/chatTypes'
+import type { BuyRoomPayload, BuyRoomResult, RoomDetail, RoomId, RoomNode, RoomSummary } from '../types/chatTypes'
 import { httpChatApi } from '../api/httpChatApi'
 
 export const DEFAULT_ROOM_ID: RoomId = 'plaza'
 
-// ── mock 房间数据（API 不可用时的降级数据） ──
-
-const mockRooms: RoomNode[] = [
-  {
-    id: 'plaza',
-    name: '广场',
-    description: '所有人闲聊的大厅',
-    memberCount: 35,
-    isActive: true,
-    parentId: null,
-    cover: '#546e7a',
-    colSpan: 2,
-    rowSpan: 2,
-    children: [],
-  },
-  {
-    id: 'teahouse',
-    name: '茶馆',
-    description: '品茶闲聊，安静交流',
-    memberCount: 12,
-    isActive: true,
-    parentId: null,
-    cover: '#4e6b5e',
-    colSpan: 1,
-    rowSpan: 1,
-    children: [],
-  },
-]
-
-function findRoomById(nodes: RoomNode[], id: RoomId): RoomNode | null {
-  for (const node of nodes) {
-    if (node.id === id) return node
-    if (node.children.length > 0) {
-      const found = findRoomById(node.children, id)
-      if (found) return found
-    }
-  }
-  return null
-}
-
 export const useRoomStore = defineStore('room', () => {
-  const rooms = ref<RoomNode[]>([...mockRooms])
+  const rooms = ref<RoomNode[]>([])
   const navStack = ref<RoomNode[]>([])
   const activeRoomId = ref<RoomId>(DEFAULT_ROOM_ID)
   const isLoadingRooms = ref(false)
+  const selectedRoomInfo = ref<RoomDetail | null>(null)
+  const isLoadingRoomInfo = ref(false)
 
   /** 当前面包屑层级可见的房间列表 */
   const currentRooms = computed<RoomNode[]>(() =>
@@ -64,8 +26,6 @@ export const useRoomStore = defineStore('room', () => {
     try {
       const data = await httpChatApi.fetchRoomList()
       if (data.length > 0) rooms.value = data
-    } catch {
-      // 保持当前值（mock）
     } finally {
       isLoadingRooms.value = false
     }
@@ -78,18 +38,32 @@ export const useRoomStore = defineStore('room', () => {
       const summary = await httpChatApi.enterRoom(roomId, options)
       activeRoomId.value = roomId
       return summary
-    } catch {
-      activeRoomId.value = roomId
-      const found = findRoomById(rooms.value, roomId)
-      if (!found) throw new Error(`Room ${roomId} not found`)
-      return {
-        id: found.id,
-        name: found.name,
-        description: found.description,
-        memberCount: found.memberCount,
-        isActive: found.isActive,
-      }
+    } catch (err) {
+      throw err instanceof Error ? err : new Error(`进入房间失败：${roomId}`)
     }
+  }
+
+  async function fetchRoomInfo(roomId: RoomId): Promise<RoomDetail> {
+    isLoadingRoomInfo.value = true
+    try {
+      const detail = await httpChatApi.fetchRoomInfo(roomId)
+      selectedRoomInfo.value = detail
+      return detail
+    } finally {
+      isLoadingRoomInfo.value = false
+    }
+  }
+
+  async function repayRoomLoan(roomId: RoomId, amount: number): Promise<RoomDetail> {
+    const detail = await httpChatApi.repayRoomLoan(roomId, amount)
+    selectedRoomInfo.value = detail
+    return detail
+  }
+
+  async function buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult> {
+    const result = await httpChatApi.buyRoom(payload)
+    await fetchRoomList()
+    return result
   }
 
   function setActiveRoom(roomId?: RoomId | null): void {
@@ -101,9 +75,14 @@ export const useRoomStore = defineStore('room', () => {
     navStack,
     activeRoomId,
     currentRooms,
+    selectedRoomInfo,
     isLoadingRooms,
+    isLoadingRoomInfo,
     fetchRoomList,
     enterRoom,
+    fetchRoomInfo,
+    repayRoomLoan,
+    buyRoom,
     setActiveRoom,
   }
 })

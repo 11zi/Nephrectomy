@@ -15,13 +15,8 @@ function normalizeVolumeInput(event: Event) {
 </script>
 
 <template>
-  <div class="settings-page-root">
-    <div class="settings-header">
-      <div class="settings-title">
-        <i class="mdui-icon material-icons">settings</i>
-        <span>设置</span>
-      </div>
-
+  <div class="app-page settings-page">
+    <div class="app-page-header">
       <button
         class="mdui-btn mdui-btn-icon mdui-ripple"
         type="button"
@@ -30,45 +25,49 @@ function normalizeVolumeInput(event: Event) {
       >
         <i class="mdui-icon material-icons">close</i>
       </button>
+
+      <div class="app-page-title">
+        <span>设置</span>
+      </div>
     </div>
 
-    <div class="settings-scroll">
-      <section class="settings-section">
-        <div class="section-heading">
+    <div class="app-scroll settings-scroll">
+      <section class="app-panel">
+        <div class="app-panel-header">
           <i class="mdui-icon material-icons">playlist_play</i>
           <span>点播</span>
         </div>
 
-        <label class="setting-row mdui-ripple">
-          <div class="setting-copy">
-            <div class="setting-title">关闭视频点播功能</div>
-            <div class="setting-desc">本地不再显示或播放房间中的视频点播</div>
+        <label class="app-row mdui-ripple">
+          <div class="app-copy">
+            <div class="app-copy-title">关闭视频点播功能</div>
+            <div class="app-copy-desc">本地不再显示或播放房间中的视频点播</div>
           </div>
-          <label class="mdui-switch">
+          <label class="mdui-switch app-switch">
             <input v-model="settingsStore.disableVideoPlayback" type="checkbox" />
             <i class="mdui-switch-icon"></i>
           </label>
         </label>
 
-        <label class="setting-row mdui-ripple">
-          <div class="setting-copy">
-            <div class="setting-title">关闭音频点播功能</div>
-            <div class="setting-desc">本地不再显示或播放房间中的音频点播</div>
+        <label class="app-row mdui-ripple">
+          <div class="app-copy">
+            <div class="app-copy-title">关闭音频点播功能</div>
+            <div class="app-copy-desc">本地不再显示或播放房间中的音频点播</div>
           </div>
-          <label class="mdui-switch">
+          <label class="mdui-switch app-switch">
             <input v-model="settingsStore.disableAudioPlayback" type="checkbox" />
             <i class="mdui-switch-icon"></i>
           </label>
         </label>
 
-        <div class="setting-row volume-row">
-          <div class="setting-copy">
-            <div class="setting-title">总音量</div>
-            <div class="setting-desc">控制本地点播播放器音量</div>
+        <div class="app-row settings-volume-row">
+          <div class="app-copy">
+            <div class="app-copy-title">总音量</div>
+            <div class="app-copy-desc">控制本地点播播放器音量</div>
           </div>
-          <div class="volume-control">
+          <div class="app-control-cluster settings-volume-control">
             <input
-              class="volume-slider"
+              class="app-slider"
               type="range"
               min="0"
               max="100"
@@ -77,155 +76,63 @@ function normalizeVolumeInput(event: Event) {
               :aria-valuetext="volumeText"
               @input="normalizeVolumeInput"
             />
-            <span class="volume-value">{{ volumeText }}</span>
+            <span class="app-value-label">{{ volumeText }}</span>
           </div>
         </div>
+      </section>
+
+      <section class="app-panel">
+        <div class="app-panel-header">
+          <i class="mdui-icon material-icons">tune</i>
+          <span>其他</span>
+        </div>
+
+        <label class="app-row mdui-ripple">
+          <div class="app-copy">
+            <div class="app-copy-title">保持侧边栏打开</div>
+            <div class="app-copy-desc">切换页面或点击外部区域时不自动收起侧边栏</div>
+          </div>
+          <label class="mdui-switch app-switch">
+            <input v-model="settingsStore.keepSidebarOpen" type="checkbox" />
+            <i class="mdui-switch-icon"></i>
+          </label>
+        </label>
       </section>
     </div>
   </div>
 </template>
 
 <style scoped>
-.settings-page-root {
-  height: 100%;
-  width: -webkit-fill-available;
-  display: flex;
-  flex-direction: column;
-  background: #eceff1;
-  overflow: hidden;
-  color: #263238;
-}
-
-.settings-header {
-  min-height: 52px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 12px 16px;
-  background: transparent;
-}
-
-.settings-title {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #37474f;
-}
-
-.settings-title .mdui-icon {
-  font-size: 22px;
-  color: #607d8b;
-}
-
 .settings-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding-bottom: calc(16px + var(--app-safe-area-bottom));
 }
 
-.settings-section {
-  max-width: 720px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(84, 110, 122, 0.16);
-  border-radius: 8px;
-  overflow: hidden;
+.settings-scroll .app-panel {
+  max-width: 100%;
 }
 
-.section-heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(84, 110, 122, 0.14);
-  color: #455a64;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.section-heading .mdui-icon {
-  font-size: 20px;
-  color: #607d8b;
-}
-
-.setting-row {
-  min-height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(84, 110, 122, 0.1);
-}
-
-.setting-row:last-child {
-  border-bottom: none;
-}
-
-.setting-copy {
-  min-width: 0;
-}
-
-.setting-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #263238;
-}
-
-.setting-desc {
-  margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: #78909c;
-}
-
-.volume-row {
+.settings-volume-row {
   align-items: flex-start;
 }
 
-.volume-control {
+.settings-volume-control {
   width: min(300px, 44vw);
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding-top: 4px;
-}
-
-.volume-slider {
-  flex: 1;
-  min-width: 120px;
-  accent-color: #546e7a;
-}
-
-.volume-value {
-  width: 42px;
-  text-align: right;
-  font-size: 13px;
-  font-weight: 600;
-  color: #455a64;
 }
 
 @media (max-width: 600px) {
   .settings-scroll {
     padding: 10px;
+    padding-bottom: calc(16px + var(--app-safe-area-bottom));
   }
 
-  .setting-row {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .setting-row .mdui-switch {
-    align-self: flex-end;
-  }
-
-  .volume-control {
+  .settings-volume-control {
     width: 100%;
   }
 }

@@ -5,14 +5,18 @@ import type {
   FetchRoomMessagesQuery,
   FetchRoomMessagesResult,
   HeartbeatResult,
+  BuyRoomPayload,
+  BuyRoomResult,
+  MessageId,
   RegisterPayload,
+  RoomDetail,
   RoomId,
   RoomNode,
   RoomSummary,
   SendMessagePayload,
   SendMessageResult,
 } from '../types/chatTypes'
-import type { AccountProfile } from '../types/accountTypes'
+import type { AccountProfile, PublicProfile } from '../types/accountTypes'
 import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
 import type {
   StockAutoPayload,
@@ -97,6 +101,12 @@ export const httpChatApi: ChatApi = {
     })
   },
 
+  async recallMessage(roomId: RoomId, messageId: MessageId): Promise<{ success: boolean; messageId: MessageId }> {
+    return request<{ success: boolean; messageId: MessageId }>(`/rooms/${roomId}/messages/${messageId}`, {
+      method: 'DELETE',
+    })
+  },
+
   async enterRoom(roomId: RoomId, options: { implicit?: boolean } = {}): Promise<RoomSummary> {
     return request<RoomSummary>(`/rooms/${roomId}/enter`, {
       method: 'POST',
@@ -108,16 +118,57 @@ export const httpChatApi: ChatApi = {
     return request<RoomNode[]>('/rooms')
   },
 
+  async fetchRoomInfo(roomId: RoomId): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}`)
+  },
+
+  async repayRoomLoan(roomId: RoomId, amount: number): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/repay`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    })
+  },
+
+  async buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult> {
+    return request<BuyRoomResult>('/shop/rooms', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
   // ── 用户资料 ──
 
   async fetchProfile(): Promise<AccountProfile> {
     return request<AccountProfile>('/profile')
   },
 
+  async fetchPublicProfile(userId: string): Promise<PublicProfile> {
+    return request<PublicProfile>(`/profile/${userId}`)
+  },
+
+  async likeProfile(userId: string): Promise<PublicProfile> {
+    return request<PublicProfile>(`/profile/${userId}/like`, {
+      method: 'POST',
+    })
+  },
+
   async saveProfile(profile: AccountProfile): Promise<AccountProfile> {
     return request<AccountProfile>('/profile', {
       method: 'PUT',
       body: JSON.stringify(profile),
+    })
+  },
+
+  async setPresenceStatus(payload: { status: string; detail?: string; durationMinutes?: number }): Promise<AccountProfile> {
+    return request<AccountProfile>('/profile/status', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async clearPresenceStatus(): Promise<AccountProfile> {
+    return request<AccountProfile>('/profile/status', {
+      method: 'DELETE',
     })
   },
 

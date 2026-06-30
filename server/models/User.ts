@@ -26,6 +26,9 @@ export interface IUser extends Document {
 
   // ── 状态 ──
   accountStatus: number // 账户状态
+  presenceStatus: string
+  presenceDetail: string
+  presenceUntil: Date | null
   currentRoom: string // 坐标（当前所在 room_id）
   lastOnline: Date // 最后在线
   onlineDuration: number // 在线时间（分钟）
@@ -74,6 +77,9 @@ const UserSchema = new Schema<IUser>(
     lastSeenAt: { type: Date, default: Date.now },
 
     accountStatus: { type: Number, default: 0 },
+    presenceStatus: { type: String, default: '', maxlength: 24 },
+    presenceDetail: { type: String, default: '', maxlength: 80 },
+    presenceUntil: { type: Date, default: null },
     currentRoom: { type: String, default: 'plaza' },
     lastOnline: { type: Date, default: Date.now },
     onlineDuration: { type: Number, default: 1 },

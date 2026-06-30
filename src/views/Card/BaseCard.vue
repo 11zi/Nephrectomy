@@ -2,9 +2,11 @@
 import { ref, onUnmounted } from 'vue'
 import type { Component } from 'vue'
 import { getNextZIndex } from '../../utils/useZIndex'
+import { useSidebar } from '../../composables/useSidebar'
 
 const isDrag = ref(false)
 const currentZIndex = ref(8000)
+const { isMobileViewport } = useSidebar()
 
 const props = defineProps({
   panelName: String,
@@ -15,6 +17,10 @@ const props = defineProps({
   contentComponent: {
     type: Object as () => Component | null,
     default: null,
+  },
+  contentProps: {
+    type: Object,
+    default: () => ({}),
   },
 })
 const _emit = defineEmits(['closePanel'])
@@ -32,6 +38,7 @@ function bringToFront() {
 }
 
 function onDragMove(_e: MouseEvent) {
+  if (isMobileViewport()) return
   cardPos.value.left = _e.clientX - cardOffSet.left + 'px'
   cardPos.value.top = _e.clientY - cardOffSet.top + 'px'
 }
@@ -44,6 +51,8 @@ function onDragEnd() {
 
 function m_d(_e: MouseEvent) {
   bringToFront()
+  if (isMobileViewport()) return
+
   isDrag.value = true
   cardOffSet.left = _e.clientX - parseInt(cardPos.value.left)
   cardOffSet.top = _e.clientY - parseInt(cardPos.value.top)
@@ -56,6 +65,8 @@ function m_d(_e: MouseEvent) {
 // touch drag
 function onTouchMove(_e: TouchEvent) {
   _e.stopPropagation()
+  if (isMobileViewport()) return
+
   cardPos.value.left = _e.touches[0].clientX - cardOffSet.left + 'px'
   cardPos.value.top = _e.touches[0].clientY - cardOffSet.top + 'px'
 }
@@ -70,6 +81,8 @@ function onTouchDragEnd(_e: TouchEvent) {
 function onTouchStart(_e: TouchEvent) {
   _e.stopPropagation()
   bringToFront()
+  if (isMobileViewport()) return
+
   isDrag.value = true
   cardOffSet.left = _e.touches[0].clientX - parseInt(cardPos.value.left)
   cardOffSet.top = _e.touches[0].clientY - parseInt(cardPos.value.top)
@@ -88,17 +101,17 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="mdui-card float-card"
+    class="mdui-card float-card app-floating-card"
     :style="{ zIndex: currentZIndex }"
     @mousedown="bringToFront"
   >
-    <div class="card-surface">
+    <div class="app-panel-shell">
       <div
-        class="mdui-card-actions drag-handle"
+        class="mdui-card-actions app-drag-header"
         @mousedown="m_d($event)"
         @touchstart="onTouchStart($event)"
       >
-        <div class="mdui-card-primary-title mdui-p-l-1">
+        <div class="mdui-card-primary-title app-drag-title">
           {{ panelName }}
         </div>
         <button
@@ -110,8 +123,8 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="card-content">
-        <component v-if="contentComponent" :is="contentComponent" />
+      <div class="app-panel-content">
+        <component v-if="contentComponent" :is="contentComponent" v-bind="contentProps" />
         <slot v-else></slot>
       </div>
     </div>
@@ -131,83 +144,70 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.app-drag-header .mdui-card-primary-title {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.app-drag-header .mdui-btn {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
 @media (max-width: 768px) {
-  .float-card {
+  .app-panel-shell {
     max-width: calc(100vw - 20px);
   }
 }
 
-.drag-handle {
-  cursor: grab;
-  user-select: none;
-  min-height: 48px;
-  width: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: #263238;
-  background: rgba(255, 255, 255, 0.78);
-  border-bottom: 1px solid rgba(84, 110, 122, 0.16);
-}
-.drag-handle .mdui-card-primary-title {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-.drag-handle .mdui-btn {
-  flex: 0 0 auto;
-  margin-left: auto;
-}
-.drag-handle:active {
-  cursor: grabbing;
-}
+@media (max-width: 600px) {
+  .float-card {
+    --mobile-panel-max-height: min(86dvh, calc(var(--app-viewport-height) - var(--app-safe-area-top) - 12px));
 
-/* ── 程序化背景：渐变底色 + 噪声颗粒 + 暗角 ── */
-.card-surface {
-  width: 100%;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
-  overflow: hidden;
-  position: relative;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    top: auto;
+    width: 100%;
+    height: auto;
+    min-width: 0;
+    max-width: 100vw;
+    max-height: var(--mobile-panel-max-height);
+    border-radius: 10px 10px 0 0;
+  }
 
-  /* 底层：线性渐变，上方亮（暖灰）→ 底部暗（带紫） */
-  background: linear-gradient(-180deg, #cfd8dc 0%, #607d8b 75%);
-}
+  .app-panel-shell {
+    width: 100%;
+    max-width: 100%;
+    max-height: var(--mobile-panel-max-height);
+    border-radius: 10px 10px 0 0;
+  }
 
-/* 噪声颗粒 — 底图作为 overlay 叠加，opacity 控制强度 */
-.card-surface::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('../../assets/static_image/noise_pic.png') center / 256px 256px repeat;
-  opacity: 0.10;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-}
+  .app-drag-header {
+    min-height: 48px;
+    cursor: default;
+    touch-action: pan-y;
+    padding-left: calc(var(--app-safe-area-left) + 8px);
+    padding-right: calc(var(--app-safe-area-right) + 4px);
+  }
 
-/* 暗角 — 径向渐变，中心透明，边缘暗紫 */
-.card-surface::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at 40% 45%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.15) 70%,
-    rgba(10, 5, 20, 0.55) 100%
-  );
-  pointer-events: none;
-}
+  .app-drag-header:active {
+    cursor: default;
+  }
 
-.card-content {
-  position: relative;
-  max-height: calc(100vh - 104px);
-  overflow: auto;
-}
+  .app-drag-title {
+    font-size: 16px;
+  }
 
-@media (max-width: 768px) {
-  .card-surface {
-    max-width: calc(100vw - 20px);
+  .app-panel-content {
+    max-height: calc(var(--mobile-panel-max-height) - 48px);
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-bottom: var(--app-safe-area-bottom);
+  }
+
+  .app-panel-content :deep(> *) {
+    width: 100%;
+    max-width: 100%;
   }
 }
 </style>

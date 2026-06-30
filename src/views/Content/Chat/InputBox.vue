@@ -1,28 +1,34 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useUserStore } from '../../../stores/useUserStore'
+import { useSnackbar } from '../../../composables/useSnackbar'
 import { CHAT_INPUT_INSERT_TEXT_EVENT } from '../../../composables/useChatInput'
+import {
+  PRESET_CHAT_EMOJIS,
+  loadCustomChatEmojiUrls,
+  normalizeCustomChatEmojiUrl,
+  saveCustomChatEmojiUrls,
+} from '../../../utils/chatEmoji'
+import type { ChatMessage } from '../../../types/chatTypes'
 import '../../../assets/js/marked.min.js'
 
 const userStore = useUserStore()
+const snackbar = useSnackbar()
 const message_send = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
-const emit = defineEmits(['sendMsg'])
+const props = defineProps<{
+  replyTarget?: ChatMessage | null
+}>()
+const emit = defineEmits<{
+  sendMsg: [message: string]
+  cancelReply: []
+}>()
 
 const emojiPanelOpen = ref(false)
 const emojiTab = ref<'preset' | 'custom'>('preset')
 
-const presetEmojis = [
-  'sentiment_very_satisfied', 'sentiment_satisfied', 'sentiment_neutral',
-  'sentiment_dissatisfied', 'sentiment_very_dissatisfied', 'mood',
-  'mood_bad', 'insert_emoticon', 'face', 'tag_faces',
-  'thumb_up', 'thumb_down', 'favorite', 'star', 'whatshot',
-  'cake', 'local_fire_department', 'bolt', 'water_drop', 'eco',
-]
-const customEmojis = [
-  'person', 'pets', 'child_care', 'elderly', 'accessibility',
-  'directions_run', 'self_improvement', 'sports_esports', 'music_note', 'brush',
-]
+const presetEmojis = PRESET_CHAT_EMOJIS
+const customEmojis = ref<string[]>([])
 
 function toggleEmojiPanel() {
   emojiPanelOpen.value = !emojiPanelOpen.value
@@ -47,6 +53,56 @@ async function insertTextAtCursor(text: string) {
 
 function insertEmoji(iconName: string) {
   insertTextAtCursor(`:${iconName}: `)
+}
+
+function insertCustomEmoji(url: string) {
+  insertTextAtCursor(`${url} `)
+}
+
+function openAddCustomEmojiDialog() {
+  let dialogController: { close: () => void } | null = null
+
+  mdui.dialog({
+    title: '添加表情',
+    content: `
+      <div class="mdui-textfield">
+        <label class="mdui-textfield-label">图片链接</label>
+        <input class="mdui-textfield-input custom-emoji-url-input" type="url" />
+        <div class="mdui-textfield-helper">支持 jpg、png、webp、gif 链接</div>
+      </div>
+    `,
+    buttons: [
+      {
+        text: '取消',
+        close: true,
+      },
+      {
+        text: '添加',
+        bold: true,
+        close: false,
+        onClick: () => {
+          const input = document.querySelector<HTMLInputElement>('.custom-emoji-url-input')
+          const url = normalizeCustomChatEmojiUrl(input?.value.trim() ?? '')
+          if (!url) {
+            snackbar.error('请输入可访问的图片链接')
+            return
+          }
+          if (!customEmojis.value.includes(url)) {
+            customEmojis.value = [url, ...customEmojis.value]
+            saveCustomChatEmojiUrls(customEmojis.value)
+          }
+          snackbar.success('表情已添加')
+          dialogController?.close()
+        },
+      },
+    ],
+    history: false,
+    onOpened: (dialog) => {
+      dialogController = dialog
+      mdui.updateTextFields?.()
+      document.querySelector<HTMLInputElement>('.custom-emoji-url-input')?.focus()
+    },
+  })
 }
 
 function handleInsertText(event: Event) {
@@ -74,10 +130,13 @@ defineExpose({
   presetEmojis,
   customEmojis,
   insertEmoji,
+  insertCustomEmoji,
+  openAddCustomEmojiDialog,
   insertTextAtCursor,
 })
 
 onMounted(() => {
+  customEmojis.value = loadCustomChatEmojiUrls()
   window.addEventListener(CHAT_INPUT_INSERT_TEXT_EVENT, handleInsertText)
 })
 
@@ -87,23 +146,37 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="mdui-row" style="position: relative; width: 100%">
-    <div class="mdui-textfield">
-      <img
-        :src="userStore.currentUser?.avatarUrl"
-        alt="avatar"
-        class="mdui-img-rounded mdui-shadow-1 mdui-m-a-1"
-        style="position: absolute; bottom: 0px; cursor: pointer"
-        width="48"
-        height="48"
+  <div class="chat-input-root">
+    <div v-if="props.replyTarget" class="input-reply-preview">
+      <div class="input-reply-copy">
+        <span class="input-reply-label">引用 {{ props.replyTarget.sender.nickname }}</span>
+        <span class="input-reply-text">{{ props.replyTarget.content }}</span>
+      </div>
+      <button
+        class="mdui-btn mdui-btn-icon mdui-ripple input-reply-close"
+        type="button"
+        title="取消引用"
+        @click="emit('cancelReply')"
+      >
+        <i class="mdui-icon material-icons">close</i>
+      </button>
+    </div>
+    <div class="chat-input-row">
+      <button
+        class="chat-input-avatar-button mdui-ripple"
+        type="button"
         @click="toggleEmojiPanel"
         :title="emojiPanelOpen ? '收起表情' : '打开表情'"
-      />
-      <i
-        class="mdui-icon material-icons mdui-ripple icon-plus-round mdui-p-a-1"
-        style="right: 8px; border-radius: 50%"
-        @click="sendMsg(null)"
-      >send</i>
+      >
+        <img
+          :src="userStore.currentUser?.avatarUrl"
+          alt="avatar"
+          class="mdui-img-rounded mdui-shadow-1 chat-input-avatar"
+          width="48"
+          height="48"
+        />
+      </button>
+      <div class="mdui-textfield chat-input-field">
       <textarea
         ref="textareaRef"
         class="mdui-textfield-input"
@@ -112,8 +185,141 @@ onBeforeUnmount(() => {
         @keydown.enter="sendMsg($event)"
         placeholder="说点什么...!"
         rows="2"
-        style="margin-left: 64px"
       ></textarea>
+      </div>
+      <button
+        class="chat-input-send mdui-ripple"
+        type="button"
+        title="发送"
+        @click="sendMsg(null)"
+      >
+        <i class="mdui-icon material-icons">send</i>
+      </button>
     </div>
   </div>
 </template>
+
+<style scoped>
+.chat-input-root {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px 8px;
+}
+
+.chat-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.chat-input-avatar-button,
+.chat-input-send {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chat-input-avatar {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+}
+
+.chat-input-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding-top: 0;
+}
+
+.chat-input-field textarea {
+  min-height: 48px;
+  max-height: 128px;
+  resize: none;
+}
+
+.chat-input-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #546e7a;
+  box-shadow: 0 2px 6px rgba(38, 50, 56, 0.2);
+}
+
+.input-reply-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 56px 6px;
+  padding: 6px 8px;
+  border-left: 3px solid #455a64;
+  border-radius: 0 6px 6px 0;
+  background: rgba(236, 239, 241, 0.9);
+}
+
+.input-reply-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.input-reply-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #546e7a;
+}
+
+.input-reply-text {
+  overflow: hidden;
+  color: #455a64;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.input-reply-close {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+  .chat-input-root {
+    padding: 6px 8px 8px;
+  }
+
+  .chat-input-row {
+    gap: 6px;
+  }
+
+  .chat-input-avatar-button,
+  .chat-input-send {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chat-input-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .chat-input-field textarea {
+    min-height: 44px;
+    max-height: 104px;
+  }
+
+  .input-reply-preview {
+    margin: 0 50px 6px;
+  }
+}
+</style>

@@ -28,11 +28,25 @@ export interface AccountProfile {
   albums: string[]
   visitCount: number
   accountStatus: number
+  isOnline: boolean
+  presenceStatus: string
+  presenceDetail: string
+  presenceUntil: string | null
   currentRoom: string
   lastOnline: string
   onlineDuration: number
   registeredAt: string
   peerId: string
+}
+
+export interface PublicLikeUser {
+  uid: string
+  nickname: string
+}
+
+export interface PublicProfile extends AccountProfile {
+  likedToday: boolean
+  recentLikeUsers: PublicLikeUser[]
 }
 
 // ── 校验 ──

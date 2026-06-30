@@ -2,24 +2,32 @@
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import '../../../assets/js/marked.min.js'
+import { renderPresetChatEmojis } from '../../../utils/chatEmoji'
 import { isAllowedChatMediaElement, renderMessageMediaLinks } from '../../../utils/chatMedia'
+import type { ChatMessage } from '../../../types/chatTypes'
 
-const props = defineProps({
-  raw_msg: String,
-  avatar_url: String,
-  sender_name: {
-    type: String,
-    default: '哈米斯基',
-  },
-  timestamp: {
-    type: String,
-    default: '',
-  },
+type MessageAction = '引用' | '@他' | '复读' | '撤回'
+
+const props = defineProps<{
+  message: ChatMessage
+  timestamp?: string
+  quotedMessage?: ChatMessage | null
+}>()
+
+const emit = defineEmits<{
+  action: [action: MessageAction, message: ChatMessage]
+  avatarClick: [message: ChatMessage]
+}>()
+
+const safeHtml = computed(() => renderSafeHtml(props.message.content))
+
+const quotedPreview = computed(() => {
+  if (!props.quotedMessage) return ''
+  return renderSafeHtml(props.quotedMessage.content)
 })
 
-const safeHtml = computed(() => {
-  if (!props.raw_msg) return ''
-  const parsed = marked.parse(renderMessageMediaLinks(props.raw_msg))
+function renderSafeHtml(content: string): string {
+  const parsed = marked.parse(renderPresetChatEmojis(renderMessageMediaLinks(content)))
   const sanitized = DOMPurify.sanitize(parsed, {
     ALLOWED_TAGS: [
       'p', 'br', 'b', 'i', 'em', 'strong', 'a', 'code', 'pre',
@@ -37,7 +45,7 @@ const safeHtml = computed(() => {
     FORCE_BODY: true,
   })
   return stripUntrustedMedia(sanitized)
-})
+}
 
 function stripUntrustedMedia(html: string): string {
   const template = document.createElement('template')
@@ -59,12 +67,74 @@ function stripUntrustedMedia(html: string): string {
   return template.innerHTML
 }
 
+function onMessageContentClick(event: MouseEvent) {
+  const target = event.target
+  if (!(target instanceof Element)) return
+
+  const anchor = target.closest('a[href]')
+  if (!(anchor instanceof HTMLAnchorElement)) return
+
+  const url = parseWebLink(anchor.getAttribute('href') ?? '')
+  if (!url) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  confirmOpenWebLink(url.href)
+}
+
+function parseWebLink(href: string): URL | null {
+  try {
+    const url = new URL(href, window.location.href)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url : null
+  } catch {
+    return null
+  }
+}
+
+function confirmOpenWebLink(url: string) {
+  mdui.dialog({
+    title: '确认访问链接',
+    content: `
+      <div class="link-confirm-content">
+        <div class="link-confirm-hint">即将在新标签页打开以下网页链接：</div>
+        <div class="mdui-dialog-content link-confirm-url">${escapeHtml(url)}</div>
+      </div>
+    `,
+    cssClass: 'link-confirm-dialog',
+    buttons: [
+      {
+        text: '取消',
+        close: true,
+      },
+      {
+        text: '访问',
+        bold: true,
+        close: true,
+        onClick: () => {
+          const opened = window.open(url, '_blank', 'noopener,noreferrer')
+          if (opened) opened.opener = null
+        },
+      },
+    ],
+    history: false,
+  })
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 // ---- 右键菜单 ----
 const menuItems = [
-  { icon: 'reply',        label: '引用' },
-  { icon: 'person',       label: '@他' },
-  { icon: 'content_copy', label: '复读' },
-  { icon: 'undo',         label: '撤回' },
+  { icon: 'reply',        label: '引用' as const },
+  { icon: 'person',       label: '@他' as const },
+  { icon: 'content_copy', label: '复读' as const },
+  { icon: 'undo',         label: '撤回' as const },
 ]
 
 function onContextMenu(e: MouseEvent) {
@@ -91,26 +161,33 @@ function onContextMenu(e: MouseEvent) {
 }
 
 function handleAction(label: string | null) {
-  // TODO: 实现各项功能
+  const item = menuItems.find(menuItem => menuItem.label === label)
+  if (!item) return
+  emit('action', item.label, props.message)
 }
 </script>
 
 <template>
   <div class="msg-row anim_in" @contextmenu="onContextMenu">
     <img
-      :src="props.avatar_url"
+      :src="props.message.sender.avatarUrl"
       alt="avatar"
       class="mdui-img-circle msg-avatar"
       width="40"
       height="40"
+      @click="emit('avatarClick', props.message)"
     />
 
     <div class="msg-body">
       <div class="msg-meta">
-        <span class="msg-sender">{{ props.sender_name }}</span>
+        <span class="msg-sender">{{ props.message.sender.nickname }}</span>
         <span v-if="props.timestamp" class="msg-time">{{ props.timestamp }}</span>
       </div>
-      <div class="msg-bubble mdui-typo" v-html="safeHtml"></div>
+      <div v-if="props.quotedMessage" class="msg-quote" @click="onMessageContentClick">
+        <div class="msg-quote-sender">{{ props.quotedMessage.sender.nickname }}</div>
+        <div class="msg-quote-content mdui-typo" v-html="quotedPreview"></div>
+      </div>
+      <div class="msg-bubble mdui-typo" @click="onMessageContentClick" v-html="safeHtml"></div>
     </div>
   </div>
 </template>
@@ -126,12 +203,14 @@ function handleAction(label: string | null) {
 .msg-avatar {
   flex-shrink: 0;
   margin-top: 2px;
+  cursor: pointer;
 }
 
 .msg-body {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
   max-width: 100%;
 }
 
@@ -149,11 +228,12 @@ function handleAction(label: string | null) {
 
 .msg-time {
   font-size: 11px;
-  color: #90a4ae;
+  color: #455a64;
 }
 
 .msg-bubble {
   display: inline-block;
+  max-width: 100%;
   background: #eceff1;
   border-radius: 0 8px 8px 8px;
   padding: 8px 12px;
@@ -164,6 +244,11 @@ function handleAction(label: string | null) {
 .msg-bubble p:first-child { margin-top: 0; }
 .msg-bubble p:last-child  { margin-bottom: 0; }
 
+.msg-bubble a,
+.msg-quote-content a {
+  cursor: pointer;
+}
+
 .msg-bubble .chat-media {
   display: block;
   max-width: min(520px, 100%);
@@ -171,6 +256,31 @@ function handleAction(label: string | null) {
   border-radius: 6px;
   background: #000;
 }
+
+.msg-quote {
+  max-width: min(520px, 100%);
+  padding: 6px 10px;
+  border-left: 3px solid #455a64;
+  border-radius: 0 6px 6px 0;
+  background: rgba(236, 239, 241, 0.72);
+  color: #607d8b;
+}
+
+.msg-quote-sender {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.msg-quote-content {
+  font-size: 12px;
+  line-height: 1.35;
+  max-height: 42px;
+  overflow: hidden;
+}
+
+.msg-quote-content p:first-child { margin-top: 0; }
+.msg-quote-content p:last-child { margin-bottom: 0; }
 
 .msg-bubble .chat-media-image {
   height: auto;
@@ -193,6 +303,20 @@ function handleAction(label: string | null) {
   background: transparent;
 }
 
+.msg-bubble pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.msg-bubble .chat-preset-emoji,
+.msg-quote-content .chat-preset-emoji {
+  display: inline-block;
+  color: #546e7a;
+  font-size: 22px;
+  line-height: 1;
+  vertical-align: -5px;
+}
+
 /* 消息操作 dialog 宽度，用双 class 提高特异性覆盖 mdui */
 .mdui-dialog.msg-action-dialog {
   width: 400px;
@@ -202,6 +326,32 @@ function handleAction(label: string | null) {
 /* dialog 内菜单项样式 */
 .msg-action-item {
   cursor: pointer;
+}
+
+.mdui-dialog.link-confirm-dialog {
+  max-width: min(480px, calc(100vw - 32px));
+}
+
+.link-confirm-content {
+  padding: 2px 0 4px;
+}
+
+.link-confirm-hint {
+  color: #546e7a;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.link-confirm-url {
+  max-height: 128px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #eceff1;
+  color: #263238;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-all;
 }
 
 .anim_in {
@@ -218,6 +368,36 @@ function handleAction(label: string | null) {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 600px) {
+  .msg-row {
+    gap: 8px;
+    padding: 3px 0;
+  }
+
+  .msg-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .msg-bubble {
+    padding: 7px 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .msg-quote {
+    max-width: 100%;
+  }
+
+  .msg-bubble .chat-media {
+    max-width: 100%;
+  }
+
+  .mdui-dialog.msg-action-dialog {
+    width: min(360px, calc(100vw - 32px));
   }
 }
 </style>

@@ -1,0 +1,107 @@
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+  background: var(--app-bg);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
+  margin: 0;
+  overflow: hidden;
+  padding-left: var(--sidebar-width);
+  background: var(--app-bg);
+  color: var(--app-text);
+  overscroll-behavior: none;
+}
+
+#app {
+  height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe {
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+[role='button'],
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: rgba(84, 110, 122, 0.14);
+}
+
+body ::selection {
+  background: rgba(84, 110, 122, 0.22);
+}
+
+body ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+body ::-webkit-scrollbar-thumb {
+  background: rgba(84, 110, 122, 0.28);
+  border-radius: 4px;
+}
+
+body ::-webkit-scrollbar-thumb:hover {
+  background: rgba(84, 110, 122, 0.4);
+}
+
+@media (pointer: coarse) {
+  button,
+  [role='button'],
+  .mdui-btn,
+  .mdui-btn-icon,
+  .mdui-list-item {
+    min-height: var(--app-tap-target-min);
+  }
+
+  .mdui-btn-icon {
+    min-width: var(--app-tap-target-min);
+  }
+}
+
+@media (max-width: 600px) {
+  body {
+    padding-left: 0 !important;
+  }
+
+  body ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}

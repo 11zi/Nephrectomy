@@ -98,11 +98,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="dice-panel mdui-p-a-2 mdui-text-color-blue-grey-900">
-    <div class="dice-header mdui-valign mdui-m-b-1">
+  <div class="dice-panel">
+    <div class="dice-header">
       <div class="dice-title">
-        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">骰子游戏</span>
-        <strong class="panel-title">下注试手气</strong>
+        <span class="app-stat-label">骰子游戏</span>
+        <strong class="app-stat-value dice-title-value">下注试手气</strong>
       </div>
       <div class="mdui-chip dice-chip mdui-color-blue-grey-600">
         <span class="mdui-chip-icon">
@@ -112,25 +112,25 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="balance-band mdui-color-blue-grey-50 mdui-p-a-2">
-      <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">当前余额</span>
-      <strong class="balance-value">{{ formatMoney(currentBalance) }}</strong>
+    <div class="app-stat-card app-stat-card-strong balance-band">
+      <span class="app-stat-label">当前余额</span>
+      <strong class="app-stat-value balance-value">{{ formatMoney(currentBalance) }}</strong>
     </div>
 
-    <div class="dice-copy mdui-typo-caption mdui-text-color-blue-grey-500">
-      <span class="mdui-valign">
+    <div class="dice-copy app-meta-list">
+      <span class="app-meta-line">
         <i class="mdui-icon material-icons">payments</i>
         成功获得下注额 1 倍
       </span>
-      <span class="mdui-valign">
+      <span class="app-meta-line">
         <i class="mdui-icon material-icons">remove_circle_outline</i>
         失败失去下注额
       </span>
     </div>
 
-    <form class="dice-form mdui-m-t-1" @submit.prevent="rollDice">
+    <form class="app-action-row app-action-row-two dice-form" @submit.prevent="rollDice">
       <div
-        class="mdui-textfield mdui-textfield-floating-label amount-field"
+        class="mdui-textfield mdui-textfield-floating-label app-field amount-field"
         :class="{ 'mdui-textfield-invalid': validationMessage }"
       >
         <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
@@ -148,7 +148,7 @@ onMounted(() => {
       </div>
 
       <button
-        class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey-600 action-btn"
+        class="mdui-btn mdui-btn-raised mdui-ripple app-button action-btn"
         type="submit"
         :disabled="!canSubmit"
       >
@@ -165,38 +165,23 @@ onMounted(() => {
 .dice-panel {
   width: min(360px, calc(100vw - 56px));
   box-sizing: border-box;
+  padding: 16px;
+  color: var(--app-text-soft);
 }
 
 .dice-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
 .dice-title {
   min-width: 0;
 }
 
-.balance-band {
-  border: 1px solid #d9e1e5;
-  border-radius: 4px;
-  min-width: 0;
-}
-
-.metric-label {
-  display: block;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.panel-title,
-.balance-value {
-  display: block;
-  line-height: 1.2;
-  font-weight: 600;
-  color: #263238;
-}
-
-.panel-title {
+.dice-title-value {
   font-size: 22px;
 }
 
@@ -214,23 +199,12 @@ onMounted(() => {
 }
 
 .dice-copy {
-  display: grid;
-  gap: 4px;
   margin: 12px 0 4px;
   font-size: 13px;
-  line-height: 1.4;
-}
-
-.dice-copy .mdui-icon {
-  margin-right: 6px;
-  font-size: 16px;
 }
 
 .dice-form {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) auto;
-  align-items: end;
-  gap: 8px;
+  margin-top: 4px;
 }
 
 .amount-field {
@@ -240,21 +214,9 @@ onMounted(() => {
 
 .action-btn {
   min-width: 86px;
-  height: 36px;
-  line-height: 36px;
-  color: #fff;
-}
-
-.mdui-btn[disabled] {
-  color: rgba(0, 0, 0, 0.26);
-  background: rgba(0, 0, 0, 0.12);
 }
 
 @media (max-width: 480px) {
-  .dice-form {
-    grid-template-columns: 1fr;
-  }
-
   .dice-header {
     align-items: flex-start;
   }

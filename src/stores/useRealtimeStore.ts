@@ -1,10 +1,11 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
-import type { MessageCreatedEvent, RoomId } from '../types/chatTypes'
+import type { MessageCreatedEvent, MessageDeletedEvent, RoomId } from '../types/chatTypes'
 import type { SysMsgSnackBarInstance } from '../components/SysMsgSnackBar.vue'
 import type { PlaybackSocketEvent } from '../types/playbackTypes'
 import { useChatStore } from './useChatStore'
+import { useUserStore } from './useUserStore'
 import { useSnackbar } from '../composables/useSnackbar'
 import { PLAYBACK_STATE_EVENT } from './usePlaybackStore'
 
@@ -23,6 +24,38 @@ export const useRealtimeStore = defineStore('realtime', () => {
   let socket: Socket | null = null
   let offlineSnack: SysMsgSnackBarInstance | null = null
   let offlineTimer: ReturnType<typeof setTimeout> | null = null
+  let notificationAudioContext: AudioContext | null = null
+
+  function playMentionSound(): void {
+    if (typeof window === 'undefined') return
+    const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    if (!AudioContextCtor) return
+
+    notificationAudioContext ??= new AudioContextCtor()
+    const context = notificationAudioContext
+    const oscillator = context.createOscillator()
+    const gain = context.createGain()
+    const now = context.currentTime
+
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(880, now)
+    oscillator.frequency.setValueAtTime(660, now + 0.09)
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22)
+
+    oscillator.connect(gain)
+    gain.connect(context.destination)
+    oscillator.start(now)
+    oscillator.stop(now + 0.24)
+  }
+
+  function shouldNotifyMessage(event: MessageCreatedEvent): boolean {
+    const currentUserId = useUserStore().currentUser?.id
+    if (!currentUserId) return false
+    if (event.message.sender.id === currentUserId) return false
+    return event.message.mentionedUserIds.includes(currentUserId)
+  }
 
   function clearOfflineTimer(): void {
     if (offlineTimer) {
@@ -98,6 +131,14 @@ export const useRealtimeStore = defineStore('realtime', () => {
     socket.on('message:created', (event: MessageCreatedEvent) => {
       if (event.scope === 'room') {
         useChatStore().appendMessage(event.message)
+        if (shouldNotifyMessage(event)) {
+          playMentionSound()
+        }
+      }
+    })
+    socket.on('message:deleted', (event: MessageDeletedEvent) => {
+      if (event.scope === 'room') {
+        useChatStore().removeMessage(event.roomId, event.messageId)
       }
     })
     socket.on('playback:state', (event: PlaybackSocketEvent) => {

@@ -1,0 +1,105 @@
+.app-control-cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-3);
+}
+
+.app-switch {
+  flex-shrink: 0;
+}
+
+.app-switch .mdui-switch-icon {
+  background-color: rgba(84, 110, 122, 0.28);
+}
+
+.app-switch input[type='checkbox']:checked + .mdui-switch-icon {
+  background-color: rgba(84, 110, 122, 0.42);
+}
+
+.app-switch input[type='checkbox']:checked + .mdui-switch-icon::before {
+  background-color: var(--app-accent);
+}
+
+.app-slider {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--app-accent);
+}
+
+.app-value-label {
+  width: 42px;
+  color: var(--app-text-soft);
+  font-size: var(--app-font-sm);
+  font-weight: 600;
+  text-align: right;
+}
+
+.app-action-row {
+  display: grid;
+  align-items: end;
+  gap: var(--app-space-2);
+}
+
+.app-action-row-two {
+  grid-template-columns: minmax(140px, 1fr) auto;
+}
+
+.app-action-row-three {
+  grid-template-columns: minmax(120px, 1fr) auto auto;
+}
+
+.app-action-row-auto {
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
+}
+
+.app-field {
+  min-width: 0;
+  margin: 0;
+  width: 100%;
+}
+
+.app-field .mdui-textfield-icon {
+  overflow: hidden;
+  width: 24px;
+  pointer-events: none;
+}
+
+.app-button {
+  min-width: 76px;
+  height: 36px;
+  line-height: 36px;
+  color: #fff;
+  background: var(--app-accent);
+}
+
+.app-button-danger {
+  background: var(--app-danger);
+}
+
+.app-button-success {
+  background: var(--app-success);
+}
+
+.app-button[disabled],
+.app-button-danger[disabled],
+.app-button-success[disabled] {
+  color: rgba(0, 0, 0, 0.26);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 600px) {
+  .app-control-cluster {
+    width: 100%;
+  }
+
+  .app-row > .app-switch {
+    align-self: flex-end;
+  }
+
+  .app-action-row,
+  .app-action-row-two,
+  .app-action-row-three,
+  .app-action-row-auto {
+    grid-template-columns: 1fr;
+  }
+}

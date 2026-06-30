@@ -8,6 +8,7 @@ interface StoredSettings {
   disableVideoPlayback?: boolean
   disableAudioPlayback?: boolean
   masterVolume?: number
+  keepSidebarOpen?: boolean
 }
 
 function clampVolume(value: number) {
@@ -34,6 +35,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const disableVideoPlayback = ref(Boolean(storedSettings.disableVideoPlayback))
   const disableAudioPlayback = ref(Boolean(storedSettings.disableAudioPlayback))
   const masterVolume = ref(clampVolume(storedSettings.masterVolume ?? 80))
+  const keepSidebarOpen = ref(Boolean(storedSettings.keepSidebarOpen))
 
   const normalizedVolume = computed(() => masterVolume.value / 100)
 
@@ -52,7 +54,7 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   watch(
-    [disableVideoPlayback, disableAudioPlayback, masterVolume],
+    [disableVideoPlayback, disableAudioPlayback, masterVolume, keepSidebarOpen],
     () => {
       if (typeof window === 'undefined') return
       window.localStorage.setItem(
@@ -61,6 +63,7 @@ export const useSettingsStore = defineStore('settings', () => {
           disableVideoPlayback: disableVideoPlayback.value,
           disableAudioPlayback: disableAudioPlayback.value,
           masterVolume: clampVolume(masterVolume.value),
+          keepSidebarOpen: keepSidebarOpen.value,
         }),
       )
     },
@@ -71,6 +74,7 @@ export const useSettingsStore = defineStore('settings', () => {
     disableVideoPlayback,
     disableAudioPlayback,
     masterVolume,
+    keepSidebarOpen,
     normalizedVolume,
     isPlaybackAllowed,
     getPlaybackDisabledText,

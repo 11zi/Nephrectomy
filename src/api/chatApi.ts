@@ -4,14 +4,18 @@ import type {
   FetchRoomMessagesQuery,
   FetchRoomMessagesResult,
   HeartbeatResult,
+  BuyRoomPayload,
+  BuyRoomResult,
+  RoomDetail,
   RegisterPayload,
   RoomId,
   RoomNode,
   RoomSummary,
   SendMessagePayload,
   SendMessageResult,
+  MessageId,
 } from '../types/chatTypes'
-import type { AccountProfile } from '../types/accountTypes'
+import type { AccountProfile, PublicProfile } from '../types/accountTypes'
 import type { BankStatus, BankTransferPayload, DiceResult } from '../types/bankTypes'
 import type {
   StockAutoPayload,
@@ -25,14 +29,30 @@ export interface ChatApi {
   fetchRoomMessages(query: FetchRoomMessagesQuery): Promise<FetchRoomMessagesResult>
   /** 发送消息 */
   sendMessage(payload: SendMessagePayload): Promise<SendMessageResult>
+  /** 撤回消息 */
+  recallMessage(roomId: RoomId, messageId: MessageId): Promise<{ success: boolean; messageId: MessageId }>
   /** 进入房间 */
   enterRoom(roomId: RoomId, options?: { implicit?: boolean }): Promise<RoomSummary>
   /** 获取房间列表 */
   fetchRoomList(): Promise<RoomNode[]>
+  /** 获取房间信息 */
+  fetchRoomInfo(roomId: RoomId): Promise<RoomDetail>
+  /** 偿还房间贷款 */
+  repayRoomLoan(roomId: RoomId, amount: number): Promise<RoomDetail>
+  /** 购买房间 */
+  buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult>
   /** 获取当前用户资料 */
   fetchProfile(): Promise<AccountProfile>
+  /** 获取公开用户资料 */
+  fetchPublicProfile(userId: string): Promise<PublicProfile>
+  /** 点赞用户资料 */
+  likeProfile(userId: string): Promise<PublicProfile>
   /** 保存用户资料 */
   saveProfile(profile: AccountProfile): Promise<AccountProfile>
+  /** 设置暂离/不在窗口状态 */
+  setPresenceStatus(payload: { status: string; detail?: string; durationMinutes?: number }): Promise<AccountProfile>
+  /** 结束暂离/不在窗口状态 */
+  clearPresenceStatus(): Promise<AccountProfile>
   /** 登录 */
   login(credentials: AuthCredentials): Promise<AuthResult>
   /** 注册 */

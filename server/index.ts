@@ -8,6 +8,7 @@ import profileRouter from './routes/profile'
 import authRouter from './routes/auth'
 import bankRouter from './routes/bank'
 import stockRouter from './routes/stock'
+import shopRouter from './routes/shop'
 import playbackRouter from './routes/playback'
 import { msUntilNextUtcMidnight, settleAllDepositInterest } from './bank/service'
 import { ensureStock, tickStock } from './stock/service'
@@ -53,6 +54,7 @@ app.use('/api/rooms', messagesRouter)
 app.use('/api/profile', profileRouter)
 app.use('/api/bank', bankRouter)
 app.use('/api/stock', stockRouter)
+app.use('/api/shop', shopRouter)
 app.use('/api/rooms', playbackRouter)
 
 // 健康检查

@@ -1,0 +1,11 @@
+.app-muted {
+  color: var(--app-text-muted);
+}
+
+.app-faint {
+  color: var(--app-text-faint);
+}
+
+.app-no-shrink {
+  flex-shrink: 0;
+}

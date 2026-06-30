@@ -3,7 +3,7 @@ import { Message } from '../models/Message'
 import { Room } from '../models/Room'
 import { User } from '../models/User'
 import { authRequired } from '../auth/middleware'
-import { emitRoomMessageCreated, serializeMessage } from '../realtime'
+import { emitRoomMessageCreated, emitRoomMessageDeleted, serializeMessage } from '../realtime'
 
 const router = Router()
 const DEFAULT_MESSAGE_PAGE_SIZE = 50
@@ -27,6 +27,21 @@ function serializeRoomMessage(message: any) {
     mentionedUserIds: message.mentionedUserIds,
     canRecall: message.canRecall,
   }
+}
+
+function normalizeUserIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return Array.from(new Set(
+    value
+      .map(item => typeof item === 'string' ? item.trim() : '')
+      .filter(Boolean),
+  ))
+}
+
+function isPrivilegedUser(user: any): boolean {
+  const titles = Array.isArray(user?.titles) ? user.titles : []
+  return Number(user?.accountStatus ?? 0) > 0
+    || titles.some((title: string) => /管理员|房管|admin|moderator/i.test(title))
 }
 
 // GET /api/rooms/:roomId/messages
@@ -107,6 +122,18 @@ router.post('/:roomId/messages', authRequired, async (req, res) => {
       motto: user.motto ?? '',
     }
 
+    let normalizedReplyToId: string | null = null
+    const mentionedUserIds = normalizeUserIds(req.body.mentionedUserIds)
+
+    if (replyToId) {
+      const replyMessage = await Message.findOne({ roomId, messageId: String(replyToId) }).lean()
+      if (!replyMessage) return res.status(400).json({ error: '引用消息不存在' })
+      normalizedReplyToId = replyMessage.messageId
+      if (replyMessage.sender?.id && replyMessage.sender.id !== user.uid) {
+        mentionedUserIds.push(replyMessage.sender.id)
+      }
+    }
+
     const messageId = `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
     const doc = await Message.create({
@@ -116,8 +143,8 @@ router.post('/:roomId/messages', authRequired, async (req, res) => {
       sender,
       content: content.trim(),
       createdAt: new Date(),
-      replyToId: replyToId || null,
-      mentionedUserIds: [],
+      replyToId: normalizedReplyToId,
+      mentionedUserIds: Array.from(new Set(mentionedUserIds)).filter(uid => uid !== user.uid),
       canRecall: true,
     })
 
@@ -129,6 +156,36 @@ router.post('/:roomId/messages', authRequired, async (req, res) => {
     })
   } catch (err) {
     res.status(500).json({ error: '发送消息失败' })
+  }
+})
+
+// DELETE /api/rooms/:roomId/messages/:messageId
+router.delete('/:roomId/messages/:messageId', authRequired, async (req, res) => {
+  try {
+    const roomId = String(req.params.roomId)
+    const messageId = String(req.params.messageId)
+
+    const [message, user] = await Promise.all([
+      Message.findOne({ roomId, messageId }),
+      User.findOne({ uid: req.userId }).lean(),
+    ])
+
+    if (!message) return res.status(404).json({ error: '消息不存在' })
+    if (!user) return res.status(404).json({ error: '用户不存在' })
+
+    const isOwner = message.sender.id === user.uid
+    const isRecent = Date.now() - message.createdAt.getTime() <= 2 * 60 * 1000
+    const canRecall = isPrivilegedUser(user) || (isOwner && isRecent)
+
+    if (!canRecall) {
+      return res.status(403).json({ error: '只能撤回自己 2 分钟内发出的消息' })
+    }
+
+    await message.deleteOne()
+    emitRoomMessageDeleted(roomId, messageId)
+    res.json({ success: true, messageId })
+  } catch (err) {
+    res.status(500).json({ error: '撤回消息失败' })
   }
 })
 

@@ -1,0 +1,79 @@
+:root {
+  color-scheme: light;
+
+  --app-bg: #d5e0e3;
+  --app-bg-soft: #eceff1;
+  --app-bg-raised: #f4f7f8;
+
+  --app-surface: rgba(238, 244, 246, 0.78);
+  --app-surface-strong: rgba(247, 250, 251, 0.92);
+  --app-surface-muted: rgba(213, 224, 227, 0.62);
+  --app-surface-dark: rgba(55, 74, 82, 0.78);
+
+  --app-line-soft: rgba(84, 110, 122, 0.14);
+  --app-line: rgba(84, 110, 122, 0.2);
+  --app-line-strong: rgba(55, 71, 79, 0.28);
+
+  --app-text: #263238;
+  --app-text-soft: #455a64;
+  --app-text-muted: #455a64;
+  --app-text-faint: #546e7a;
+  --app-text-inverse: #f7fafb;
+
+  --app-accent: #546e7a;
+  --app-accent-soft: rgba(84, 110, 122, 0.14);
+  --app-success: #2e7d32;
+  --app-danger: #795548;
+  --app-warning: #8a6d3b;
+
+  --app-sidebar-bg: #3f5962;
+  --app-sidebar-bg-strong: #314a54;
+  --app-sidebar-bg-soft: rgba(247, 250, 251, 0.08);
+  --app-sidebar-text: rgba(247, 250, 251, 0.88);
+  --app-sidebar-muted: rgba(213, 224, 227, 0.66);
+  --app-sidebar-line: rgba(247, 250, 251, 0.1);
+  --app-sidebar-active: rgba(247, 250, 251, 0.16);
+  --app-sidebar-active-line: #d7e4e7;
+
+  --app-radius-xs: 3px;
+  --app-radius-sm: 6px;
+  --app-radius-md: 8px;
+
+  --app-shadow-soft: 0 2px 8px rgba(38, 50, 56, 0.12);
+  --app-shadow-panel: 0 10px 28px rgba(38, 50, 56, 0.24);
+  --app-shadow-floating: 0 14px 36px rgba(38, 50, 56, 0.28);
+
+  --app-space-1: 4px;
+  --app-space-2: 8px;
+  --app-space-3: 12px;
+  --app-space-4: 16px;
+  --app-space-5: 20px;
+  --app-space-6: 24px;
+
+  --app-font-xs: 12px;
+  --app-font-sm: 13px;
+  --app-font-md: 14px;
+  --app-font-lg: 16px;
+  --app-font-xl: 20px;
+
+  --app-breakpoint-mobile: 600px;
+  --app-breakpoint-tablet: 900px;
+  --app-viewport-height: 100vh;
+  --app-sidebar-width: 240px;
+  --sidebar-width: 0px;
+  --app-tap-target-min: 44px;
+  --app-safe-area-top: env(safe-area-inset-top, 0px);
+  --app-safe-area-right: env(safe-area-inset-right, 0px);
+  --app-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-area-left: env(safe-area-inset-left, 0px);
+
+  --app-z-sidebar: 1000;
+  --app-z-panel: 1200;
+  --app-z-overlay: 2000;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}

@@ -168,13 +168,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="stock-panel mdui-p-a-2 mdui-text-color-blue-grey-900">
-    <div class="stock-header mdui-valign">
+  <div class="stock-panel">
+    <div class="stock-header">
       <div class="stock-title">
-        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">
+        <span class="app-stat-label">
           {{ status?.symbol ?? 'NEPH' }}
         </span>
-        <strong class="stock-name mdui-text-truncate">{{ status?.name ?? '肾股' }}</strong>
+        <strong class="app-stat-value stock-name mdui-text-truncate">{{ status?.name ?? '肾股' }}</strong>
       </div>
       <div
         class="mdui-chip stock-badge"
@@ -195,47 +195,47 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="stock-grid">
-      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
-        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">当前股价</span>
-        <strong class="metric-value">{{ formatPrice(status?.price) }}</strong>
+    <div class="app-stat-grid">
+      <div class="app-stat-card">
+        <span class="app-stat-label">当前股价</span>
+        <strong class="app-stat-value">{{ formatPrice(status?.price) }}</strong>
       </div>
-      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
-        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">持股数</span>
-        <strong class="metric-value">{{ status?.user.shares ?? 0 }}</strong>
+      <div class="app-stat-card">
+        <span class="app-stat-label">持股数</span>
+        <strong class="app-stat-value">{{ status?.user.shares ?? 0 }}</strong>
       </div>
-      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
-        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">买入价</span>
-        <strong class="metric-value">{{ formatPrice(status?.buyPrice) }}</strong>
+      <div class="app-stat-card">
+        <span class="app-stat-label">买入价</span>
+        <strong class="app-stat-value">{{ formatPrice(status?.buyPrice) }}</strong>
       </div>
-      <div class="stock-metric mdui-color-blue-grey-50 mdui-p-a-1">
-        <span class="metric-label mdui-typo-caption mdui-text-color-blue-grey-500">卖出价</span>
-        <strong class="metric-value">{{ formatPrice(status?.sellPrice) }}</strong>
+      <div class="app-stat-card">
+        <span class="app-stat-label">卖出价</span>
+        <strong class="app-stat-value">{{ formatPrice(status?.sellPrice) }}</strong>
       </div>
     </div>
 
-    <div class="stock-meta mdui-typo-caption mdui-text-color-blue-grey-900">
-      <span class="mdui-valign">
+    <div class="stock-meta app-meta-list">
+      <span class="app-meta-line">
         <i class="mdui-icon material-icons">account_balance_wallet</i>
         余额 {{ formatMoney(status?.user.cash) }}
       </span>
-      <span class="mdui-valign">
+      <span class="app-meta-line">
         <i class="mdui-icon material-icons">update</i>
         更新 {{ formatDate(status?.updatedAt) }}
       </span>
-      <span class="mdui-valign">
+      <span class="app-meta-line">
         买税 1.5% / 卖税 0.5%
       </span>
-      <span class="mdui-valign">
+      <span class="app-meta-line">
         买入将花费 {{ formatMoney(buyPreview) }}
       </span>
-      <span class="mdui-valign">
+      <span class="app-meta-line">
         卖出将获得 {{ formatMoney(sellPreview) }}
       </span>
     </div>
 
-    <div class="trade-row">
-      <div class="mdui-textfield mdui-textfield-floating-label amount-field">
+    <div class="app-action-row app-action-row-two trade-row">
+      <div class="mdui-textfield mdui-textfield-floating-label app-field amount-field">
         <i class="mdui-icon material-icons mdui-textfield-icon">confirmation_number</i>
         <label class="mdui-textfield-label">股数</label>
         <input
@@ -250,7 +250,7 @@ onUnmounted(() => {
       </div>
       <div class="trade-actions">
         <button
-          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-brown-600 action-btn"
+          class="mdui-btn mdui-btn-raised mdui-ripple app-button app-button-danger action-btn"
           type="button"
           :disabled="isSubmitting"
           @click.prevent="trade('sell')"
@@ -259,7 +259,7 @@ onUnmounted(() => {
           卖出
         </button>
         <button
-          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-green-700 action-btn"
+          class="mdui-btn mdui-btn-raised mdui-ripple app-button app-button-success action-btn"
           type="button"
           :disabled="isSubmitting || status?.isCrashed === true"
           @click.prevent="trade('buy')"
@@ -270,8 +270,8 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="auto-row">
-      <div class="mdui-textfield mdui-textfield-floating-label amount-field">
+    <div class="app-action-row app-action-row-auto auto-row">
+      <div class="mdui-textfield mdui-textfield-floating-label app-field amount-field">
         <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
         <label class="mdui-textfield-label">自动买入价</label>
         <input
@@ -283,7 +283,7 @@ onUnmounted(() => {
           :disabled="isSubmitting"
         />
       </div>
-      <div class="mdui-textfield mdui-textfield-floating-label amount-field">
+      <div class="mdui-textfield mdui-textfield-floating-label app-field amount-field">
         <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
         <label class="mdui-textfield-label">自动卖出价</label>
         <input
@@ -296,7 +296,7 @@ onUnmounted(() => {
         />
       </div>
       <button
-        class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey-600 action-btn"
+        class="mdui-btn mdui-btn-raised mdui-ripple app-button action-btn"
         type="button"
         :disabled="isSubmitting"
         @click.prevent="saveAutoPrices"
@@ -312,9 +312,13 @@ onUnmounted(() => {
 .stock-panel {
   width: min(480px, calc(100vw - 56px));
   box-sizing: border-box;
+  padding: 16px;
+  color: var(--app-text-soft);
 }
 
 .stock-header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
@@ -322,21 +326,6 @@ onUnmounted(() => {
 
 .stock-title {
   min-width: 0;
-}
-
-.metric-label {
-  display: block;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.stock-name,
-.metric-value {
-  display: block;
-  font-size: 22px;
-  line-height: 1.2;
-  font-weight: 600;
-  color: #263238;
 }
 
 .stock-name {
@@ -352,24 +341,9 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.stock-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.stock-metric {
-  border: 1px solid #d9e1e5;
-  border-radius: 4px;
-  min-width: 0;
-}
-
 .stock-meta,
 .trade-preview {
-  display: grid;
-  gap: 4px;
   margin: 12px 0 4px;
-  font-size: 12px;
 }
 
 .trade-preview {
@@ -377,17 +351,12 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
-.stock-meta .mdui-icon,
 .trade-preview .mdui-icon {
   margin-right: 6px;
   font-size: 16px;
 }
 
 .trade-row {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) auto;
-  align-items: end;
-  column-gap: 12px;
   margin-top: 4px;
 }
 
@@ -399,46 +368,19 @@ onUnmounted(() => {
 }
 
 .auto-row {
-  display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
-  align-items: end;
-  column-gap: 16px;
   margin-top: 18px;
 }
 
 .amount-field {
-  min-width: 0;
   margin: 0;
   padding-top: 8px;
-  width: 100%;
-}
-
-.amount-field .mdui-textfield-icon {
-  overflow: hidden;
-  width: 24px;
-  pointer-events: none;
 }
 
 .action-btn {
   min-width: 76px;
-  height: 36px;
-  line-height: 36px;
-  color: #fff;
-}
-
-.mdui-btn[disabled] {
-  color: rgba(0, 0, 0, 0.26);
-  background: rgba(0, 0, 0, 0.12);
 }
 
 @media (max-width: 560px) {
-  .stock-grid,
-  .trade-row,
-  .trade-preview,
-  .auto-row {
-    grid-template-columns: 1fr;
-  }
-
   .trade-actions {
     justify-content: stretch;
   }

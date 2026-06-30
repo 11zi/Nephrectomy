@@ -17,6 +17,18 @@ export interface RoomSummary {
   isActive: boolean
 }
 
+export interface RoomDetail extends RoomSummary {
+  heat: number
+  parentId: RoomId | null
+  cover?: string
+  colSpan?: number
+  rowSpan?: number
+  ownerId: UserId | null
+  ownerName: string
+  loanBalance: number
+  downPayment: number
+}
+
 export type ChatMessageKind = 'user' | 'state' | 'command'
 
 export interface ChatMessage {
@@ -35,6 +47,7 @@ export interface SendMessagePayload {
   roomId: RoomId
   content: string
   replyToId?: MessageId
+  mentionedUserIds?: UserId[]
 }
 
 export interface SendMessageResult {
@@ -46,6 +59,12 @@ export interface MessageCreatedEvent {
   roomId?: RoomId
   conversationId?: string
   message: ChatMessage
+}
+
+export interface MessageDeletedEvent {
+  scope: 'room'
+  roomId: RoomId
+  messageId: MessageId
 }
 
 export interface FetchRoomMessagesQuery {
@@ -68,10 +87,23 @@ export interface FetchRoomMessagesResult {
 /** 房间树节点——用于房间列表的层级展示，继承核心 RoomSummary */
 export interface RoomNode extends RoomSummary {
   parentId: RoomId | null
+  ownerId?: UserId | null
+  loanBalance?: number
+  downPayment?: number
   children: RoomNode[]
   cover?: string
   colSpan?: number
   rowSpan?: number
+}
+
+export interface BuyRoomPayload {
+  name: string
+  description?: string
+}
+
+export interface BuyRoomResult {
+  room: RoomDetail
+  cash: number
 }
 
 // ── 用户资料（与 accountTypes.ts 的 AccountProfile 对应） ──

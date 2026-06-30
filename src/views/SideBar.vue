@@ -1,6 +1,6 @@
 <!-- src/views/SideBar.vue -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 import BaseCard from './Card/BaseCard.vue'
 import BankPanel from './Card/BankPanel.vue'
@@ -9,16 +9,20 @@ import StockPanel from './Card/StockPanel.vue'
 import PlaybackPanel from '../components/playback/PlaybackPanel.vue'
 import { useContentStore } from '../stores/useContentStore'
 import { useRoomStore } from '../stores/useRoomStore'
+import { useSettingsStore } from '../stores/useSettingsStore'
 import { useUserStore } from '../stores/useUserStore'
 import { useSnackbar } from '../composables/useSnackbar'
 import { requestInsertChatText } from '../composables/useChatInput'
+import { useSidebar } from '../composables/useSidebar'
 import type { ContentPage } from '../stores/useContentStore'
 import type { Component } from 'vue'
 
 const contentStore = useContentStore()
 const roomStore = useRoomStore()
+const settingsStore = useSettingsStore()
 const userStore = useUserStore()
 const snackbar = useSnackbar()
+const { isSidebarOpen, isMobileViewport, openSidebar, closeSidebar } = useSidebar()
 
 const components = [
   {
@@ -27,7 +31,7 @@ const components = [
     index: '1',
     icon: 'home',
     child: [
-      { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: null },
+      { name: '房间信息',  vueSrc: '', index: '1-1', icon: 'class',        navigate: 'room-info' as ContentPage },
       { name: '房间列表',  vueSrc: '', index: '1-2', icon: 'map',          navigate: 'room-list' as ContentPage },
       { name: '编辑资料',   vueSrc: '', index: '1-3', icon: 'edit',        navigate: 'account-edit' as ContentPage },
     ],
@@ -41,7 +45,7 @@ const components = [
       { name: '银行', vueSrc: '', index: '2-1', icon: 'account_balance',   navigate: null },
       { name: '炒股', vueSrc: '', index: '2-2', icon: 'timeline',          navigate: null },
       { name: '骰子', vueSrc: '', index: '2-3', icon: 'money_off',         navigate: null },
-      { name: '商城', vueSrc: '', index: '2-4', icon: 'add_shopping_cart', navigate: null },
+      { name: '商城', vueSrc: '', index: '2-4', icon: 'add_shopping_cart', navigate: 'shop' as ContentPage },
     ],
   },
   {
@@ -74,12 +78,10 @@ const components = [
   },
 ]
 
-const isSidebarOpen = ref(false)
 const isActive = ref<Record<string, boolean>>({})
 const stackIndexMap = ref<Record<string, number>>({})
 let openCount = 0
 
-const drawerEl = ref<HTMLElement | null>(null)
 const panelComponents: Record<string, Component> = {
   点播: PlaybackPanel,
   银行: BankPanel,
@@ -87,14 +89,14 @@ const panelComponents: Record<string, Component> = {
   骰子: DicePanel,
 }
 
-const sidebarClass = ref([
+const sidebarClass = computed(() => [
   'mdui-drawer',
-  'mdui-drawer-close',
-  'mdui-color-blue-grey',
+  isSidebarOpen.value ? 'mdui-drawer-open' : 'mdui-drawer-close',
+  'app-sidebar',
 ])
-const sidebar = ref(null)
+const sidebar = ref<HTMLElement | null>(null)
 
-onClickOutside(sidebar, closeSideBar)
+onClickOutside(sidebar, () => closeSideBar())
 for (const item of components) {
   for (const _item of item.child) {
     isActive.value[_item.name] = false
@@ -103,23 +105,18 @@ for (const item of components) {
 }
 
 function openSideBar() {
-  isSidebarOpen.value = true
-  document.body.style.paddingLeft = '240px'
-  document.documentElement.style.setProperty('--sidebar-width', '240px')
-  sidebarClass.value[1] = 'mdui-drawer-open'
+  openSidebar()
 }
-function closeSideBar() {
-  isSidebarOpen.value = false
-  document.body.style.paddingLeft = '0px'
-  document.documentElement.style.setProperty('--sidebar-width', '0px')
-  sidebarClass.value[1] = 'mdui-drawer-close'
-  mdui.mutation()
+function closeSideBar(force = false) {
+  if (settingsStore.keepSidebarOpen && !force && !isMobileViewport()) return
+
+  closeSidebar()
 }
 
 async function handleLogout() {
   await userStore.logout()
   contentStore.navigateTo('login' as ContentPage)
-  closeSideBar()
+  closeSideBar(true)
 }
 
 function formatCurrentTime() {
@@ -142,6 +139,150 @@ function insertCurrentTimeToChatInput() {
   closeSideBar()
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function getPresenceStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    eating: '吃饭',
+    sleeping: '睡觉',
+    bathing: '洗澡',
+    away: '外出',
+    dead: '似',
+  }
+  return labels[status] ?? status
+}
+
+function getPresenceSummary() {
+  const profile = userStore.profile
+  if (!profile?.presenceStatus || !profile.presenceUntil) return ''
+
+  const remainingMs = new Date(profile.presenceUntil).getTime() - Date.now()
+  if (remainingMs <= 0) return ''
+
+  const remainingMinutes = Math.max(1, Math.ceil(remainingMs / 60_000))
+  const label = getPresenceStatusLabel(profile.presenceStatus)
+  const detail = profile.presenceDetail ? `：${profile.presenceDetail}` : ''
+  return `当前状态：${label}${detail}，约 ${remainingMinutes} 分钟后结束。`
+}
+
+const activePresenceStatus = computed(() => {
+  const profile = userStore.profile
+  if (!profile?.presenceStatus || !profile.presenceUntil) return ''
+
+  const remainingMs = new Date(profile.presenceUntil).getTime() - Date.now()
+  return remainingMs > 0 ? profile.presenceStatus : ''
+})
+
+const sidebarStatusDotClass = computed(() => ({
+  online: userStore.isOnline && !activePresenceStatus.value,
+  eating: activePresenceStatus.value === 'eating',
+  away: Boolean(activePresenceStatus.value && activePresenceStatus.value !== 'eating'),
+}))
+
+const sidebarStatusTitle = computed(() => {
+  const summary = getPresenceSummary()
+  if (summary) return summary
+  return userStore.isOnline ? '在线' : '离线'
+})
+
+function openEatingDialog() {
+  const inputId = `eating-food-${Date.now()}`
+  const currentSummary = getPresenceSummary()
+  let dialogController: { close: () => void } | null = null
+  const buttons: Array<{
+    text: string
+    bold?: boolean
+    close?: boolean
+    onClick?: () => void
+  }> = [
+    {
+      text: '取消',
+      close: true,
+    },
+  ]
+
+  if (currentSummary) {
+    buttons.push({
+      text: '结束当前状态',
+      close: false,
+      onClick: async () => {
+        try {
+          await userStore.clearPresenceStatus()
+          dialogController?.close()
+          snackbar.show('已结束当前状态')
+        } catch (err) {
+          snackbar.show(err instanceof Error ? err.message : '结束失败')
+        }
+      },
+    })
+  }
+
+  buttons.push({
+    text: '开始吃饭',
+    bold: true,
+    close: false,
+    onClick: async () => {
+      const input = document.getElementById(inputId) as HTMLInputElement | null
+      const food = input?.value.trim() ?? ''
+      if (!food) {
+        snackbar.show('请填写在吃什么东西')
+        input?.focus()
+        return
+      }
+
+      try {
+        dialogController?.close()
+        await userStore.setPresenceStatus({
+          status: 'eating',
+          detail: food,
+          durationMinutes: 60,
+        })
+        snackbar.show('已切换为吃饭状态，最多持续 1 小时')
+      } catch (err) {
+        snackbar.show(err instanceof Error ? err.message : '设置失败')
+      }
+    },
+  })
+
+  const summaryHtml = currentSummary
+    ? `<p style="margin:0 0 10px;color:#455a64;font-size:13px">${escapeHtml(currentSummary)}</p>`
+    : ''
+  mdui.dialog({
+    title: '吃饭',
+    content: `
+      <div style="padding-top:4px">
+        ${summaryHtml}
+        <div class="mdui-textfield" style="padding-top:0">
+          <label class="mdui-textfield-label">在吃什么</label>
+          <input id="${inputId}" class="mdui-textfield-input" type="text" maxlength="40" placeholder="例如：牛肉面" />
+        </div>
+      </div>
+    `,
+    buttons,
+    onOpened: (dialog) => {
+      dialogController = dialog
+      requestAnimationFrame(() => {
+        mdui.mutation()
+        document.getElementById(inputId)?.focus()
+      })
+    },
+  })
+  closeSideBar(true)
+}
+
+function openCurrentUserProfile() {
+  if (!userStore.currentUser) return
+  contentStore.navigateToUserProfile(userStore.currentUser.id)
+  closeSideBar()
+}
+
 function handleItemClick(item: {
   name: string
   vueSrc: string
@@ -153,6 +294,10 @@ function handleItemClick(item: {
   }
   if (item.name === '时间') {
     insertCurrentTimeToChatInput()
+    return
+  }
+  if (item.name === '吃饭') {
+    openEatingDialog()
     return
   }
   if (item.navigate) {
@@ -178,6 +323,10 @@ function handleHeaderClick(item: { child?: unknown[]; navigate?: ContentPage | n
 
 function isHeaderClickable(item: { child?: unknown[]; navigate?: ContentPage | null }) {
   return Boolean(item.navigate || !item.child?.length)
+}
+
+function isMenuItemActive(item: { name: string }) {
+  return Boolean(panelComponents[item.name] && isActive.value[item.name])
 }
 
 const assignedPanels = new Set<string>()
@@ -212,11 +361,20 @@ watch(
     closeAllPanels()
   },
 )
+
+watch(
+  () => settingsStore.keepSidebarOpen,
+  (keepSidebarOpen) => {
+    if (keepSidebarOpen && !isMobileViewport()) {
+      openSideBar()
+    }
+  },
+)
 </script>
 
 <template>
   <div
-    style="height: 100%; width: 1px; position: absolute; left: 0px"
+    class="app-sidebar-edge-trigger"
     @mouseenter="openSideBar"
   ></div>
 
@@ -238,42 +396,47 @@ watch(
 
   <!-- 侧边栏 -->
   <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
-    <div class="mdui-container mdui-p-a-2">
-      <div class="sidebar-profile">
-        <div class="avatar-wrapper">
+    <div class="app-sidebar-profile-wrap">
+      <div class="app-sidebar-profile">
+        <div
+          class="app-sidebar-avatar"
+          title="查看详细资料"
+          @click="openCurrentUserProfile"
+        >
           <img
             :src="userStore.currentUser?.avatarUrl"
             alt="avatar"
-            class="mdui-img-rounded mdui-shadow-2"
             width="80"
             height="80"
           />
           <!-- 在线状态指示灯 -->
           <span
-            class="online-dot"
-            :class="{ online: userStore.isOnline }"
-            :title="userStore.isOnline ? '在线' : '离线'"
+            class="app-sidebar-status-dot"
+            :class="sidebarStatusDotClass"
+            :title="sidebarStatusTitle"
           ></span>
         </div>
-        <div class="profile-text">
+        <div class="app-sidebar-profile-text">
           <div
-            class="profile-motto mdui-list-item-three-line mdui-typo-caption noselect"
+            class="app-sidebar-motto noselect"
             :title="userStore.currentUser?.motto ?? '还没有签名'"
           >
             {{ userStore.currentUser?.motto ?? '还没有签名' }}
           </div>
-          <div class="profile-name mdui-typo-title noselect">
+          <div class="app-sidebar-name noselect">
             {{ userStore.currentUser?.nickname ?? '未登录' }}
           </div>
         </div>
       </div>
     </div>
 
-    <ul class="mdui-list" v-for="item in components" :key="item.index">
-      <li></li>
+    <ul class="mdui-list app-sidebar-list" v-for="item in components" :key="item.index">
       <li
         class="mdui-subheader noselect"
-        :class="{ 'mdui-ripple': isHeaderClickable(item), 'clickable-header': isHeaderClickable(item) }"
+        :class="{
+          'mdui-ripple': isHeaderClickable(item),
+          'clickable-header': isHeaderClickable(item),
+        }"
         @click="handleHeaderClick(item)"
       >
         <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>
@@ -284,11 +447,11 @@ watch(
         v-for="_item in item.child"
         :key="_item.index"
         @click="handleItemClick(_item)"
+        :class="{ 'app-sidebar-active': isMenuItemActive(_item) }"
       >
-        &nbsp;&nbsp;&nbsp;&nbsp;
-        <div class="mdui-list-item-content">
-          <i class="mdui-list-item-icon mdui-icon material-icons mdui-m-r-1">{{ _item.icon }}</i>
-          {{ _item.name }}
+        <div class="mdui-list-item-content app-sidebar-item-content">
+          <i class="mdui-list-item-icon mdui-icon material-icons">{{ _item.icon }}</i>
+          <span class="app-sidebar-item-text">{{ _item.name }}</span>
         </div>
       </li>
     </ul>
@@ -308,71 +471,4 @@ watch(
   cursor: pointer;
 }
 
-.sidebar-profile {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: 100%;
-}
-
-/* 头像 + 在线状态指示器 */
-.avatar-wrapper {
-  position: relative;
-  flex: 0 0 80px;
-  width: 80px;
-  height: 80px;
-}
-
-.avatar-wrapper img {
-  display: block;
-}
-
-.profile-text {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 80px;
-  overflow: hidden;
-}
-
-.profile-motto {
-  height: 48px;
-  max-height: 48px;
-  max-width: 100%;
-  overflow: hidden;
-  opacity: 0.87;
-  padding-top: 2px;
-  text-overflow: ellipsis;
-  -webkit-line-clamp: 3;
-  line-height: 16px;
-  white-space: normal;
-  font-weight: 200;
-}
-
-.profile-name {
-  display: flex;
-  align-items: center;
-  height: 28px;
-  margin-top: 4px;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 400;
-}
-
-.online-dot {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #bdbdbd;
-  border: 2px solid #fff;
-  transition: background 0.3s;
-}
-
-.online-dot.online {
-  background: #4caf50;
-}
 </style>
