@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { Cake, CalendarDays, Link, MapPin, ThumbsUp, VenusAndMars, X } from 'lucide-vue-next'
+import { Badge } from '../../components/ui/badge'
+import { Button } from '../../components/ui/button'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
 import { useSnackbar } from '../../composables/useSnackbar'
@@ -99,14 +102,16 @@ watch(targetUserId, loadProfile)
 <template>
   <div class="app-page user-profile-page">
     <div class="app-page-header">
-      <button
-        class="mdui-btn mdui-btn-icon mdui-ripple"
+      <Button
+        class="app-header-icon-button"
+        variant="ghost"
+        size="icon"
         type="button"
         title="返回"
         @click="contentStore.goBack()"
       >
-        <i class="mdui-icon material-icons">close</i>
-      </button>
+        <X />
+      </Button>
 
       <div class="app-page-title">
         <span>详细资料</span>
@@ -135,59 +140,60 @@ watch(targetUserId, loadProfile)
         </div>
 
         <div class="user-profile-grid">
-          <section class="mdui-card user-profile-section">
+          <section class="user-profile-section">
             <div class="user-profile-section-title">基本信息</div>
             <div class="user-profile-fields">
               <div class="user-profile-field">
-                <i class="mdui-icon material-icons">wc</i>
+                <VenusAndMars />
                 <span>性别</span>
                 <strong>{{ profile.gender ? '男' : '女' }}</strong>
               </div>
               <div class="user-profile-field">
-                <i class="mdui-icon material-icons">cake</i>
+                <Cake />
                 <span>生日</span>
                 <strong>{{ formatDate(profile.birthday) }}</strong>
               </div>
               <div class="user-profile-field">
-                <i class="mdui-icon material-icons">location_on</i>
+                <MapPin />
                 <span>住址</span>
                 <strong>{{ profile.address || '未填写' }}</strong>
               </div>
               <div class="user-profile-field">
-                <i class="mdui-icon material-icons">event</i>
+                <CalendarDays />
                 <span>注册</span>
                 <strong>{{ formatDate(profile.registeredAt) }}</strong>
               </div>
             </div>
           </section>
 
-          <section class="mdui-card user-profile-section user-profile-stats-section">
+          <section class="user-profile-section user-profile-stats-section">
             <div class="user-profile-section-title">统计</div>
             <div class="user-profile-stats">
               <div class="user-profile-like-stat">
                 <span>点赞</span>
                 <strong>{{ profile.likes }}</strong>
-                <button
-                  class="mdui-btn mdui-btn-raised mdui-ripple user-like-button"
-                  :class="{ 'mdui-color-blue-grey': !profile.likedToday && !isSelf }"
+                <Button
+                  class="user-like-button"
                   type="button"
                   :disabled="isSelf || profile.likedToday || isLiking"
                   @click="likeProfile"
                 >
-                  <i class="mdui-icon material-icons mdui-icon-left">thumb_up</i>
+                  <ThumbsUp />
                   {{ isSelf ? '自己的资料' : profile.likedToday ? '今日已点赞' : '点赞' }}
-                </button>
+                </Button>
                 <div class="user-profile-like-list">
                   <span v-if="!profile.recentLikeUsers.length" class="user-profile-muted">暂无点赞</span>
-                  <button
+                  <Button
                     v-for="user in profile.recentLikeUsers"
                     :key="user.uid"
-                    class="mdui-chip user-like-user"
+                    variant="secondary"
+                    size="sm"
+                    class="user-like-user"
                     type="button"
                     @click="openUserProfile(user.uid)"
                   >
-                    <span class="mdui-chip-title">{{ user.nickname }}</span>
-                  </button>
+                    {{ user.nickname }}
+                  </Button>
                 </div>
               </div>
               <div>
@@ -205,21 +211,21 @@ watch(targetUserId, loadProfile)
             </div>
           </section>
 
-          <section class="mdui-card user-profile-section">
+          <section class="user-profile-section">
             <div class="user-profile-section-title">爱好</div>
             <div class="user-profile-chips">
               <span v-if="!profile.hobbies.length" class="user-profile-muted">暂无爱好</span>
-              <span v-for="hobby in profile.hobbies" :key="hobby" class="mdui-chip">
-                <span class="mdui-chip-title">{{ hobby }}</span>
-              </span>
+              <Badge v-for="hobby in profile.hobbies" :key="hobby" variant="secondary">
+                {{ hobby }}
+              </Badge>
             </div>
           </section>
 
-          <section class="mdui-card user-profile-section user-profile-contact-section">
+          <section class="user-profile-section user-profile-contact-section">
             <div class="user-profile-section-title">联系</div>
             <div class="user-profile-fields">
               <div class="user-profile-field">
-                <i class="mdui-icon material-icons">link</i>
+                <Link />
                 <span>个人网站</span>
                 <strong>{{ profile.website || '未填写' }}</strong>
               </div>
@@ -321,6 +327,10 @@ watch(targetUserId, loadProfile)
 }
 
 .user-profile-section {
+  border: 1px solid rgba(84, 110, 122, 0.16);
+  border-radius: 8px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
   padding: 16px;
 }
 
@@ -425,9 +435,10 @@ watch(targetUserId, loadProfile)
   color: #455a64;
 }
 
-.user-profile-field .mdui-icon {
+.user-profile-field svg {
+  width: 22px;
+  height: 22px;
   color: #455a64;
-  font-size: 22px;
 }
 
 .user-profile-field strong {

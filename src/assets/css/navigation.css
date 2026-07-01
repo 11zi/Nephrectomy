@@ -1,10 +1,26 @@
 .app-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: var(--app-z-sidebar);
+  overflow-y: auto;
   width: var(--app-sidebar-width);
   color: var(--app-sidebar-text);
   background:
     radial-gradient(circle at 18% 6%, rgba(247, 250, 251, 0.12), transparent 32%),
     linear-gradient(180deg, var(--app-sidebar-bg) 0%, var(--app-sidebar-bg-strong) 100%);
   box-shadow: 8px 0 28px rgba(38, 50, 56, 0.22);
+  transition: transform 0.22s ease;
+  will-change: transform;
+}
+
+.app-sidebar-open {
+  transform: translateX(0);
+}
+
+.app-sidebar-closed {
+  transform: translateX(-100%);
 }
 
 .app-sidebar::before {
@@ -122,40 +138,58 @@
   border-bottom: none;
 }
 
-.app-sidebar-list .mdui-subheader {
+.app-sidebar-section-header {
   height: 38px;
+  width: 100%;
   display: flex;
   align-items: center;
+  gap: 8px;
   margin: 0 0 4px;
   padding: 0 10px;
+  border: 0;
   border-radius: var(--app-radius-sm);
   color: var(--app-sidebar-muted);
+  background: transparent;
   font-size: 13px;
   line-height: 38px;
   letter-spacing: 0;
+  text-align: left;
 }
 
-.app-sidebar-list .mdui-subheader .mdui-icon {
+.app-sidebar-section-header:disabled {
+  cursor: default;
+}
+
+.app-sidebar-section-icon {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
   color: var(--app-sidebar-muted);
-  font-size: 21px;
 }
 
-.app-sidebar-list .mdui-list-item {
+.app-sidebar-item {
   min-height: 42px;
   height: 42px;
+  width: 100%;
+  display: flex;
+  align-items: center;
   margin: 2px 0;
   padding: 0 10px 0 34px;
+  border: 0;
   border-radius: var(--app-radius-sm);
   color: var(--app-sidebar-text);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
 
-.app-sidebar-list .mdui-list-item:hover,
+.app-sidebar-list .app-sidebar-item:hover,
 .app-sidebar-list .clickable-header:hover {
   background: var(--app-sidebar-bg-soft);
 }
 
-.app-sidebar-list .mdui-list-item:active {
+.app-sidebar-list .app-sidebar-item:active {
   transform: translateX(1px);
 }
 
@@ -168,11 +202,11 @@
   font-weight: 500;
 }
 
-.app-sidebar-item-content .mdui-icon {
+.app-sidebar-item-icon {
   flex: 0 0 auto;
   width: 24px;
+  height: 24px;
   color: rgba(247, 250, 251, 0.9);
-  font-size: 22px;
 }
 
 .app-sidebar-item-text {
@@ -198,7 +232,7 @@
   background: var(--app-sidebar-active-line);
 }
 
-.app-sidebar-list .app-sidebar-active .mdui-icon {
+.app-sidebar-list .app-sidebar-active .app-sidebar-item-icon {
   color: #ffffff;
 }
 

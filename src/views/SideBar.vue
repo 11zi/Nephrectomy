@@ -2,11 +2,38 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { onClickOutside } from '@vueuse/core'
+import {
+  CircleHelp,
+  Clock,
+  Dices,
+  DoorOpen,
+  Edit3,
+  Gavel,
+  Grid3X3,
+  HardDrive,
+  Home,
+  Info,
+  Landmark,
+  ListVideo,
+  LogOut,
+  Map,
+  MessageSquare,
+  RefreshCw,
+  Settings,
+  ShoppingCart,
+  StickyNote,
+  TrendingUp,
+  UserSquare,
+  Utensils,
+  Waves,
+} from 'lucide-vue-next'
 import BaseCard from './Card/BaseCard.vue'
 import BankPanel from './Card/BankPanel.vue'
 import DicePanel from './Card/DicePanel.vue'
 import StockPanel from './Card/StockPanel.vue'
 import PlaybackPanel from '../components/playback/PlaybackPanel.vue'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
 import { useContentStore } from '../stores/useContentStore'
 import { useRoomStore } from '../stores/useRoomStore'
 import { useSettingsStore } from '../stores/useSettingsStore'
@@ -90,11 +117,39 @@ const panelComponents: Record<string, Component> = {
 }
 
 const sidebarClass = computed(() => [
-  'mdui-drawer',
-  isSidebarOpen.value ? 'mdui-drawer-open' : 'mdui-drawer-close',
   'app-sidebar',
+  isSidebarOpen.value ? 'app-sidebar-open' : 'app-sidebar-closed',
 ])
 const sidebar = ref<HTMLElement | null>(null)
+const eatingDialogOpen = ref(false)
+const eatingFood = ref('')
+const logoutDialogOpen = ref(false)
+const isLoggingOut = ref(false)
+
+const iconMap: Record<string, Component> = {
+  home: Home,
+  class: DoorOpen,
+  map: Map,
+  edit: Edit3,
+  widgets: Grid3X3,
+  account_balance: Landmark,
+  timeline: TrendingUp,
+  money_off: Dices,
+  add_shopping_cart: ShoppingCart,
+  gavel: Gavel,
+  playlist_play: ListVideo,
+  note: StickyNote,
+  sd_card: HardDrive,
+  restaurant_menu: Utensils,
+  access_time: Clock,
+  blur_on: Waves,
+  account_box: UserSquare,
+  message: MessageSquare,
+  settings: Settings,
+  info_outline: Info,
+  refresh: RefreshCw,
+  exit_to_app: LogOut,
+}
 
 onClickOutside(sidebar, () => closeSideBar())
 for (const item of components) {
@@ -113,10 +168,30 @@ function closeSideBar(force = false) {
   closeSidebar()
 }
 
-async function handleLogout() {
-  await userStore.logout()
-  contentStore.navigateTo('login' as ContentPage)
+function openLogoutDialog() {
+  logoutDialogOpen.value = true
   closeSideBar(true)
+}
+
+function closeLogoutDialog() {
+  if (isLoggingOut.value) return
+  logoutDialogOpen.value = false
+}
+
+async function confirmLogout() {
+  if (isLoggingOut.value) return
+
+  isLoggingOut.value = true
+  try {
+    await userStore.logout()
+    logoutDialogOpen.value = false
+    contentStore.navigateTo('login' as ContentPage)
+    closeSideBar(true)
+  } catch (err) {
+    snackbar.show(err instanceof Error ? err.message : '登出失败')
+  } finally {
+    isLoggingOut.value = false
+  }
 }
 
 function formatCurrentTime() {
@@ -137,15 +212,6 @@ function insertCurrentTimeToChatInput() {
     requestInsertChatText(formatCurrentTime())
   })
   closeSideBar()
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
 }
 
 function getPresenceStatusLabel(status: string) {
@@ -172,6 +238,8 @@ function getPresenceSummary() {
   return `当前状态：${label}${detail}，约 ${remainingMinutes} 分钟后结束。`
 }
 
+const currentPresenceSummary = computed(() => getPresenceSummary())
+
 const activePresenceStatus = computed(() => {
   const profile = userStore.profile
   if (!profile?.presenceStatus || !profile.presenceUntil) return ''
@@ -193,88 +261,47 @@ const sidebarStatusTitle = computed(() => {
 })
 
 function openEatingDialog() {
-  const inputId = `eating-food-${Date.now()}`
-  const currentSummary = getPresenceSummary()
-  let dialogController: { close: () => void } | null = null
-  const buttons: Array<{
-    text: string
-    bold?: boolean
-    close?: boolean
-    onClick?: () => void
-  }> = [
-    {
-      text: '取消',
-      close: true,
-    },
-  ]
+  eatingFood.value = ''
+  eatingDialogOpen.value = true
+  closeSideBar(true)
+}
 
-  if (currentSummary) {
-    buttons.push({
-      text: '结束当前状态',
-      close: false,
-      onClick: async () => {
-        try {
-          await userStore.clearPresenceStatus()
-          dialogController?.close()
-          snackbar.show('已结束当前状态')
-        } catch (err) {
-          snackbar.show(err instanceof Error ? err.message : '结束失败')
-        }
-      },
-    })
+function closeEatingDialog() {
+  eatingDialogOpen.value = false
+}
+
+async function clearEatingStatus() {
+  try {
+    await userStore.clearPresenceStatus()
+    closeEatingDialog()
+    snackbar.show('已结束当前状态')
+  } catch (err) {
+    snackbar.show(err instanceof Error ? err.message : '结束失败')
+  }
+}
+
+async function submitEatingStatus() {
+  const food = eatingFood.value.trim()
+  if (!food) {
+    snackbar.show('请填写在吃什么东西')
+    return
   }
 
-  buttons.push({
-    text: '开始吃饭',
-    bold: true,
-    close: false,
-    onClick: async () => {
-      const input = document.getElementById(inputId) as HTMLInputElement | null
-      const food = input?.value.trim() ?? ''
-      if (!food) {
-        snackbar.show('请填写在吃什么东西')
-        input?.focus()
-        return
-      }
+  try {
+    closeEatingDialog()
+    await userStore.setPresenceStatus({
+      status: 'eating',
+      detail: food,
+      durationMinutes: 60,
+    })
+    snackbar.show('已切换为吃饭状态，最多持续 1 小时')
+  } catch (err) {
+    snackbar.show(err instanceof Error ? err.message : '设置失败')
+  }
+}
 
-      try {
-        dialogController?.close()
-        await userStore.setPresenceStatus({
-          status: 'eating',
-          detail: food,
-          durationMinutes: 60,
-        })
-        snackbar.show('已切换为吃饭状态，最多持续 1 小时')
-      } catch (err) {
-        snackbar.show(err instanceof Error ? err.message : '设置失败')
-      }
-    },
-  })
-
-  const summaryHtml = currentSummary
-    ? `<p style="margin:0 0 10px;color:#455a64;font-size:13px">${escapeHtml(currentSummary)}</p>`
-    : ''
-  mdui.dialog({
-    title: '吃饭',
-    content: `
-      <div style="padding-top:4px">
-        ${summaryHtml}
-        <div class="mdui-textfield" style="padding-top:0">
-          <label class="mdui-textfield-label">在吃什么</label>
-          <input id="${inputId}" class="mdui-textfield-input" type="text" maxlength="40" placeholder="例如：牛肉面" />
-        </div>
-      </div>
-    `,
-    buttons,
-    onOpened: (dialog) => {
-      dialogController = dialog
-      requestAnimationFrame(() => {
-        mdui.mutation()
-        document.getElementById(inputId)?.focus()
-      })
-    },
-  })
-  closeSideBar(true)
+function getMenuIcon(icon: string) {
+  return iconMap[icon] ?? CircleHelp
 }
 
 function openCurrentUserProfile() {
@@ -289,7 +316,7 @@ function handleItemClick(item: {
   navigate?: ContentPage | null
 }) {
   if (item.navigate === ('logout' as ContentPage)) {
-    handleLogout()
+    openLogoutDialog()
     return
   }
   if (item.name === '时间') {
@@ -395,7 +422,7 @@ watch(
   </div>
 
   <!-- 侧边栏 -->
-  <div :class="sidebarClass" ref="sidebar" swipe="true" overlay="true">
+  <aside :class="sidebarClass" ref="sidebar" aria-label="主导航">
     <div class="app-sidebar-profile-wrap">
       <div class="app-sidebar-profile">
         <div
@@ -430,32 +457,93 @@ watch(
       </div>
     </div>
 
-    <ul class="mdui-list app-sidebar-list" v-for="item in components" :key="item.index">
-      <li
-        class="mdui-subheader noselect"
+    <div class="app-sidebar-list" v-for="item in components" :key="item.index">
+      <button
+        class="app-sidebar-section-header noselect"
         :class="{
-          'mdui-ripple': isHeaderClickable(item),
           'clickable-header': isHeaderClickable(item),
         }"
+        type="button"
+        :disabled="!isHeaderClickable(item)"
         @click="handleHeaderClick(item)"
       >
-        <i class="mdui-icon material-icons mdui-m-r-1">{{ item.icon }}</i>
+        <component :is="getMenuIcon(item.icon)" class="app-sidebar-section-icon" aria-hidden="true" />
         {{ item.name }}
-      </li>
-      <li
-        class="mdui-list-item mdui-ripple"
+      </button>
+      <button
+        class="app-sidebar-item"
         v-for="_item in item.child"
         :key="_item.index"
+        type="button"
         @click="handleItemClick(_item)"
         :class="{ 'app-sidebar-active': isMenuItemActive(_item) }"
       >
-        <div class="mdui-list-item-content app-sidebar-item-content">
-          <i class="mdui-list-item-icon mdui-icon material-icons">{{ _item.icon }}</i>
+        <div class="app-sidebar-item-content">
+          <component :is="getMenuIcon(_item.icon)" class="app-sidebar-item-icon" aria-hidden="true" />
           <span class="app-sidebar-item-text">{{ _item.name }}</span>
         </div>
-      </li>
-    </ul>
-  </div>
+      </button>
+    </div>
+  </aside>
+
+  <Teleport to="body">
+    <div v-if="logoutDialogOpen" class="presence-dialog-backdrop" @click.self="closeLogoutDialog">
+      <div class="presence-dialog logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title">
+        <div class="presence-dialog-header">
+          <div>
+            <h2 id="logout-dialog-title">确认登出</h2>
+            <p>登出后将返回登录页面，当前会话会被清除。</p>
+          </div>
+        </div>
+
+        <div class="presence-dialog-actions">
+          <Button type="button" variant="ghost" :disabled="isLoggingOut" @click="closeLogoutDialog">取消</Button>
+          <Button
+            type="button"
+            variant="destructive"
+            :disabled="isLoggingOut"
+            @click="confirmLogout"
+          >
+            {{ isLoggingOut ? '正在登出...' : '确认登出' }}
+          </Button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="eatingDialogOpen" class="presence-dialog-backdrop" @click.self="closeEatingDialog">
+      <form class="presence-dialog" @submit.prevent="submitEatingStatus">
+        <div class="presence-dialog-header">
+          <div>
+            <h2>吃饭</h2>
+            <p v-if="currentPresenceSummary">{{ currentPresenceSummary }}</p>
+          </div>
+        </div>
+
+        <label class="presence-dialog-field">
+          <span>在吃什么</span>
+          <Input
+            v-model="eatingFood"
+            maxlength="40"
+            placeholder="例如：牛肉面"
+            autofocus
+          />
+        </label>
+
+        <div class="presence-dialog-actions">
+          <Button type="button" variant="ghost" @click="closeEatingDialog">取消</Button>
+          <Button
+            v-if="currentPresenceSummary"
+            type="button"
+            variant="outline"
+            @click="clearEatingStatus"
+          >
+            结束当前状态
+          </Button>
+          <Button type="submit">开始吃饭</Button>
+        </div>
+      </form>
+    </div>
+  </Teleport>
 </template>
 
 <style>
@@ -471,4 +559,56 @@ watch(
   cursor: pointer;
 }
 
+.presence-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(18, 28, 34, 0.42);
+}
+
+.presence-dialog {
+  width: min(420px, 100%);
+  border: 1px solid rgba(84, 110, 122, 0.22);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: var(--app-shadow-floating);
+}
+
+.presence-dialog-header h2 {
+  margin: 0;
+  color: var(--app-text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.presence-dialog-header p {
+  margin: 8px 0 0;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.presence-dialog-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--app-text-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.presence-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
 </style>

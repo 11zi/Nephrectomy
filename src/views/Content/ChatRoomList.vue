@@ -1,6 +1,8 @@
 <!-- src/views/Content/ChatRoomList.vue -->
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { ChevronRight, FolderOpen, Info, Users, X, ArrowLeft, Circle } from 'lucide-vue-next'
+import { Button } from '../../components/ui/button'
 import { useContentStore } from '../../stores/useContentStore'
 import { useChatStore } from '../../stores/useChatStore'
 import { useRoomStore } from '../../stores/useRoomStore'
@@ -36,45 +38,23 @@ function goToLevel(index: number) {
 const dialogRoom = ref<RoomNode | null>(null)
 
 function openDialog(room: RoomNode) {
-  const actionText = props.implicitTeleport ? '传送' : '进入房间'
   dialogRoom.value = room
-  mdui.dialog({
-    title: room.name,
-    content: `
-      <div style="padding: 8px 0">
-        <p style="color:#546e7a; margin:0 0 12px">${room.description}</p>
-        <p style="margin:0; font-size:13px; color:#455a64">
-          <i class="mdui-icon material-icons" style="font-size:16px;vertical-align:-3px">people</i>
-          ${room.memberCount} 名成员
-          &nbsp;&nbsp;
-          <span style="color:${room.isActive ? '#4caf50' : '#546e7a'}">
-            <i class="mdui-icon material-icons" style="font-size:16px;vertical-align:-3px">fiber_manual_record</i>
-            ${room.isActive ? '有人在线' : '暂无人在线'}
-          </span>
-        </p>
-      </div>
-    `,
-    buttons: [
-      {
-        text: '房间信息',
-        bold: false,
-        close: true,
-        onClick: () => {
-          contentStore.navigateToRoomInfo(room.id)
-        },
-      },
-      {
-        text: actionText,
-        bold: true,
-        close: true,
-        onClick: async () => {
-          await roomStore.enterRoom(room.id, { implicit: props.implicitTeleport })
-          await chatStore.fetchInitialRoomMessages(room.id)
-          contentStore.navigateTo('chat')
-        },
-      },
-    ],
-  })
+}
+
+function closeDialog() {
+  dialogRoom.value = null
+}
+
+function openRoomInfo(room: RoomNode) {
+  closeDialog()
+  contentStore.navigateToRoomInfo(room.id)
+}
+
+async function enterRoom(room: RoomNode) {
+  closeDialog()
+  await roomStore.enterRoom(room.id, { implicit: props.implicitTeleport })
+  await chatStore.fetchInitialRoomMessages(room.id)
+  contentStore.navigateTo('chat')
 }
 
 // 动画：切换层级时触发
@@ -97,20 +77,22 @@ watch(
     <!-- 顶部导航栏 -->
     <div class="app-page-header" :class="{ 'app-page-header-bordered': props.implicitTeleport }">
       <button
-        class="mdui-btn mdui-btn-icon mdui-ripple"
+        class="room-nav-button"
         @click="contentStore.navigateTo('chat')"
         title="返回聊天室"
+        type="button"
       >
-        <i class="mdui-icon material-icons">close</i>
+        <X />
       </button>
 
       <button
         v-if="roomStore.navStack.length > 0"
-        class="mdui-btn mdui-btn-icon mdui-ripple"
+        class="room-nav-button"
         @click="goBack"
         title="返回上级"
+        type="button"
       >
-        <i class="mdui-icon material-icons">arrow_back</i>
+        <ArrowLeft />
       </button>
 
       <!-- 面包屑 -->
@@ -119,7 +101,7 @@ watch(
           {{ props.implicitTeleport ? '隐式传送' : '房间列表' }}
         </span>
         <template v-for="(room, i) in roomStore.navStack" :key="room.id">
-          <i class="mdui-icon material-icons app-page-breadcrumb-sep">chevron_right</i>
+          <ChevronRight class="app-page-breadcrumb-sep" />
           <span
             class="app-page-breadcrumb-item"
             :class="{ 'app-page-breadcrumb-current': i === roomStore.navStack.length - 1 }"
@@ -135,7 +117,7 @@ watch(
         <div
           v-for="room in roomStore.currentRooms"
           :key="room.id"
-          class="room-cell mdui-ripple"
+          class="room-cell"
           :style="{
             '--col-span': room.colSpan,
             '--row-span': room.rowSpan,
@@ -148,7 +130,7 @@ watch(
 
           <!-- 子房间角标 -->
           <span v-if="room.children.length > 0" class="child-badge">
-            <i class="mdui-icon material-icons">folder_open</i>
+            <FolderOpen />
             {{ room.children.length }}
           </span>
 
@@ -156,13 +138,46 @@ watch(
             <div class="room-cell-name">{{ room.name }}</div>
             <div class="room-cell-desc">{{ room.description }}</div>
             <div class="room-cell-meta">
-              <i class="mdui-icon material-icons" style="font-size:14px;vertical-align:-2px;">people</i>
+              <Users />
               {{ room.memberCount }}
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="dialogRoom" class="room-dialog-backdrop" @click.self="closeDialog">
+        <div class="room-dialog">
+          <div class="room-dialog-header">
+            <h2>{{ dialogRoom.name }}</h2>
+            <button class="room-dialog-close" type="button" title="关闭" @click="closeDialog">
+              <X />
+            </button>
+          </div>
+          <p class="room-dialog-desc">{{ dialogRoom.description || '这个房间还没有简介' }}</p>
+          <div class="room-dialog-meta">
+            <span>
+              <Users />
+              {{ dialogRoom.memberCount }} 名成员
+            </span>
+            <span :class="{ active: dialogRoom.isActive }">
+              <Circle />
+              {{ dialogRoom.isActive ? '有人在线' : '暂无人在线' }}
+            </span>
+          </div>
+          <div class="room-dialog-actions">
+            <Button variant="outline" @click="openRoomInfo(dialogRoom)">
+              <Info />
+              房间信息
+            </Button>
+            <Button @click="enterRoom(dialogRoom)">
+              {{ props.implicitTeleport ? '传送' : '进入房间' }}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -173,6 +188,32 @@ watch(
 
 .room-list-root.implicit-room-list {
   background: var(--app-bg-raised);
+}
+
+.room-nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--app-text-soft);
+  background: transparent;
+  cursor: pointer;
+}
+
+.room-nav-button:hover {
+  background: rgba(84, 110, 122, 0.1);
+}
+
+.room-nav-button svg,
+.app-page-breadcrumb-sep,
+.room-cell-meta svg,
+.child-badge svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 /* ── 网格 ── */
@@ -191,7 +232,7 @@ watch(
   gap: 12px;
 }
 
-/* ── 房间卡片：动态列/行/背景色，无法用 mdui-row/mdui-col 替代 ── */
+/* ── 房间卡片：动态列/行/背景色 ── */
 .room-cell {
   grid-column: span var(--col-span, 1);
   grid-row: span var(--row-span, 1);
@@ -243,6 +284,9 @@ watch(
 }
 
 .room-cell-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
   opacity: 0.75;
   margin-top: 4px;
@@ -279,7 +323,105 @@ watch(
   gap: 3px;
   backdrop-filter: blur(4px);
 }
-.child-badge .mdui-icon { font-size: 13px; }
+
+.child-badge svg {
+  width: 13px;
+  height: 13px;
+}
+
+.room-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(18, 28, 34, 0.42);
+}
+
+.room-dialog {
+  width: min(420px, 100%);
+  border: 1px solid rgba(84, 110, 122, 0.22);
+  border-radius: 8px;
+  padding: 18px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  box-shadow: var(--app-shadow-floating);
+}
+
+.room-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.room-dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--app-text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.room-dialog-close:hover {
+  background: rgba(84, 110, 122, 0.1);
+}
+
+.room-dialog-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.room-dialog-desc {
+  margin: 10px 0 0;
+  color: var(--app-text-muted);
+  line-height: 1.5;
+}
+
+.room-dialog-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+}
+
+.room-dialog-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.room-dialog-meta svg {
+  width: 15px;
+  height: 15px;
+}
+
+.room-dialog-meta .active {
+  color: #2e7d32;
+}
+
+.room-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
 
 @media (max-width: 600px) {
   .room-grid {

@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { DoorOpen, X } from 'lucide-vue-next'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Textarea } from '../../components/ui/textarea'
 import { useContentStore } from '../../stores/useContentStore'
 import { useRoomStore } from '../../stores/useRoomStore'
 import { useUserStore } from '../../stores/useUserStore'
@@ -42,20 +46,27 @@ async function buyRoom() {
 <template>
   <div class="app-page shop-page">
     <div class="app-page-header app-page-header-bordered">
-      <button
-        class="mdui-btn mdui-btn-icon mdui-ripple"
+      <Button
+        class="app-header-icon-button"
+        variant="ghost"
+        size="icon"
+        type="button"
         @click="contentStore.navigateTo('chat')"
         title="返回聊天室"
       >
-        <i class="mdui-icon material-icons">close</i>
-      </button>
-      <div class="app-page-title">商城</div>
+        <X />
+      </Button>
+      <div class="app-page-title">
+        <span>商城</span>
+      </div>
     </div>
 
     <div class="shop-body">
       <section class="shop-item">
         <div class="shop-item-main">
-          <i class="mdui-icon material-icons shop-item-icon">meeting_room</i>
+          <div class="shop-item-icon">
+            <DoorOpen />
+          </div>
           <div>
             <h1>房间</h1>
             <p>创建一个属于你的房间。首付 30 万，剩余 70 万贷款可在房间信息里慢慢还。</p>
@@ -78,21 +89,20 @@ async function buyRoom() {
         </div>
 
         <form class="shop-form" @submit.prevent="buyRoom">
-          <div class="mdui-textfield">
-            <label class="mdui-textfield-label">房间名</label>
-            <input v-model="name" class="mdui-textfield-input" maxlength="24" placeholder="默认使用昵称生成" />
-          </div>
-          <div class="mdui-textfield">
-            <label class="mdui-textfield-label">简介</label>
-            <textarea v-model="description" class="mdui-textfield-input" maxlength="100" rows="3"></textarea>
-          </div>
-          <button
-            class="mdui-btn mdui-btn-raised mdui-color-theme mdui-ripple"
+          <label class="shop-field">
+            <span>房间名</span>
+            <Input v-model="name" maxlength="24" placeholder="默认使用昵称生成" />
+          </label>
+          <label class="shop-field">
+            <span>简介</span>
+            <Textarea v-model="description" maxlength="100" rows="3" />
+          </label>
+          <Button
             type="submit"
             :disabled="isBuying || !canAfford"
           >
             购买房间
-          </button>
+          </Button>
           <p v-if="!canAfford" class="shop-note">现金不足，需要 30 万首付。</p>
         </form>
       </section>
@@ -134,6 +144,11 @@ async function buyRoom() {
   place-items: center;
 }
 
+.shop-item-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .shop-item h1 {
   margin: 0;
   font-size: 22px;
@@ -170,7 +185,17 @@ async function buyRoom() {
 }
 
 .shop-form {
+  display: grid;
+  gap: 12px;
   margin-top: 12px;
+}
+
+.shop-field {
+  display: grid;
+  gap: 6px;
+  color: var(--app-text-muted);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .shop-note {

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { Landmark, X } from 'lucide-vue-next'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useContentStore } from '../../stores/useContentStore'
 import { useRoomStore } from '../../stores/useRoomStore'
 import { useUserStore } from '../../stores/useUserStore'
@@ -52,15 +55,21 @@ watch(roomId, loadRoomInfo)
 
 <template>
   <div class="app-page room-info-page">
-    <div class="app-page-header app-page-header-bordered">
-      <button
-        class="mdui-btn mdui-btn-icon mdui-ripple"
-        @click="contentStore.navigateTo('chat')"
+    <div class="app-page-header">
+      <Button
+        class="app-header-icon-button"
+        variant="ghost"
+        size="icon"
+        type="button"
         title="返回聊天室"
+        @click="contentStore.navigateTo('chat')"
       >
-        <i class="mdui-icon material-icons">close</i>
-      </button>
-      <div class="app-page-title">房间信息</div>
+        <X />
+      </Button>
+
+      <div class="app-page-title">
+        <span>房间信息</span>
+      </div>
     </div>
 
     <div class="room-info-body">
@@ -95,7 +104,7 @@ watch(roomId, loadRoomInfo)
 
         <section class="room-info-section">
           <div class="room-info-section-title">
-            <i class="mdui-icon material-icons">account_balance</i>
+            <Landmark />
             房贷
           </div>
           <div class="room-info-loan">
@@ -110,17 +119,16 @@ watch(roomId, loadRoomInfo)
           </div>
 
           <form v-if="isOwner && loanBalance > 0" class="room-info-repay" @submit.prevent="submitRepayment">
-            <input
+            <Input
               v-model="repayAmount"
-              class="mdui-textfield-input"
               type="number"
               min="1"
               :max="loanBalance"
               placeholder="还多少都行，不强制"
             />
-            <button class="mdui-btn mdui-btn-raised mdui-color-theme mdui-ripple" type="submit" :disabled="isRepaying">
+            <Button type="submit" :disabled="isRepaying">
               还款
-            </button>
+            </Button>
           </form>
           <p v-else-if="isOwner" class="room-info-note">贷款已还清。</p>
           <p v-else class="room-info-note">只有房主可以在这里还款。</p>
@@ -208,6 +216,12 @@ watch(roomId, loadRoomInfo)
   align-items: center;
   gap: 8px;
   font-weight: 700;
+}
+
+.room-info-section-title svg {
+  width: 18px;
+  height: 18px;
+  color: var(--app-text-muted);
 }
 
 .room-info-repay {

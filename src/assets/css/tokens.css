@@ -61,6 +61,7 @@
   --app-viewport-height: 100vh;
   --app-sidebar-width: 240px;
   --sidebar-width: 0px;
+  --content-left-gap: 10px;
   --app-tap-target-min: 44px;
   --app-safe-area-top: env(safe-area-inset-top, 0px);
   --app-safe-area-right: env(safe-area-inset-right, 0px);

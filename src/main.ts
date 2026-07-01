@@ -1,6 +1,5 @@
-import './assets/css/mdui.min.css'
-import './assets/js/mdui.min.js'
 import './assets/main.css'
+import './assets/tailwind.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

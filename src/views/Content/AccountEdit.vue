@@ -1,5 +1,25 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import {
+  AlignLeft,
+  Cake,
+  Camera,
+  Check,
+  Hourglass,
+  Image as ImageIcon,
+  Link,
+  Mail,
+  MapPin,
+  Plus,
+  Save,
+  User,
+  VenusAndMars,
+  X,
+} from 'lucide-vue-next'
+import { Badge } from '../../components/ui/badge'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Textarea } from '../../components/ui/textarea'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
 import { useSnackbar } from '../../composables/useSnackbar'
@@ -55,14 +75,21 @@ onMounted(async () => {
   if (saved.nickname) {
     profile.value = { ...saved }
   }
-  // mdui textfield floating label 需要重新扫描 DOM
-  await nextTick()
-  mdui.mutation()
 })
 
 const avatarPreview = computed(
   () => profile.value.avatarUrl || (userStore.currentUser?.avatarUrl ?? ''),
 )
+
+const backgroundImage = computed({
+  get: () => profile.value.albums[0] ?? '',
+  set: (value: string) => {
+    const trimmedValue = value.trim()
+    profile.value.albums = trimmedValue
+      ? [trimmedValue, ...profile.value.albums.slice(1)]
+      : profile.value.albums.slice(1)
+  },
+})
 
 // 爱好输入框的临时值
 const hobbyInput = ref('')
@@ -183,294 +210,186 @@ const genderOptions = [
   <div class="app-page account-edit-page">
     <!-- 顶部导航栏 -->
     <div class="app-page-header">
-      <button
-        class="mdui-btn mdui-btn-icon mdui-ripple"
+      <Button
+        class="app-header-icon-button"
+        variant="ghost"
+        size="icon"
         type="button"
         title="返回聊天室"
         @click="contentStore.navigateTo('chat')"
       >
-        <i class="mdui-icon material-icons">close</i>
-      </button>
+        <X />
+      </Button>
 
       <div class="app-page-title">
         <span>编辑资料</span>
       </div>
 
       <div class="app-page-actions">
-        <button
-          class="mdui-btn mdui-ripple app-page-action-button"
+        <Button
+          class="app-page-action-button"
           type="button"
           :disabled="isSubmitting"
           @click="handleSubmit"
         >
-          <i class="mdui-icon material-icons">{{
-            isSubmitting ? 'hourglass_empty' : 'check'
-          }}</i>
+          <Hourglass v-if="isSubmitting" />
+          <Check v-else />
           {{ isSubmitting ? '保存中…' : '保存' }}
-        </button>
+        </Button>
       </div>
     </div>
 
     <div class="app-scroll ae-body">
-      <!-- 头像区域 -->
-      <div class="ae-avatar-section">
-        <div class="ae-avatar-wrap" @click="onAvatarClick" title="点击更换头像">
-          <img :src="avatarPreview" alt="avatar" class="ae-avatar-img" />
-          <div class="ae-avatar-overlay">
-            <i class="mdui-icon material-icons" style="color: #fff"
-              >photo_camera</i
-            >
-          </div>
+      <div class="ae-hero">
+        <div class="ae-identity">
+          <button class="ae-avatar-wrap" type="button" @click="onAvatarClick" title="点击更换头像">
+            <img :src="avatarPreview" alt="avatar" class="ae-avatar-img" />
+            <span class="ae-avatar-overlay">
+              <Camera />
+            </span>
+          </button>
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/*"
+            class="ae-file-input"
+            @change="onAvatarChange"
+          />
+
+          <label class="ae-hero-field">
+            <span>
+              <User />
+              昵称 <em>*</em>
+            </span>
+            <Input v-model="profile.nickname" type="text" maxlength="24" required />
+          </label>
+
+          <label class="ae-hero-field">
+            <span>
+              <AlignLeft />
+              签名
+            </span>
+            <Textarea v-model="profile.motto" maxlength="100" rows="3" />
+            <strong>{{ profile.motto.length }}/100</strong>
+          </label>
         </div>
-        <p class="ae-avatar-hint mdui-typo-caption" style="color: #455a64">
-          点击更换头像（≤5MB，自动压缩）
-        </p>
-        <input
-          ref="avatarInput"
-          type="file"
-          accept="image/*"
-          style="display: none"
-          @change="onAvatarChange"
-        />
+
+        <section class="ae-cover-editor">
+          <div
+            class="ae-cover-preview"
+            :class="{ empty: !backgroundImage }"
+            :style="backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : undefined"
+          >
+            <span v-if="!backgroundImage">背景图片</span>
+          </div>
+
+          <label class="ae-cover-field">
+            <span>
+              <ImageIcon />
+              背景图片链接
+            </span>
+            <Input
+              v-model="backgroundImage"
+              type="url"
+              placeholder="https://example.com/background.jpg"
+            />
+          </label>
+        </section>
       </div>
 
-      <!-- 基本信息卡片 -->
-      <div class="mdui-card ae-card">
-        <div
-          class="mdui-list-item-one-line"
-          style="
-            font-size: 12px;
-            font-weight: 600;
-            color: #546e7a;
-            text-transform: uppercase;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eceff1;
-            margin-bottom: 8px;
-          "
-        >
-          基本信息
-        </div>
-        <div style="padding: 0 8px 6px 8px">
-          <!-- 昵称 -->
-          <div class="mdui-textfield mdui-textfield-floating-label">
-            <i class="mdui-icon material-icons mdui-textfield-icon">person</i>
-            <label class="mdui-textfield-label"
-              >昵称 <span style="color: #e53935">*</span></label
-            >
-            <input
-              class="mdui-textfield-input"
-              v-model="profile.nickname"
-              type="text"
-              maxlength="24"
-              required
-            />
-          </div>
-
-          <!-- 签名 -->
-          <div class="mdui-textfield mdui-textfield-floating-label">
-            <i class="mdui-icon material-icons mdui-textfield-icon"
-              >short_text</i
-            >
-            <label class="mdui-textfield-label">签名</label>
-            <input
-              class="mdui-textfield-input"
-              v-model="profile.motto"
-              type="text"
-              maxlength="100"
-            />
-            <div class="mdui-textfield-counter">
-              {{ profile.motto.length }}/100
+      <div class="ae-grid">
+        <section class="ae-section">
+          <div class="ae-section-title">基本信息</div>
+          <div class="ae-fields">
+            <div class="ae-field-row">
+              <VenusAndMars />
+              <span>性别</span>
+              <div class="ae-segmented">
+                <button
+                  v-for="opt in genderOptions"
+                  :key="String(opt.value)"
+                  class="ae-gender-option"
+                  type="button"
+                  :class="{ active: profile.gender === opt.value }"
+                  @click="profile.gender = opt.value"
+                >
+                  {{ opt.label }}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <!-- 性别 -->
-          <div class="ae-field-row">
-            <i class="mdui-icon material-icons ae-field-icon">wc</i>
-            <span class="ae-field-label">性别</span>
-            <label
-              v-for="opt in genderOptions"
-              :key="String(opt.value)"
-              style="
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                cursor: pointer;
-                font-size: 14px;
-                color: #546e7a;
-                user-select: none;
-              "
-              @click="profile.gender = opt.value"
-            >
-              <i class="mdui-icon material-icons" style="font-size: 20px">{{
-                profile.gender === opt.value
-                  ? 'radio_button_checked'
-                  : 'radio_button_unchecked'
-              }}</i>
-              {{ opt.label }}
+            <label class="ae-field-row">
+              <Cake />
+              <span>生日</span>
+              <input v-model="profile.birthday" type="date" class="ae-date-input" />
+            </label>
+
+            <label class="ae-field-row">
+              <MapPin />
+              <span>住址</span>
+              <Input v-model="profile.address" type="text" />
             </label>
           </div>
+        </section>
 
-          <!-- 生日 -->
-          <div class="ae-field-row">
-            <i class="mdui-icon material-icons ae-field-icon">cake</i>
-            <span class="ae-field-label">生日</span>
-            <input
-              v-model="profile.birthday"
-              type="date"
-              style="
-                width: 0;
-                flex: 1;
-                border: none;
-                border-bottom: 1px solid #cfd8dc;
-                padding: 4px 0;
-                font-size: 14px;
-                color: #546e7a;
-                outline: none;
-                background: transparent;
-              "
-            />
-          </div>
-        </div>
-      </div>
-
-      <!-- 爱好卡片 -->
-      <div class="mdui-card ae-card">
-        <div
-          class="mdui-list-item-one-line"
-          style="
-            font-size: 12px;
-            font-weight: 600;
-            color: #546e7a;
-            text-transform: uppercase;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eceff1;
-            margin-bottom: 8px;
-          "
-        >
-          爱好
-        </div>
-        <div style="padding: 0 8px">
-          <!-- 爱好输入 -->
-          <div
-            class="ae-hobby-input-row"
-            style="
-              display: flex;
-              gap: 8px;
-              align-items: flex-end;
-              margin-bottom: 12px;
-            "
-          >
-            <div
-              class="mdui-textfield mdui-textfield-floating-label"
-              style="flex: 1"
-            >
-              <label class="mdui-textfield-label">爱好</label>
-              <input
-                class="mdui-textfield-input"
-                v-model="hobbyInput"
-                type="text"
-                maxlength="20"
-                @keydown="onHobbyKeydown"
-              />
-            </div>
-            <button
-              class="mdui-btn mdui-btn-icon mdui-btn-raised mdui-ripple mdui-color-blue-grey"
-              @click="addHobby"
-            >
-              <i class="mdui-icon material-icons">add</i>
-            </button>
-          </div>
-
-          <!-- 爱好标签用 mdui-chip -->
-          <div
-            style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 32px"
-          >
-            <span
-              v-if="profile.hobbies.length === 0"
-              class="mdui-typo-caption"
-              style="color: #455a64; align-self: center"
-              >暂无爱好</span
-            >
-            <div v-for="(h, i) in profile.hobbies" :key="i" class="mdui-chip">
-              <span class="mdui-chip-title">{{ h }}</span>
-              <span
-                class="mdui-chip-delete mdui-ripple"
-                @click="removeHobby(i)"
-                style="cursor: pointer"
-              >
-                <i class="mdui-icon material-icons" style="font-size: 16px"
-                  >close</i
-                >
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 联系方式卡片 -->
-      <div class="mdui-card ae-card">
-        <div
-          class="mdui-list-item-one-line"
-          style="
-            font-size: 12px;
-            font-weight: 600;
-            color: #546e7a;
-            text-transform: uppercase;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #eceff1;
-            margin-bottom: 8px;
-          "
-        >
-          联系方式
-        </div>
-        <div style="padding: 0 8px">
-          <!-- 邮箱 -->
-          <div class="mdui-textfield mdui-textfield-floating-label">
-            <i class="mdui-icon material-icons mdui-textfield-icon">email</i>
-            <label class="mdui-textfield-label">邮箱</label>
-            <input
-              class="mdui-textfield-input"
-              v-model="profile.email"
-              type="email"
-            />
-          </div>
-
-          <!-- 个人网站 -->
-          <div class="mdui-textfield mdui-textfield-floating-label">
-            <i class="mdui-icon material-icons mdui-textfield-icon">link</i>
-            <label class="mdui-textfield-label">个人网站</label>
-            <input
-              class="mdui-textfield-input"
-              v-model="profile.website"
-              type="url"
-            />
-          </div>
-
-          <!-- 住址 -->
-          <div class="mdui-textfield mdui-textfield-floating-label">
-            <i class="mdui-icon material-icons mdui-textfield-icon"
-              >location_on</i
-            >
-            <label class="mdui-textfield-label">住址</label>
-            <input
-              class="mdui-textfield-input"
-              v-model="profile.address"
+        <section class="ae-section">
+          <div class="ae-section-title">爱好</div>
+          <div class="ae-hobby-input-row">
+            <Input
+              v-model="hobbyInput"
               type="text"
+              maxlength="20"
+              placeholder="添加爱好"
+              @keydown="onHobbyKeydown"
             />
+            <Button size="icon" type="button" title="添加爱好" @click="addHobby">
+              <Plus />
+            </Button>
           </div>
-        </div>
+
+          <div class="ae-hobby-list">
+            <span v-if="profile.hobbies.length === 0" class="ae-empty-text">暂无爱好</span>
+            <Badge v-for="(h, i) in profile.hobbies" :key="i" variant="secondary" class="ae-hobby-chip">
+              {{ h }}
+              <button
+                class="ae-hobby-delete"
+                type="button"
+                title="删除爱好"
+                @click.stop="removeHobby(i)"
+              >
+                <X />
+              </button>
+            </Badge>
+          </div>
+        </section>
+
+        <section class="ae-section ae-contact-section">
+          <div class="ae-section-title">联系</div>
+          <div class="ae-fields">
+            <label class="ae-field-row">
+              <Mail />
+              <span>邮箱</span>
+              <Input v-model="profile.email" type="email" />
+            </label>
+
+            <label class="ae-field-row">
+              <Link />
+              <span>个人网站</span>
+              <Input v-model="profile.website" type="url" />
+            </label>
+          </div>
+        </section>
       </div>
 
       <!-- 底部保存按钮 -->
-      <div style="padding: 8px 0 24px; text-align: center">
-        <button
-          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey mdui-shadow-2"
+      <div class="ae-footer-actions">
+        <Button
           :disabled="isSubmitting"
           @click="handleSubmit"
         >
-          <i class="mdui-icon material-icons mdui-icon-left">save</i>
+          <Save />
           {{ isSubmitting ? '保存中…' : '保存资料' }}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -482,31 +401,44 @@ const genderOptions = [
 }
 
 .ae-body {
-  max-width: 760px;
-  margin: 0 auto;
-  width: 100%;
-  padding-bottom: calc(24px + var(--app-safe-area-bottom));
+  --profile-content-max: 1180px;
+  position: relative;
+  padding-top: 12px;
+  padding-bottom: 24px;
 }
 
-/* 头像相关 — mdui v1 无对应组件，保留少量自定义 */
-.ae-avatar-section {
+.ae-hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(320px, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  max-width: var(--profile-content-max);
+  margin: 0 auto;
+  padding: 24px 16px 12px;
+}
+
+.ae-identity {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  align-items: center;
-  padding: 24px 0 8px;
+  align-items: flex-start;
 }
 
 .ae-avatar-wrap {
   position: relative;
   width: 96px;
   height: 96px;
+  border: 0;
   border-radius: 50%;
+  padding: 0;
+  background: transparent;
   cursor: pointer;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .ae-avatar-img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -515,51 +447,281 @@ const genderOptions = [
 .ae-avatar-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.42);
   opacity: 0;
   transition: opacity 0.2s;
+}
+
+.ae-avatar-overlay svg {
+  width: 28px;
+  height: 28px;
+  color: #fff;
 }
 
 .ae-avatar-wrap:hover .ae-avatar-overlay {
   opacity: 1;
 }
 
-.ae-avatar-hint {
-  margin-top: 8px;
+.ae-file-input {
+  display: none;
 }
 
-.ae-card {
-  width: 100%;
-  margin-bottom: 14px;
-  padding: 16px;
+.ae-hero-field {
+  display: grid;
+  gap: 6px;
+  width: min(420px, 100%);
+  margin-top: 12px;
+  color: #455a64;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-/* ── 性别 / 生日 ── */
-.ae-field-row {
+.ae-hero-field span {
   display: flex;
   align-items: center;
-  gap: 4px;
-  min-height: 48px;
+  gap: 6px;
 }
-.ae-field-row + .ae-field-row {
-  margin-top: -8px;
-}
-.ae-field-row > .ae-field-icon {
-  font-size: 24px;
+
+.ae-hero-field svg {
+  width: 18px;
+  height: 18px;
   color: #455a64;
-  flex-shrink: 0;
-  width: 24px;
+}
+
+.ae-hero-field em {
+  color: #e53935;
+  font-style: normal;
+}
+
+.ae-hero-field strong {
+  justify-self: end;
+  color: #78909c;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ae-cover-editor {
+  display: grid;
+  grid-template-rows: minmax(150px, 1fr) auto;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ae-cover-preview {
+  display: flex;
+  min-height: 150px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px dashed rgba(84, 110, 122, 0.22);
+  border-radius: 8px;
+  background-color: rgba(236, 239, 241, 0.66);
+  background-position: center;
+  background-size: cover;
+  color: #455a64;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ae-cover-preview:not(.empty) {
+  border-style: solid;
+}
+
+.ae-cover-field {
+  display: grid;
+  gap: 6px;
+  color: #455a64;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ae-cover-field span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ae-cover-field svg {
+  width: 18px;
+  height: 18px;
+  color: #455a64;
+}
+
+.ae-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  max-width: var(--profile-content-max);
+  margin: 4px auto 0;
+  padding: 0 16px;
+}
+
+.ae-section {
+  grid-column: span 6;
+  border: 1px solid rgba(84, 110, 122, 0.16);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
+}
+
+.ae-contact-section {
+  grid-column: span 6;
+}
+
+.ae-section-title {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eceff1;
+  color: #37474f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ae-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.ae-field-row {
+  display: grid;
+  grid-template-columns: 28px 72px minmax(0, 1fr);
+  align-items: center;
+  min-height: 38px;
+  color: #455a64;
+  gap: 0;
+}
+
+.ae-field-row > svg {
+  width: 22px;
+  height: 22px;
+  color: #455a64;
+}
+
+.ae-field-row > span {
+  color: #455a64;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ae-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ae-gender-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 32px;
+  border: 1px solid rgba(84, 110, 122, 0.24);
+  border-radius: 6px;
+  color: #546e7a;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ae-gender-option:hover {
+  border-color: #78909c;
+}
+
+.ae-gender-option.active {
+  border-color: #455a64;
+  color: #fff;
+  background: #455a64;
+}
+
+.ae-date-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid hsl(214.3 31.8% 91.4%);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #546e7a;
+  background: #fff;
+  font: inherit;
+  outline: none;
+}
+
+.ae-date-input:focus {
+  border-color: #78909c;
+}
+
+.ae-hobby-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ae-hobby-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.ae-hobby-chip {
+  gap: 6px;
+}
+
+.ae-hobby-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: -4px;
+  border: 0;
+  border-radius: 999px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.ae-hobby-delete:hover {
+  background: rgba(84, 110, 122, 0.14);
+}
+
+.ae-hobby-delete svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ae-empty-text {
+  align-self: center;
+  color: #455a64;
+  font-size: 12px;
+}
+
+.ae-footer-actions {
+  max-width: var(--profile-content-max);
+  margin: 0 auto;
+  padding: 18px 16px 24px;
   text-align: center;
 }
-.ae-field-label {
-  font-size: 12px;
-  color: #455a64;
-  font-weight: 500;
-  margin-right: 8px;
-  white-space: nowrap;
+
+@media (min-width: 1100px) {
+  .ae-section {
+    grid-column: span 4;
+  }
+}
+
+@media (max-width: 720px) {
+  .ae-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .ae-section,
+  .ae-contact-section {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 600px) {
@@ -574,39 +736,63 @@ const genderOptions = [
 
   .ae-body {
     padding: 10px;
-    padding-bottom: calc(20px + var(--app-safe-area-bottom));
+    padding-bottom: calc(18px + var(--app-safe-area-bottom));
   }
 
-  .ae-avatar-section {
-    padding: 14px 0 6px;
+  .ae-hero {
+    gap: 10px;
+    padding: 8px 0 4px;
+  }
+
+  .ae-identity {
+    align-items: center;
+    text-align: center;
   }
 
   .ae-avatar-wrap {
-    width: 84px;
-    height: 84px;
+    width: 82px;
+    height: 82px;
   }
 
-  .ae-card {
-    margin-bottom: 10px;
+  .ae-hero-field {
+    width: 100%;
+    text-align: left;
+  }
+
+  .ae-cover-editor {
+    grid-template-rows: auto auto;
+  }
+
+  .ae-cover-preview {
+    min-height: 112px;
+  }
+
+  .ae-grid {
+    gap: 10px;
+    padding: 0;
+  }
+
+  .ae-section {
     padding: 12px;
   }
 
   .ae-field-row {
-    flex-wrap: wrap;
-    gap: 6px;
-    min-height: 44px;
-  }
-
-  .ae-field-row input[type='date'] {
-    min-width: 150px;
+    grid-template-columns: 26px 58px minmax(0, 1fr);
+    min-height: 40px;
+    font-size: 13px;
   }
 
   .ae-hobby-input-row {
-    gap: 6px !important;
+    gap: 6px;
   }
 
-  .ae-hobby-input-row .mdui-btn-icon {
+  .ae-hobby-input-row button {
     flex: 0 0 44px;
+  }
+
+  .ae-footer-actions {
+    padding-right: 0;
+    padding-left: 0;
   }
 }
 </style>

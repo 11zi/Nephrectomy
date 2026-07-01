@@ -34,6 +34,26 @@
   text-align: right;
 }
 
+.app-header-icon-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
+  color: var(--app-text-soft);
+  box-shadow: none;
+}
+
+.app-header-icon-button:hover {
+  background: rgba(84, 110, 122, 0.12);
+  color: var(--app-text);
+}
+
+.app-header-icon-button:focus-visible {
+  outline: 2px solid rgba(84, 110, 122, 0.28);
+  outline-offset: 2px;
+}
+
 .app-action-row {
   display: grid;
   align-items: end;

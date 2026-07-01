@@ -21,6 +21,31 @@ export const PRESET_CHAT_EMOJIS = [
   'eco',
 ] as const
 
+export type PresetChatEmoji = (typeof PRESET_CHAT_EMOJIS)[number]
+
+export const PRESET_CHAT_EMOJI_LABELS: Record<PresetChatEmoji, string> = {
+  sentiment_very_satisfied: '😄',
+  sentiment_satisfied: '🙂',
+  sentiment_neutral: '😐',
+  sentiment_dissatisfied: '🙁',
+  sentiment_very_dissatisfied: '😣',
+  mood: '😊',
+  mood_bad: '😞',
+  insert_emoticon: '😃',
+  face: '😀',
+  tag_faces: '😋',
+  thumb_up: '👍',
+  thumb_down: '👎',
+  favorite: '❤️',
+  star: '⭐',
+  whatshot: '🔥',
+  cake: '🎂',
+  local_fire_department: '🚒',
+  bolt: '⚡',
+  water_drop: '💧',
+  eco: '🌿',
+}
+
 const PRESET_CHAT_EMOJI_SET = new Set<string>(PRESET_CHAT_EMOJIS)
 const PRESET_CHAT_EMOJI_RE = /:([a-z0-9_]+):/g
 const CUSTOM_CHAT_EMOJI_STORAGE_KEY = 'nephrectomy.customChatEmojiUrls'
@@ -29,7 +54,8 @@ const CUSTOM_EMOJI_IMAGE_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp',
 export function renderPresetChatEmojis(content: string): string {
   return content.replace(PRESET_CHAT_EMOJI_RE, (token, iconName: string) => {
     if (!PRESET_CHAT_EMOJI_SET.has(iconName)) return token
-    return `<i class="mdui-icon material-icons chat-preset-emoji" title=":${iconName}:">${iconName}</i>`
+    const label = PRESET_CHAT_EMOJI_LABELS[iconName as PresetChatEmoji]
+    return `<span class="chat-preset-emoji" title=":${iconName}:" aria-label=":${iconName}:">${label}</span>`
   })
 }
 

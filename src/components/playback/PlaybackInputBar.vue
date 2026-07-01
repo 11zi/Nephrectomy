@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Send } from 'lucide-vue-next'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 
 defineProps<{
   submitting: boolean
@@ -24,23 +27,22 @@ defineExpose({ clear })
 
 <template>
   <div class="playback-input-bar">
-    <div class="mdui-textfield playback-input">
-      <input
-        v-model="url"
-        class="mdui-textfield-input"
-        placeholder="粘贴 YouTube 或直链媒体"
-        :disabled="submitting"
-        @keydown.enter.prevent="submit"
-      />
-    </div>
-    <button
-      class="mdui-btn mdui-btn-raised mdui-ripple app-button"
+    <Input
+      v-model="url"
+      class="playback-input"
+      placeholder="粘贴 YouTube 或直链媒体"
+      :disabled="submitting"
+      @keydown.enter.prevent="submit"
+    />
+    <Button
+      class="app-button"
       type="button"
       :disabled="submitting"
       @click="submit"
     >
+      <Send />
       发送
-    </button>
+    </Button>
   </div>
 </template>
 
@@ -57,14 +59,10 @@ defineExpose({ clear })
 .playback-input {
   flex: 1 1 auto;
   min-width: 0;
-  padding-top: 0;
-}
-
-.playback-input :deep(.mdui-textfield-input) {
   font-size: 13px;
 }
 
-.playback-input-bar .mdui-btn {
+.playback-input-bar .app-button {
   flex: 0 0 auto;
   min-width: 64px;
 }

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { ArrowDownToLine, ArrowUpFromLine } from 'lucide-vue-next'
 import { httpChatApi } from '../../api/httpChatApi'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useUserStore } from '../../stores/useUserStore'
 import { useSnackbar } from '../../composables/useSnackbar'
 import type { BankStatus } from '../../types/bankTypes'
@@ -9,11 +12,15 @@ const userStore = useUserStore()
 const snackbar = useSnackbar()
 
 const status = ref<BankStatus | null>(null)
-const amount = ref<number | null>(null)
+const amountText = ref('')
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 
-const canSubmit = computed(() => Number.isFinite(amount.value) && Number(amount.value) > 0)
+const parsedAmount = computed(() => {
+  const value = Number(amountText.value)
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : null
+})
+const canSubmit = computed(() => parsedAmount.value !== null)
 
 function formatMoney(value: number | undefined): string {
   return `${Math.floor(value ?? 0).toLocaleString('zh-CN')} G`
@@ -55,13 +62,13 @@ async function transfer(kind: 'deposit' | 'withdraw') {
   if (!canSubmit.value || isSubmitting.value) return
   isSubmitting.value = true
   try {
-    const payload = { amount: Math.floor(Number(amount.value)) }
+    const payload = { amount: parsedAmount.value ?? 0 }
     const nextStatus = kind === 'deposit'
       ? await httpChatApi.depositBank(payload)
       : await httpChatApi.withdrawBank(payload)
     status.value = nextStatus
     syncProfile(nextStatus)
-    amount.value = null
+    amountText.value = ''
     snackbar.success(kind === 'deposit' ? '存入成功' : '提取成功')
   } catch (err: any) {
     snackbar.error(err.message || (kind === 'deposit' ? '存入失败' : '提取失败'))
@@ -102,34 +109,31 @@ onMounted(loadBankStatus)
     </div>
 
     <div class="app-action-row app-action-row-three transfer-row">
-      <div class="mdui-textfield app-field amount-field">
-        <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
-        <input
-          v-model.number="amount"
-          class="mdui-textfield-input"
-          type="number"
-          min="1"
-          step="1"
-          placeholder="金额"
-          :disabled="isLoading || isSubmitting"
-        />
-      </div>
-      <button
-        class="mdui-btn mdui-btn-raised mdui-ripple app-button app-button-success"
+      <Input
+        v-model="amountText"
+        class="amount-field"
+        type="number"
+        min="1"
+        step="1"
+        placeholder="金额"
+        :disabled="isLoading || isSubmitting"
+      />
+      <Button
+        class="app-button app-button-success"
         :disabled="!canSubmit || isSubmitting"
         @click="transfer('deposit')"
       >
-        <i class="mdui-icon material-icons">call_made</i>
+        <ArrowUpFromLine />
         存入
-      </button>
-      <button
-        class="mdui-btn mdui-btn-raised mdui-ripple app-button"
+      </Button>
+      <Button
+        class="app-button"
         :disabled="!canSubmit || isSubmitting"
         @click="transfer('withdraw')"
       >
-        <i class="mdui-icon material-icons">call_received</i>
+        <ArrowDownToLine />
         提取
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -164,7 +168,7 @@ onMounted(loadBankStatus)
 }
 
 .amount-field {
-  padding-top: 0;
+  min-width: 0;
 }
 
 @media (max-width: 560px) {

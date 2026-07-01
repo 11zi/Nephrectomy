@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { Send, X } from 'lucide-vue-next'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { useUserStore } from '../../../stores/useUserStore'
 import { useSnackbar } from '../../../composables/useSnackbar'
 import { CHAT_INPUT_INSERT_TEXT_EVENT } from '../../../composables/useChatInput'
@@ -10,12 +14,14 @@ import {
   saveCustomChatEmojiUrls,
 } from '../../../utils/chatEmoji'
 import type { ChatMessage } from '../../../types/chatTypes'
-import '../../../assets/js/marked.min.js'
 
 const userStore = useUserStore()
 const snackbar = useSnackbar()
 const message_send = ref('')
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const customEmojiDialogOpen = ref(false)
+const customEmojiUrl = ref('')
+const customEmojiInputRef = ref<InstanceType<typeof Input> | null>(null)
 const props = defineProps<{
   replyTarget?: ChatMessage | null
 }>()
@@ -29,6 +35,10 @@ const emojiTab = ref<'preset' | 'custom'>('preset')
 
 const presetEmojis = PRESET_CHAT_EMOJIS
 const customEmojis = ref<string[]>([])
+
+function currentUserInitials() {
+  return userStore.currentUser?.nickname?.slice(0, 2).toUpperCase() ?? 'ME'
+}
 
 function toggleEmojiPanel() {
   emojiPanelOpen.value = !emojiPanelOpen.value
@@ -59,50 +69,30 @@ function insertCustomEmoji(url: string) {
   insertTextAtCursor(`${url} `)
 }
 
-function openAddCustomEmojiDialog() {
-  let dialogController: { close: () => void } | null = null
+async function openAddCustomEmojiDialog() {
+  customEmojiUrl.value = ''
+  customEmojiDialogOpen.value = true
+  await nextTick()
+  customEmojiInputRef.value?.$el?.focus()
+}
 
-  mdui.dialog({
-    title: '添加表情',
-    content: `
-      <div class="mdui-textfield">
-        <label class="mdui-textfield-label">图片链接</label>
-        <input class="mdui-textfield-input custom-emoji-url-input" type="url" />
-        <div class="mdui-textfield-helper">支持 jpg、png、webp、gif 链接</div>
-      </div>
-    `,
-    buttons: [
-      {
-        text: '取消',
-        close: true,
-      },
-      {
-        text: '添加',
-        bold: true,
-        close: false,
-        onClick: () => {
-          const input = document.querySelector<HTMLInputElement>('.custom-emoji-url-input')
-          const url = normalizeCustomChatEmojiUrl(input?.value.trim() ?? '')
-          if (!url) {
-            snackbar.error('请输入可访问的图片链接')
-            return
-          }
-          if (!customEmojis.value.includes(url)) {
-            customEmojis.value = [url, ...customEmojis.value]
-            saveCustomChatEmojiUrls(customEmojis.value)
-          }
-          snackbar.success('表情已添加')
-          dialogController?.close()
-        },
-      },
-    ],
-    history: false,
-    onOpened: (dialog) => {
-      dialogController = dialog
-      mdui.updateTextFields?.()
-      document.querySelector<HTMLInputElement>('.custom-emoji-url-input')?.focus()
-    },
-  })
+function closeAddCustomEmojiDialog() {
+  customEmojiDialogOpen.value = false
+  customEmojiUrl.value = ''
+}
+
+function submitCustomEmoji() {
+  const url = normalizeCustomChatEmojiUrl(customEmojiUrl.value.trim())
+  if (!url) {
+    snackbar.error('请输入可访问的图片链接')
+    return
+  }
+  if (!customEmojis.value.includes(url)) {
+    customEmojis.value = [url, ...customEmojis.value]
+    saveCustomChatEmojiUrls(customEmojis.value)
+  }
+  snackbar.success('表情已添加')
+  closeAddCustomEmojiDialog()
 }
 
 function handleInsertText(event: Event) {
@@ -153,49 +143,84 @@ onBeforeUnmount(() => {
         <span class="input-reply-text">{{ props.replyTarget.content }}</span>
       </div>
       <button
-        class="mdui-btn mdui-btn-icon mdui-ripple input-reply-close"
+        class="input-reply-close"
         type="button"
         title="取消引用"
         @click="emit('cancelReply')"
       >
-        <i class="mdui-icon material-icons">close</i>
+        <X :size="18" />
       </button>
     </div>
     <div class="chat-input-row">
       <button
-        class="chat-input-avatar-button mdui-ripple"
+        class="chat-input-avatar-button"
         type="button"
         @click="toggleEmojiPanel"
         :title="emojiPanelOpen ? '收起表情' : '打开表情'"
       >
-        <img
-          :src="userStore.currentUser?.avatarUrl"
-          alt="avatar"
-          class="mdui-img-rounded mdui-shadow-1 chat-input-avatar"
-          width="48"
-          height="48"
-        />
+        <Avatar class="chat-input-avatar">
+          <AvatarImage :src="userStore.currentUser?.avatarUrl" alt="avatar" />
+          <AvatarFallback>{{ currentUserInitials() }}</AvatarFallback>
+        </Avatar>
       </button>
-      <div class="mdui-textfield chat-input-field">
       <textarea
         ref="textareaRef"
-        class="mdui-textfield-input"
+        class="chat-input-field"
         id="msg_textarea"
         v-model="message_send"
         @keydown.enter="sendMsg($event)"
         placeholder="说点什么...!"
         rows="2"
       ></textarea>
-      </div>
       <button
-        class="chat-input-send mdui-ripple"
+        class="chat-input-send"
         type="button"
         title="发送"
         @click="sendMsg(null)"
       >
-        <i class="mdui-icon material-icons">send</i>
+        <Send :size="20" />
       </button>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="customEmojiDialogOpen"
+        class="custom-emoji-dialog-backdrop"
+        @click.self="closeAddCustomEmojiDialog"
+      >
+        <form class="custom-emoji-dialog" @submit.prevent="submitCustomEmoji">
+          <div class="custom-emoji-dialog-header">
+            <div>
+              <h2>添加表情</h2>
+              <p>支持 jpg、png、webp、gif 链接</p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title="关闭"
+              @click="closeAddCustomEmojiDialog"
+            >
+              <X />
+            </Button>
+          </div>
+          <label class="custom-emoji-field">
+            图片链接
+            <Input
+              ref="customEmojiInputRef"
+              v-model="customEmojiUrl"
+              type="url"
+              placeholder="https://example.com/emoji.webp"
+              @keydown.esc.prevent="closeAddCustomEmojiDialog"
+            />
+          </label>
+          <div class="custom-emoji-dialog-actions">
+            <Button type="button" variant="outline" @click="closeAddCustomEmojiDialog">取消</Button>
+            <Button type="submit">添加</Button>
+          </div>
+        </form>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -225,26 +250,42 @@ onBeforeUnmount(() => {
   padding: 0;
   background: transparent;
   cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.chat-input-avatar-button:hover,
+.chat-input-send:hover {
+  transform: translateY(-1px);
 }
 
 .chat-input-avatar {
-  display: block;
   width: 48px;
   height: 48px;
-  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(38, 50, 56, 0.18);
 }
 
 .chat-input-field {
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0;
-  padding-top: 0;
-}
-
-.chat-input-field textarea {
   min-height: 48px;
   max-height: 128px;
   resize: none;
+  border: 1px solid rgba(84, 110, 122, 0.22);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #263238;
+  font: inherit;
+  line-height: 1.45;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(38, 50, 56, 0.08);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.chat-input-field:focus {
+  border-color: #546e7a;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(84, 110, 122, 0.16);
 }
 
 .chat-input-send {
@@ -291,6 +332,79 @@ onBeforeUnmount(() => {
 
 .input-reply-close {
   flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #546e7a;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.input-reply-close:hover {
+  background: rgba(84, 110, 122, 0.12);
+  color: #263238;
+}
+
+.custom-emoji-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.36);
+}
+
+.custom-emoji-dialog {
+  width: min(420px, 100%);
+  border: 1px solid rgba(84, 110, 122, 0.18);
+  border-radius: 8px;
+  padding: 18px;
+  background: #fff;
+  color: #263238;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+}
+
+.custom-emoji-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.custom-emoji-dialog-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.custom-emoji-dialog-header p {
+  margin: 4px 0 0;
+  color: #607d8b;
+  font-size: 13px;
+}
+
+.custom-emoji-field {
+  display: grid;
+  gap: 8px;
+  color: #37474f;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.custom-emoji-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
 }
 
 @media (max-width: 600px) {
@@ -313,7 +427,7 @@ onBeforeUnmount(() => {
     height: 44px;
   }
 
-  .chat-input-field textarea {
+  .chat-input-field {
     min-height: 44px;
     max-height: 104px;
   }

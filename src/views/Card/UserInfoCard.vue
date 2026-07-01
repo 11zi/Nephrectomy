@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { User } from 'lucide-vue-next'
+import { Button } from '../../components/ui/button'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
 import type { PublicProfile } from '../../types/accountTypes'
@@ -87,15 +89,15 @@ watch(() => props.user.id, loadProfile)
       </div>
     </div>
 
-    <button
-      class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey user-info-action"
+    <Button
+      class="user-info-action"
       type="button"
       :disabled="isLoading"
       @click="viewDetail"
     >
-      <i class="mdui-icon material-icons mdui-icon-left">person</i>
+      <User />
       查看详细资料
-    </button>
+    </Button>
   </div>
 </template>
 

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Hourglass, Lock, Mail, User, UserPlus } from 'lucide-vue-next'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
 import { useSnackbar } from '../../composables/useSnackbar'
@@ -51,79 +54,79 @@ function goToLogin() {
 
 <template>
   <div class="auth-page">
-    <div class="auth-card mdui-card mdui-shadow-4">
+    <div class="auth-card">
       <div class="auth-header">
         <h2 class="auth-title">注册</h2>
-        <p class="auth-subtitle mdui-typo-caption">创建账号，加入肾摘除聊天室</p>
+        <p class="auth-subtitle">创建账号，加入肾摘除聊天室</p>
       </div>
 
       <div class="auth-body">
-        <!-- 昵称 -->
-        <div class="mdui-textfield mdui-textfield-floating-label">
-          <i class="mdui-icon material-icons mdui-textfield-icon">person</i>
-          <label class="mdui-textfield-label">昵称</label>
-          <input
-            class="mdui-textfield-input"
+        <label class="auth-field">
+          <span class="auth-field-label">
+            <User />
+            昵称
+          </span>
+          <Input
             v-model="nickname"
             type="text"
             maxlength="24"
             @keydown.enter="handleRegister"
           />
-        </div>
+        </label>
 
-        <!-- 邮箱 -->
-        <div class="mdui-textfield mdui-textfield-floating-label">
-          <i class="mdui-icon material-icons mdui-textfield-icon">email</i>
-          <label class="mdui-textfield-label">邮箱</label>
-          <input
-            class="mdui-textfield-input"
+        <label class="auth-field">
+          <span class="auth-field-label">
+            <Mail />
+            邮箱
+          </span>
+          <Input
             v-model="email"
             type="email"
             autocomplete="email"
             @keydown.enter="handleRegister"
           />
-        </div>
+        </label>
 
-        <!-- 密码 -->
-        <div class="mdui-textfield mdui-textfield-floating-label">
-          <i class="mdui-icon material-icons mdui-textfield-icon">lock</i>
-          <label class="mdui-textfield-label">密码（至少 6 位）</label>
-          <input
-            class="mdui-textfield-input"
+        <label class="auth-field">
+          <span class="auth-field-label">
+            <Lock />
+            密码（至少 6 位）
+          </span>
+          <Input
             v-model="password"
             type="password"
             autocomplete="new-password"
           />
-        </div>
+        </label>
 
-        <!-- 确认密码 -->
-        <div class="mdui-textfield mdui-textfield-floating-label">
-          <i class="mdui-icon material-icons mdui-textfield-icon">lock_outline</i>
-          <label class="mdui-textfield-label">确认密码</label>
-          <input
-            class="mdui-textfield-input"
+        <label class="auth-field">
+          <span class="auth-field-label">
+            <Lock />
+            确认密码
+          </span>
+          <Input
             v-model="passwordConfirm"
             type="password"
             autocomplete="new-password"
             @keydown.enter="handleRegister"
           />
-        </div>
+        </label>
 
-        <!-- 注册按钮 -->
-        <button
-          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey auth-btn"
+        <Button
+          class="auth-btn"
           :disabled="isSubmitting"
           @click="handleRegister"
         >
           <span class="auth-btn-content">
-            <i class="mdui-icon material-icons">{{ isSubmitting ? 'hourglass_empty' : 'person_add' }}</i>
+            <Hourglass v-if="isSubmitting" />
+            <UserPlus v-else />
             <span>{{ isSubmitting ? '注册中…' : '注册' }}</span>
           </span>
-        </button>
+        </Button>
       </div>
 
       <div class="auth-footer">
-        <span class="mdui-typo-caption" style="color: #455a64;">已有账号？</span>
+        <span>已有账号？</span>
         <a class="auth-link" @click="goToLogin">去登录</a>
       </div>
     </div>
@@ -146,7 +149,10 @@ function goToLogin() {
 .auth-card {
   width: 100%;
   max-width: 400px;
+  border: 1px solid rgba(84, 110, 122, 0.18);
   border-radius: 8px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
   overflow: hidden;
 }
 
@@ -168,16 +174,36 @@ function goToLogin() {
 }
 
 .auth-body {
+  display: grid;
+  gap: 14px;
   padding: 16px 24px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #455a64;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-field-label svg {
+  width: 16px;
+  height: 16px;
 }
 
 .auth-btn {
   width: 100%;
   min-height: 40px;
-  margin-top: 12px;
+  margin-top: 2px;
   padding: 0 16px;
   font-size: 15px;
-  line-height: 40px;
 }
 
 .auth-btn-content {
@@ -190,11 +216,10 @@ function goToLogin() {
   line-height: 1;
 }
 
-.auth-btn-content .mdui-icon {
+.auth-btn-content svg {
   height: 20px;
+  width: 20px;
   margin: 0;
-  font-size: 20px;
-  line-height: 20px;
 }
 
 .auth-footer {
@@ -205,6 +230,8 @@ function goToLogin() {
   align-items: center;
   justify-content: center;
   gap: 4px;
+  color: #455a64;
+  font-size: 13px;
 }
 
 .auth-link {

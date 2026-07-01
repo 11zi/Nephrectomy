@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Hourglass, Lock, LogIn, Mail } from 'lucide-vue-next'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
 import { useSnackbar } from '../../composables/useSnackbar'
@@ -37,54 +40,54 @@ function goToRegister() {
 
 <template>
   <div class="auth-page">
-    <div class="auth-card mdui-card mdui-shadow-4">
+    <div class="auth-card">
       <div class="auth-header">
         <h2 class="auth-title">登录</h2>
-        <p class="auth-subtitle mdui-typo-caption">欢迎来到噶腰地</p>
+        <p class="auth-subtitle">欢迎来到噶腰地</p>
       </div>
 
       <div class="auth-body">
-        <!-- 邮箱 -->
-        <div class="mdui-textfield mdui-textfield-floating-label">
-          <i class="mdui-icon material-icons mdui-textfield-icon">email</i>
-          <label class="mdui-textfield-label">邮箱</label>
-          <input
-            class="mdui-textfield-input"
+        <label class="auth-field">
+          <span class="auth-field-label">
+            <Mail />
+            邮箱
+          </span>
+          <Input
             v-model="email"
             type="email"
             autocomplete="email"
             @keydown.enter="handleLogin"
           />
-        </div>
+        </label>
 
-        <!-- 密码 -->
-        <div class="mdui-textfield mdui-textfield-floating-label">
-          <i class="mdui-icon material-icons mdui-textfield-icon">lock</i>
-          <label class="mdui-textfield-label">密码</label>
-          <input
-            class="mdui-textfield-input"
+        <label class="auth-field">
+          <span class="auth-field-label">
+            <Lock />
+            密码
+          </span>
+          <Input
             v-model="password"
             type="password"
             autocomplete="current-password"
             @keydown.enter="handleLogin"
           />
-        </div>
+        </label>
 
-        <!-- 登录按钮 -->
-        <button
-          class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-blue-grey auth-btn"
+        <Button
+          class="auth-btn"
           :disabled="isSubmitting"
           @click="handleLogin"
         >
           <span class="auth-btn-content">
-            <i class="mdui-icon material-icons">{{ isSubmitting ? 'hourglass_empty' : 'login' }}</i>
+            <Hourglass v-if="isSubmitting" />
+            <LogIn v-else />
             <span>{{ isSubmitting ? '登录中…' : '登录' }}</span>
           </span>
-        </button>
+        </Button>
       </div>
 
       <div class="auth-footer">
-        <span class="mdui-typo-caption" style="color: #455a64;">没有账号？</span>
+        <span>没有账号？</span>
         <a class="auth-link" @click="goToRegister">去注册</a>
       </div>
     </div>
@@ -107,7 +110,10 @@ function goToRegister() {
 .auth-card {
   width: 100%;
   max-width: 400px;
+  border: 1px solid rgba(84, 110, 122, 0.18);
   border-radius: 8px;
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-soft);
   overflow: hidden;
 }
 
@@ -129,16 +135,36 @@ function goToRegister() {
 }
 
 .auth-body {
+  display: grid;
+  gap: 14px;
   padding: 16px 24px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 6px;
+}
+
+.auth-field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #455a64;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-field-label svg {
+  width: 16px;
+  height: 16px;
 }
 
 .auth-btn {
   width: 100%;
   min-height: 40px;
-  margin-top: 12px;
+  margin-top: 2px;
   padding: 0 16px;
   font-size: 15px;
-  line-height: 40px;
 }
 
 .auth-btn-content {
@@ -151,11 +177,10 @@ function goToRegister() {
   line-height: 1;
 }
 
-.auth-btn-content .mdui-icon {
+.auth-btn-content svg {
   height: 20px;
+  width: 20px;
   margin: 0;
-  font-size: 20px;
-  line-height: 20px;
 }
 
 .auth-footer {
@@ -166,6 +191,8 @@ function goToRegister() {
   align-items: center;
   justify-content: center;
   gap: 4px;
+  color: #455a64;
+  font-size: 13px;
 }
 
 .auth-link {
