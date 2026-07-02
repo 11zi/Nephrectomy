@@ -12,16 +12,33 @@ function generateRoomId(userId: string): string {
 }
 
 function serializeShopRoom(room: any) {
+  const memberIds = Array.isArray(room.memberIds) ? room.memberIds : []
+  const subscriberIds = Array.isArray(room.subscriberIds) ? room.subscriberIds : []
+
   return {
     id: room.roomId,
     name: room.name,
     description: room.description,
-    memberCount: room.memberCount,
+    memberCount: memberIds.length,
+    onlineCount: 0,
+    subscriberCount: subscriberIds.length,
     isActive: room.isActive,
     parentId: room.parentId,
     ownerId: room.ownerId,
+    ownerName: '',
+    heat: room.heat ?? 0,
+    cover: room.cover,
+    colSpan: room.colSpan,
+    rowSpan: room.rowSpan,
     loanBalance: room.loanBalance,
     downPayment: room.downPayment,
+    isHidden: Boolean(room.isHidden),
+    ownerOnly: Boolean(room.ownerOnly),
+    demolishedAt: room.demolishedAt ? new Date(room.demolishedAt).toISOString() : null,
+    isSubscribed: false,
+    isMember: false,
+    members: [],
+    subscribers: [],
   }
 }
 
@@ -48,6 +65,8 @@ router.post('/rooms', authRequired, async (req, res) => {
       ownerId: user.uid,
       loanBalance: ROOM_LOAN,
       downPayment: ROOM_DOWN_PAYMENT,
+      memberIds: [user.uid],
+      subscriberIds: [],
       memberCount: 0,
       heat: 0,
       isActive: false,

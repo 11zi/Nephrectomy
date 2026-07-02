@@ -1,7 +1,7 @@
 <!-- src/views/Content/ChatRoomList.vue -->
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { ChevronRight, FolderOpen, Info, Users, X, ArrowLeft, Circle } from 'lucide-vue-next'
+import { ArrowLeft, ChevronRight, Circle, EyeOff, FolderOpen, Info, Users, X } from 'lucide-vue-next'
 import { Button } from '../../components/ui/button'
 import { useContentStore } from '../../stores/useContentStore'
 import { useChatStore } from '../../stores/useChatStore'
@@ -128,6 +128,11 @@ watch(
           <!-- 活跃指示点 -->
           <span v-if="room.isActive" class="active-dot"></span>
 
+          <span v-if="room.isHidden || room.ownerOnly" class="hidden-badge">
+            <EyeOff />
+            已隐藏
+          </span>
+
           <!-- 子房间角标 -->
           <span v-if="room.children.length > 0" class="child-badge">
             <FolderOpen />
@@ -163,7 +168,7 @@ watch(
             </span>
             <span :class="{ active: dialogRoom.isActive }">
               <Circle />
-              {{ dialogRoom.isActive ? '有人在线' : '暂无人在线' }}
+              {{ dialogRoom.isHidden || dialogRoom.ownerOnly ? '仅房主可进入' : dialogRoom.isActive ? '有人在线' : '暂无人在线' }}
             </span>
           </div>
           <div class="room-dialog-actions">
@@ -210,7 +215,8 @@ watch(
 .room-nav-button svg,
 .app-page-breadcrumb-sep,
 .room-cell-meta svg,
-.child-badge svg {
+.child-badge svg,
+.hidden-badge svg {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
@@ -322,6 +328,26 @@ watch(
   align-items: center;
   gap: 3px;
   backdrop-filter: blur(4px);
+}
+
+.hidden-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 10px;
+  padding: 2px 6px;
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  font-size: 11px;
+  backdrop-filter: blur(4px);
+}
+
+.hidden-badge + .child-badge {
+  top: 32px;
 }
 
 .child-badge svg {

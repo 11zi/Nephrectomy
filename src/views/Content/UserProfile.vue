@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { Cake, CalendarDays, Link, MapPin, ThumbsUp, VenusAndMars, X } from 'lucide-vue-next'
+import { BadgeCheck, Cake, CalendarDays, Link, MapPin, ThumbsUp, VenusAndMars, X } from 'lucide-vue-next'
 import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
 import { useContentStore } from '../../stores/useContentStore'
@@ -126,6 +126,10 @@ watch(targetUserId, loadProfile)
           <div class="user-profile-identity">
             <img :src="profile.avatarUrl" alt="avatar" class="user-profile-avatar" />
             <div class="user-profile-name">{{ profile.nickname }}</div>
+            <div class="user-profile-id">
+              <BadgeCheck />
+              <span>{{ profile.identityId }}</span>
+            </div>
             <div class="user-profile-status" :class="{ active: hasActivePresence }">{{ presenceText }}</div>
             <div class="user-profile-motto">{{ profile.motto || '还没有签名' }}</div>
           </div>
@@ -285,6 +289,23 @@ watch(targetUserId, loadProfile)
   color: #37474f;
   font-size: 20px;
   font-weight: 700;
+}
+
+.user-profile-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: #607d8b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.user-profile-id svg {
+  width: 14px;
+  height: 14px;
 }
 
 .user-profile-motto {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { User } from 'lucide-vue-next'
+import { BadgeCheck, User } from 'lucide-vue-next'
 import { Button } from '../../components/ui/button'
 import { useContentStore } from '../../stores/useContentStore'
 import { useUserStore } from '../../stores/useUserStore'
@@ -69,6 +69,10 @@ watch(() => props.user.id, loadProfile)
       <img :src="profile?.avatarUrl || props.user.avatarUrl" alt="avatar" class="user-info-avatar" />
       <div class="user-info-main">
         <div class="user-info-name">{{ profile?.nickname || props.user.nickname }}</div>
+        <div v-if="profile?.identityId || props.user.identityId" class="user-info-id">
+          <BadgeCheck />
+          <span>{{ profile?.identityId || props.user.identityId }}</span>
+        </div>
         <div class="user-info-status" :class="{ active: hasActivePresence }">{{ presenceText }}</div>
         <div class="user-info-motto">{{ profile?.motto || props.user.motto || '还没有签名' }}</div>
       </div>
@@ -132,6 +136,23 @@ watch(() => props.user.id, loadProfile)
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.user-info-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: #607d8b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.user-info-id svg {
+  width: 13px;
+  height: 13px;
 }
 
 .user-info-motto {

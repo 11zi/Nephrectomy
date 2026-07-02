@@ -11,15 +11,23 @@ import { emitRoomPlaybackState } from '../realtime'
 
 const router = Router()
 
-async function ensureRoomExists(roomId: string): Promise<boolean> {
+function canAccessRoom(room: any, userId?: string): boolean {
+  if (!room.isHidden && !room.ownerOnly) return true
+  return Boolean(userId && room.ownerId === userId)
+}
+
+async function findAccessibleRoom(roomId: string, userId?: string) {
   const room = await Room.findOne({ roomId }).lean()
-  return Boolean(room)
+  if (!room) return null
+  return canAccessRoom(room, userId) ? room : false
 }
 
 router.get('/:roomId/playback', authRequired, async (req, res) => {
   try {
     const roomId = String(req.params.roomId)
-    if (!await ensureRoomExists(roomId)) return res.status(404).json({ error: '房间不存在' })
+    const room = await findAccessibleRoom(roomId, req.userId)
+    if (room === null) return res.status(404).json({ error: '房间不存在' })
+    if (room === false) return res.status(403).json({ error: '这个房间暂时只允许房主进入' })
 
     res.json(getPlaybackState(roomId))
   } catch (err) {
@@ -30,7 +38,9 @@ router.get('/:roomId/playback', authRequired, async (req, res) => {
 router.post('/:roomId/playback/queue', authRequired, async (req, res) => {
   try {
     const roomId = String(req.params.roomId)
-    if (!await ensureRoomExists(roomId)) return res.status(404).json({ error: '房间不存在' })
+    const room = await findAccessibleRoom(roomId, req.userId)
+    if (room === null) return res.status(404).json({ error: '房间不存在' })
+    if (room === false) return res.status(403).json({ error: '这个房间暂时只允许房主进入' })
 
     const playback = addMediaToQueue(roomId, String(req.body?.url ?? ''), String(req.userId))
     const item = playback.queue.find(queueItem => queueItem.id === playback.itemId)
@@ -52,7 +62,9 @@ router.post('/:roomId/playback/queue', authRequired, async (req, res) => {
 router.post('/:roomId/playback/queue/:itemId/vote-remove', authRequired, async (req, res) => {
   try {
     const roomId = String(req.params.roomId)
-    if (!await ensureRoomExists(roomId)) return res.status(404).json({ error: '房间不存在' })
+    const room = await findAccessibleRoom(roomId, req.userId)
+    if (room === null) return res.status(404).json({ error: '房间不存在' })
+    if (room === false) return res.status(403).json({ error: '这个房间暂时只允许房主进入' })
 
     const result = voteRemoveMedia(roomId, String(req.params.itemId), String(req.userId))
     emitRoomPlaybackState(roomId, result)
@@ -75,7 +87,9 @@ router.post('/:roomId/playback/queue/:itemId/vote-remove', authRequired, async (
 router.post('/:roomId/playback/current-ended', authRequired, async (req, res) => {
   try {
     const roomId = String(req.params.roomId)
-    if (!await ensureRoomExists(roomId)) return res.status(404).json({ error: '房间不存在' })
+    const room = await findAccessibleRoom(roomId, req.userId)
+    if (room === null) return res.status(404).json({ error: '房间不存在' })
+    if (room === false) return res.status(403).json({ error: '这个房间暂时只允许房主进入' })
 
     const playback = markCurrentMediaEnded(roomId, String(req.body?.itemId ?? ''))
     emitRoomPlaybackState(roomId, playback)

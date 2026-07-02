@@ -29,6 +29,7 @@ vi.mock('../../api/httpChatApi', () => ({
     logout: vi.fn().mockRejectedValue(new Error('offline')),
     fetchMe: vi.fn().mockResolvedValue({
       uid: 'user-test',
+      identityId: 'TEST0001',
       nickname: '测试用户',
       avatarUrl: '',
       motto: '',
@@ -79,6 +80,7 @@ vi.mock('../useUserStore', async () => {
     useUserStore: () => ({
       currentUser: {
         id: 'user-test',
+        identityId: 'TEST0001',
         nickname: '测试用户',
         avatarUrl: '',
         motto: '',

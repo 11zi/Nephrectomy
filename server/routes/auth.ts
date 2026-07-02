@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
-import { User } from '../models/User'
+import { User, ensureUserIdentityId, generateUniqueIdentityId } from '../models/User'
 import { signToken } from '../auth/jwt'
 import { authRequired } from '../auth/middleware'
 import { postStateMessage } from '../auth/stateMessages'
@@ -18,6 +18,7 @@ function normalizeCurrentRoom(roomId?: string | null): string {
 function senderFromUser(user: any): ISenderSummary {
   return {
     id: user.uid,
+    identityId: user.identityId,
     nickname: user.nickname,
     avatarUrl: user.avatarUrl || '',
     motto: user.motto ?? '',
@@ -33,6 +34,7 @@ function serializeProfile(user: any) {
 
   return {
     uid: user.uid,
+    identityId: user.identityId ?? '',
     nickname: user.nickname,
     avatarUrl: user.avatarUrl,
     motto: user.motto,
@@ -111,9 +113,11 @@ router.post('/register', async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10)
     const uid = generateUid()
+    const identityId = await generateUniqueIdentityId()
 
     const user = await User.create({
       uid,
+      identityId,
       nickname: nickname.trim(),
       email: email.trim(),
       passwordHash,
@@ -196,6 +200,7 @@ router.post('/login', async (req, res) => {
 
     // 登录只更新在线状态，避免旧用户文档的无关字段校验导致登录失败。
     const currentRoom = normalizeCurrentRoom(user.currentRoom)
+    await ensureUserIdentityId(user)
     user.isOnline = true
     user.currentRoom = currentRoom
     user.lastSeenAt = new Date()
@@ -250,6 +255,7 @@ router.get('/me', authRequired, async (req, res) => {
   try {
     const user = await User.findOne({ uid: req.userId }).lean()
     if (!user) return res.status(404).json({ error: '用户不存在' })
+    await ensureUserIdentityId(user)
 
     res.json(serializeProfile(user))
   } catch (err) {

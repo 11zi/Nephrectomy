@@ -4,6 +4,15 @@ export type MessageId = string
 
 export interface UserSummary {
   id: UserId
+  identityId?: string
+  nickname: string
+  avatarUrl: string
+  motto?: string
+}
+
+export interface RoomUserSummary {
+  uid: UserId
+  identityId?: string
   nickname: string
   avatarUrl: string
   motto?: string
@@ -14,6 +23,8 @@ export interface RoomSummary {
   name: string
   description?: string
   memberCount: number
+  onlineCount?: number
+  subscriberCount?: number
   isActive: boolean
 }
 
@@ -27,6 +38,15 @@ export interface RoomDetail extends RoomSummary {
   ownerName: string
   loanBalance: number
   downPayment: number
+  isHidden: boolean
+  ownerOnly: boolean
+  demolishedAt: string | null
+  onlineCount: number
+  subscriberCount: number
+  isSubscribed: boolean
+  isMember: boolean
+  members: RoomUserSummary[]
+  subscribers: RoomUserSummary[]
 }
 
 export type ChatMessageKind = 'user' | 'state' | 'command'
@@ -90,6 +110,11 @@ export interface RoomNode extends RoomSummary {
   ownerId?: UserId | null
   loanBalance?: number
   downPayment?: number
+  onlineCount?: number
+  subscriberCount?: number
+  isHidden?: boolean
+  ownerOnly?: boolean
+  demolishedAt?: string | null
   children: RoomNode[]
   cover?: string
   colSpan?: number

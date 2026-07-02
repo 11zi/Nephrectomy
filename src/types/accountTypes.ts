@@ -2,6 +2,7 @@
 
 export interface AccountProfile {
   uid: string
+  identityId: string
   avatarUrl: string
   nickname: string
   motto: string

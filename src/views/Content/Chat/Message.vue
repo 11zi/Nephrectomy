@@ -99,6 +99,9 @@ function handleAction(label: MessageAction) {
     <div class="msg-body">
       <div class="msg-meta">
         <span class="msg-sender">{{ props.message.sender.nickname }}</span>
+        <span v-if="props.message.sender.identityId" class="msg-identity-id">
+          {{ props.message.sender.identityId }}
+        </span>
         <span v-if="props.timestamp" class="msg-time">{{ props.timestamp }}</span>
       </div>
       <div v-if="props.quoteThread" class="msg-quote msg-quote-thread">
@@ -188,6 +191,14 @@ function handleAction(label: MessageAction) {
   font-size: 12px;
   font-weight: 600;
   color: #546e7a;
+}
+
+.msg-identity-id {
+  color: #78909c;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .msg-time {

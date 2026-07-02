@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   AlignLeft,
+  BadgeCheck,
   Cake,
   Camera,
   Check,
@@ -34,6 +35,7 @@ const snackbar = useSnackbar()
 // ---- 表单状态 ----
 const profile = ref<AccountProfile>({
   uid: userStore.currentUser?.id ?? 'unknown',
+  identityId: userStore.currentUser?.identityId ?? '',
   avatarUrl: '',
   nickname: '',
   motto: '',
@@ -263,6 +265,14 @@ const genderOptions = [
             </span>
             <Input v-model="profile.nickname" type="text" maxlength="24" required />
           </label>
+
+          <div class="ae-identity-id">
+            <span>
+              <BadgeCheck />
+              身份 ID
+            </span>
+            <strong>{{ profile.identityId }}</strong>
+          </div>
 
           <label class="ae-hero-field">
             <span>
@@ -501,6 +511,42 @@ const genderOptions = [
   color: #78909c;
   font-size: 12px;
   font-weight: 500;
+}
+
+.ae-identity-id {
+  display: grid;
+  gap: 6px;
+  width: min(420px, 100%);
+  margin-top: 12px;
+  color: #455a64;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ae-identity-id span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ae-identity-id svg {
+  width: 18px;
+  height: 18px;
+  color: #455a64;
+}
+
+.ae-identity-id strong {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid rgba(84, 110, 122, 0.18);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #eceff1;
+  color: #455a64;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .ae-cover-editor {

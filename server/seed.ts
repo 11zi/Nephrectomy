@@ -5,6 +5,7 @@
  * 幂等：先清空再插入，可重复执行。
  */
 import bcrypt from 'bcryptjs'
+import { fileURLToPath } from 'node:url'
 import { connectDb } from './db'
 import { Room } from './models/Room'
 import { User } from './models/User'
@@ -13,13 +14,40 @@ import { ProfileLike } from './models/ProfileLike'
 import { ProfileVisit } from './models/ProfileVisit'
 
 const rooms = [
-  { roomId: 'plaza',    name: '广场', description: '所有人闲聊的大厅',   memberCount: 35, heat: 70, isActive: true,  parentId: null, cover: '#546e7a', colSpan: 2, rowSpan: 2 },
-  { roomId: 'teahouse', name: '茶馆', description: '品茶闲聊，安静交流', memberCount: 12, heat: 18, isActive: true,  parentId: null, cover: '#4e6b5e', colSpan: 1, rowSpan: 1 },
+  {
+    roomId: 'plaza',
+    name: '广场',
+    description: '所有人闲聊的大厅',
+    memberIds: [],
+    subscriberIds: [],
+    memberCount: 0,
+    heat: 0,
+    isActive: false,
+    parentId: null,
+    cover: '#546e7a',
+    colSpan: 2,
+    rowSpan: 2,
+  },
+  {
+    roomId: 'teahouse',
+    name: '茶馆',
+    description: '品茶闲聊，安静交流',
+    memberIds: [],
+    subscriberIds: [],
+    memberCount: 0,
+    heat: 0,
+    isActive: false,
+    parentId: null,
+    cover: '#4e6b5e',
+    colSpan: 1,
+    rowSpan: 1,
+  },
 ]
 
 const users = [
   {
     uid: 'user-hamisky',
+    identityId: 'HAMI0001',
     nickname: '哈米斯基',
     avatarUrl: 'src/assets/static_image/r19.png',
     motto: '凡是被那把武器伤害的人，都会遭到席卷全身的诅咒',
@@ -67,6 +95,7 @@ const messages = [
     kind: 'user' as const,
     sender: {
       id: 'user-hamisky',
+      identityId: 'HAMI0001',
       nickname: '哈米斯基',
       avatarUrl: 'src/assets/static_image/r19.png',
       motto: '凡是被那把武器伤害的人，都会遭到席卷全身的诅咒',
@@ -83,6 +112,7 @@ const messages = [
     kind: 'user' as const,
     sender: {
       id: 'user-bot',
+      identityId: 'BOTX0001',
       nickname: '小助手',
       avatarUrl: '',
       motto: '',
@@ -99,6 +129,7 @@ const messages = [
     kind: 'user' as const,
     sender: {
       id: 'user-hamisky',
+      identityId: 'HAMI0001',
       nickname: '哈米斯基',
       avatarUrl: 'src/assets/static_image/r19.png',
       motto: '凡是被那把武器伤害的人，都会遭到席卷全身的诅咒',
@@ -115,6 +146,7 @@ const messages = [
     kind: 'user' as const,
     sender: {
       id: 'user-hamisky',
+      identityId: 'HAMI0001',
       nickname: '哈米斯基',
       avatarUrl: 'src/assets/static_image/r19.png',
       motto: '凡是被那把武器伤害的人，都会遭到席卷全身的诅咒',
@@ -154,4 +186,6 @@ async function seed() {
   process.exit(0)
 }
 
-seed()
+if (process.argv[1] && fileURLToPath(import.meta.url) === fileURLToPath(new URL(`file:///${process.argv[1].replace(/\\/g, '/')}`))) {
+  seed()
+}

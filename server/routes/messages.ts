@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import { Message } from '../models/Message'
 import { Room } from '../models/Room'
-import { User } from '../models/User'
-import { authRequired } from '../auth/middleware'
+import { User, ensureUserIdentityId } from '../models/User'
+import { authOptional, authRequired } from '../auth/middleware'
 import { emitRoomMessageCreated, emitRoomMessageDeleted, serializeMessage } from '../realtime'
 
 const router = Router()
@@ -44,8 +44,21 @@ function isPrivilegedUser(user: any): boolean {
     || titles.some((title: string) => /管理员|房管|admin|moderator/i.test(title))
 }
 
+function canAccessRoom(room: any, userId?: string): boolean {
+  if (!room.isHidden && !room.ownerOnly) return true
+  return Boolean(userId && room.ownerId === userId)
+}
+
+function roomMemberCount(room: any): number {
+  return Array.isArray(room.memberIds) ? room.memberIds.length : 0
+}
+
+async function getOnlineCount(roomId: string): Promise<number> {
+  return User.countDocuments({ currentRoom: roomId, isOnline: true })
+}
+
 // GET /api/rooms/:roomId/messages
-router.get('/:roomId/messages', async (req, res) => {
+router.get('/:roomId/messages', authOptional, async (req, res) => {
   try {
     const roomId = String(req.params.roomId)
     const beforeMessageId = req.query.beforeMessageId as string | undefined
@@ -53,6 +66,9 @@ router.get('/:roomId/messages', async (req, res) => {
 
     const room = await Room.findOne({ roomId }).lean()
     if (!room) return res.status(404).json({ error: '房间不存在' })
+    if (!canAccessRoom(room, req.userId)) {
+      return res.status(403).json({ error: '这个房间暂时只允许房主进入' })
+    }
 
     const filter: any = { roomId }
     if (beforeMessageId) {
@@ -76,14 +92,17 @@ router.get('/:roomId/messages', async (req, res) => {
     const pageMessages = hasMore ? messages.slice(0, limit) : messages
     const orderedMessages = pageMessages.reverse().map(serializeRoomMessage)
     const oldestMessage = orderedMessages[0]
+    const onlineCount = await getOnlineCount(room.roomId)
 
     res.json({
       room: {
         id: room.roomId,
         name: room.name,
         description: room.description,
-        memberCount: room.memberCount,
-        isActive: room.isActive,
+        memberCount: roomMemberCount(room),
+        onlineCount,
+        subscriberCount: Array.isArray(room.subscriberIds) ? room.subscriberIds.length : 0,
+        isActive: onlineCount > 0,
       },
       messages: orderedMessages,
       hasMore,
@@ -114,9 +133,14 @@ router.post('/:roomId/messages', authRequired, async (req, res) => {
     // 从认证 token 获取当前用户信息作为 sender
     const user = await User.findOne({ uid: req.userId }).lean()
     if (!user) return res.status(404).json({ error: '用户不存在' })
+    await ensureUserIdentityId(user)
+    if (!canAccessRoom(room, user.uid)) {
+      return res.status(403).json({ error: '这个房间暂时只允许房主进入' })
+    }
 
     const sender = {
       id: user.uid,
+      identityId: user.identityId,
       nickname: user.nickname,
       avatarUrl: user.avatarUrl || '',
       motto: user.motto ?? '',
