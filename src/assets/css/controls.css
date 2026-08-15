@@ -88,23 +88,55 @@
   min-width: 76px;
   height: 36px;
   line-height: 36px;
-  color: #fff;
-  background: var(--app-accent);
+  border: 0;
+  border-radius: var(--app-radius-sm);
+  color: var(--app-text-inverse) !important;
+  background: var(--app-accent) !important;
+  box-shadow: none;
+  font-weight: 600;
+  letter-spacing: 0;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 120ms ease;
 }
 
 .app-button-danger {
-  background: var(--app-danger);
+  background: var(--app-danger) !important;
 }
 
 .app-button-success {
-  background: var(--app-success);
+  background: var(--app-success) !important;
+}
+
+.app-button:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--app-accent) 88%, #000 12%) !important;
+}
+
+.app-button-danger:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--app-danger) 88%, #000 12%) !important;
+}
+
+.app-button-success:hover:not([disabled]) {
+  background: color-mix(in srgb, var(--app-success) 88%, #000 12%) !important;
+}
+
+.app-button:active:not([disabled]) {
+  transform: translateY(1px);
+}
+
+.app-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--app-accent) 38%, transparent);
+  outline-offset: 2px;
 }
 
 .app-button[disabled],
 .app-button-danger[disabled],
 .app-button-success[disabled] {
-  color: rgba(0, 0, 0, 0.26);
-  background: rgba(0, 0, 0, 0.12);
+  color: rgba(38, 50, 56, 0.38) !important;
+  background: rgba(84, 110, 122, 0.12) !important;
+  box-shadow: none;
+  transform: none;
 }
 
 @media (max-width: 600px) {

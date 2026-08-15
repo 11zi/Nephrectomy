@@ -25,6 +25,8 @@ export interface RoomSummary {
   memberCount: number
   onlineCount?: number
   subscriberCount?: number
+  isSubscribed?: boolean
+  isMember?: boolean
   isActive: boolean
 }
 

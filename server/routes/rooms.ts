@@ -95,7 +95,11 @@ function parseAmount(value: unknown): number | null {
 }
 
 /** 将扁平房间列表组装为树 */
-function buildRoomTree(rooms: InstanceType<typeof Room>[], onlineCounts: Map<string, number>) {
+function buildRoomTree(
+  rooms: InstanceType<typeof Room>[],
+  onlineCounts: Map<string, number>,
+  viewerUserId?: string,
+) {
   const map = new Map<string, any>()
   const roots: any[] = []
 
@@ -113,6 +117,8 @@ function buildRoomTree(rooms: InstanceType<typeof Room>[], onlineCounts: Map<str
       memberCount: roomMemberCount(r),
       subscriberCount: roomSubscriberCount(r),
       onlineCount: onlineCounts.get(r.roomId) ?? 0,
+      isSubscribed: Boolean(viewerUserId && Array.isArray(r.subscriberIds) && r.subscriberIds.includes(viewerUserId)),
+      isMember: Boolean(viewerUserId && Array.isArray(r.memberIds) && r.memberIds.includes(viewerUserId)),
       isActive: (onlineCounts.get(r.roomId) ?? 0) > 0,
       parentId: r.parentId,
       cover: r.cover,
@@ -153,7 +159,7 @@ router.get('/', authOptional, async (req, res) => {
     const onlineCounts = new Map<string, number>(
       onlineRows.map(row => [String(row._id), Number(row.count)]),
     )
-    const tree = buildRoomTree(docs as any, onlineCounts)
+    const tree = buildRoomTree(docs as any, onlineCounts, req.userId)
     res.json(tree)
   } catch (err) {
     res.status(500).json({ error: '获取房间列表失败' })
@@ -379,12 +385,17 @@ router.post('/:roomId/enter', authRequired, async (req, res) => {
       await postStateMessage(targetRoomId, sender, `${user.nickname} 来到了 ${room.name}`)
     }
 
+    const onlineCount = await getOnlineCount(room.roomId)
     res.json({
       id: room.roomId,
       name: room.name,
       description: room.description,
       memberCount: roomMemberCount(room),
-      isActive: await getOnlineCount(room.roomId) > 0,
+      onlineCount,
+      subscriberCount: roomSubscriberCount(room),
+      isSubscribed: Array.isArray(room.subscriberIds) && room.subscriberIds.includes(user.uid),
+      isMember: Array.isArray(room.memberIds) && room.memberIds.includes(user.uid),
+      isActive: onlineCount > 0,
     })
   } catch (err) {
     res.status(500).json({ error: '进入房间失败' })

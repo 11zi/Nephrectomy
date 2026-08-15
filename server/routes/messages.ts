@@ -102,6 +102,8 @@ router.get('/:roomId/messages', authOptional, async (req, res) => {
         memberCount: roomMemberCount(room),
         onlineCount,
         subscriberCount: Array.isArray(room.subscriberIds) ? room.subscriberIds.length : 0,
+        isSubscribed: Boolean(req.userId && Array.isArray(room.subscriberIds) && room.subscriberIds.includes(req.userId)),
+        isMember: Boolean(req.userId && Array.isArray(room.memberIds) && room.memberIds.includes(req.userId)),
         isActive: onlineCount > 0,
       },
       messages: orderedMessages,

@@ -165,9 +165,21 @@ watch(roomId, loadRoomInfo)
             <span>在线人数</span>
             <strong>{{ room.onlineCount }}</strong>
           </div>
-          <div class="room-info-stat">
+          <div class="room-info-stat room-info-subscribe-stat">
             <span>订阅人数</span>
             <strong>{{ room.subscriberCount }}</strong>
+            <Button
+              class="room-info-subscribe-button"
+              size="sm"
+              type="button"
+              :variant="room.isSubscribed ? 'outline' : 'default'"
+              :disabled="isSubscribing"
+              @click="toggleSubscription"
+            >
+              <BellOff v-if="room.isSubscribed" />
+              <Bell v-else />
+              {{ isSubscribing ? '处理中...' : room.isSubscribed ? '取消订阅' : '订阅' }}
+            </Button>
           </div>
           <div class="room-info-stat">
             <span>状态</span>
@@ -176,28 +188,6 @@ watch(roomId, loadRoomInfo)
           <div class="room-info-stat">
             <span>房主</span>
             <strong>{{ room.ownerName || '公共房间' }}</strong>
-          </div>
-        </section>
-
-        <section v-if="room.ownerId" class="room-info-section">
-          <div class="room-info-section-title">
-            <Bell />
-            房间订阅
-          </div>
-          <p class="room-info-note">
-            订阅后，未来侧边栏会提供快速加入入口；房主也可以把订阅用户添加为房间成员。
-          </p>
-          <div class="room-info-actions">
-            <Button
-              type="button"
-              :variant="room.isSubscribed ? 'outline' : 'default'"
-              :disabled="isSubscribing"
-              @click="toggleSubscription"
-            >
-              <BellOff v-if="room.isSubscribed" />
-              <Bell v-else />
-              {{ isSubscribing ? '处理中...' : room.isSubscribed ? '取消订阅' : '订阅房间' }}
-            </Button>
           </div>
         </section>
 
@@ -379,6 +369,16 @@ watch(roomId, loadRoomInfo)
   margin-top: 6px;
   font-size: 18px;
   color: var(--app-text);
+}
+
+.room-info-subscribe-stat {
+  display: grid;
+  align-content: start;
+}
+
+.room-info-subscribe-button {
+  width: 100%;
+  margin-top: 10px;
 }
 
 .room-info-section {

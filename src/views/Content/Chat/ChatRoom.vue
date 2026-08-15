@@ -207,7 +207,7 @@ onActivated(() => {
   flex-direction: column;
   overflow: hidden;
   padding-left: var(--content-left-gap, 0px);
-  transition: padding-left 0.22s ease;
+  transition: padding-left var(--sidebar-transition-duration) var(--sidebar-transition-easing);
 }
 
 .chat-body {

@@ -46,8 +46,8 @@ function renderContent(content: string) {
 .quote-thread-level {
   --quote-line-color: rgba(84, 110, 122, 0.24);
   --quote-card-bg: rgba(255, 255, 255, 0.42);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   width: 100%;
   min-width: 0;
@@ -55,20 +55,21 @@ function renderContent(content: string) {
 
 .quote-tree-node {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 18px;
   min-width: 0;
 }
 
 .quote-thread-card {
   position: relative;
   z-index: 1;
-  width: min(100%, 132px);
+  width: 132px;
   min-width: 0;
   max-height: 76px;
-  justify-self: center;
-  align-self: center;
+  justify-self: start;
+  align-self: start;
   overflow: hidden;
   border: 1px solid rgba(84, 110, 122, 0.13);
   border-left: 2px solid rgba(84, 110, 122, 0.3);
@@ -116,16 +117,17 @@ function renderContent(content: string) {
 .quote-thread-branch {
   position: relative;
   width: 100%;
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 0;
+  padding-top: 0;
+  padding-left: 16px;
 }
 
 .quote-thread-branch::before {
   position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1px;
-  height: 14px;
+  top: 38px;
+  left: 0;
+  width: 16px;
+  height: 1px;
   background: var(--quote-line-color);
   content: '';
 }
@@ -135,13 +137,7 @@ function renderContent(content: string) {
 }
 
 .quote-thread-branch > :deep(.quote-thread-level)::before {
-  position: absolute;
-  top: -7px;
-  right: calc(58px + 4px);
-  left: calc(58px + 4px);
-  height: 1px;
-  background: var(--quote-line-color);
-  content: '';
+  display: none;
 }
 
 .quote-thread-branch > :deep(.quote-thread-level:has(> .quote-tree-node:only-child))::before {
@@ -150,29 +146,41 @@ function renderContent(content: string) {
 
 .quote-thread-branch > :deep(.quote-tree-node)::before {
   position: absolute;
-  top: -14px;
-  left: 50%;
-  width: 1px;
-  height: 14px;
+  top: 38px;
+  left: -16px;
+  width: 16px;
+  height: 1px;
   background: var(--quote-line-color);
   content: '';
 }
 
 @media (max-width: 600px) {
   .quote-thread-level {
-    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
     gap: 6px;
   }
 
+  .quote-tree-node {
+    grid-template-columns: 116px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+
   .quote-thread-card {
-    width: min(100%, 116px);
+    width: 116px;
     max-height: 72px;
     padding: 5px 7px;
   }
 
-  .quote-thread-branch > :deep(.quote-thread-level)::before {
-    right: calc(52px + 3px);
-    left: calc(52px + 3px);
+  .quote-thread-branch {
+    padding-left: 12px;
+  }
+
+  .quote-thread-branch::before {
+    width: 12px;
+  }
+
+  .quote-thread-branch > :deep(.quote-tree-node)::before {
+    left: -12px;
+    width: 12px;
   }
 }
 </style>

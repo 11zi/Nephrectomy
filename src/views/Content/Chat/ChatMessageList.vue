@@ -175,8 +175,9 @@ defineExpose({
 .message-list {
   position: relative;
   z-index: 1;
-  width: 100%;
-  margin-bottom: 8px;
+  width: 92%;
+  max-width: 100%;
+  margin: 0 auto 8px;
 }
 
 .message-row-wrap {
@@ -207,6 +208,8 @@ defineExpose({
 
 @media (max-width: 600px) {
   .message-list {
+    width: 100%;
+    margin-bottom: 8px;
     padding-right: 0;
     padding-left: 0;
   }
