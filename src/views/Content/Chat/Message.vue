@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { AtSign, Copy, ExternalLink, RotateCcw, Undo2, X } from 'lucide-vue-next'
+import { AtSign, Copy, ExternalLink, GitBranch, RotateCcw, Undo2, X } from 'lucide-vue-next'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import QuoteThread from './QuoteThread.vue'
@@ -24,6 +24,8 @@ const emit = defineEmits<{
 }>()
 
 const actionMenuOpen = ref(false)
+const actionTargetMessage = ref<ChatMessage | null>(null)
+const quoteThreadDialogOpen = ref(false)
 const pendingWebLink = ref('')
 
 const safeHtml = computed(() => renderSafeChatMessageHtml(props.message.content))
@@ -33,7 +35,46 @@ const quotedPreview = computed(() => {
   return renderSafeChatMessageHtml(props.quotedMessage.content)
 })
 
-const quoteThreadNodes = computed(() => props.quoteThread ? [props.quoteThread] : [])
+function countQuoteThreadNodes(node: QuoteThreadNode): number {
+  return 1 + node.children.reduce((count, child) => count + countQuoteThreadNodes(child), 0)
+}
+
+function addCurrentMessageToQuoteThread(node: QuoteThreadNode): QuoteThreadNode {
+  const children = node.children.map(addCurrentMessageToQuoteThread)
+
+  if (
+    node.message.id === props.message.replyToId
+    && !children.some(child => child.message.id === props.message.id)
+  ) {
+    children.push({
+      message: props.message,
+      children: [],
+      isPath: true,
+    })
+  }
+
+  // The selected reply chain is the primary reading path; sibling replies follow it.
+  children.sort((left, right) => Number(right.isPath) - Number(left.isPath))
+
+  return {
+    ...node,
+    children,
+  }
+}
+
+const hasExpandableQuoteThread = computed(() => {
+  return props.quoteThread ? countQuoteThreadNodes(props.quoteThread) > 1 : false
+})
+
+const expandedQuoteThreadNodes = computed(() => {
+  return props.quoteThread ? [addCurrentMessageToQuoteThread(props.quoteThread)] : []
+})
+
+const expandedQuoteMessageCount = computed(() => {
+  return expandedQuoteThreadNodes.value[0]
+    ? countQuoteThreadNodes(expandedQuoteThreadNodes.value[0])
+    : 0
+})
 
 const senderInitials = computed(() => props.message.sender.nickname.slice(0, 2).toUpperCase())
 
@@ -78,14 +119,25 @@ const menuItems = [
 
 function onContextMenu(e: MouseEvent) {
   e.preventDefault()
+  actionTargetMessage.value = props.message
+  actionMenuOpen.value = true
+}
+
+function openThreadMessageActions(event: MouseEvent, message: ChatMessage) {
+  event.preventDefault()
+  event.stopPropagation()
+  actionTargetMessage.value = message
   actionMenuOpen.value = true
 }
 
 function handleAction(label: MessageAction) {
   const item = menuItems.find(menuItem => menuItem.label === label)
   if (!item) return
+  const targetMessage = actionTargetMessage.value ?? props.message
   actionMenuOpen.value = false
-  emit('action', item.label, props.message)
+  actionTargetMessage.value = null
+  quoteThreadDialogOpen.value = false
+  emit('action', item.label, targetMessage)
 }
 </script>
 
@@ -104,18 +156,30 @@ function handleAction(label: MessageAction) {
         </span>
         <span v-if="props.timestamp" class="msg-time">{{ props.timestamp }}</span>
       </div>
-      <div v-if="props.quoteThread" class="msg-quote msg-quote-thread">
-        <QuoteThread :nodes="quoteThreadNodes" @content-click="onMessageContentClick" />
-      </div>
-      <div v-else-if="props.quotedMessage" class="msg-quote" @click="onMessageContentClick">
-        <div class="msg-quote-sender">{{ props.quotedMessage.sender.nickname }}</div>
+      <div v-if="props.quotedMessage" class="msg-quote msg-quote-summary" @click="onMessageContentClick">
+        <div class="msg-quote-sender">回复 {{ props.quotedMessage.sender.nickname }}</div>
         <div class="msg-quote-content msg-rich-text" v-html="quotedPreview"></div>
+        <button
+          v-if="hasExpandableQuoteThread"
+          class="msg-quote-expand"
+          type="button"
+          title="展开回复链"
+          aria-label="展开回复链"
+          aria-haspopup="dialog"
+          @click.stop="quoteThreadDialogOpen = true"
+        >
+          <GitBranch :size="15" />
+        </button>
       </div>
       <div class="msg-bubble msg-rich-text" @click="onMessageContentClick" v-html="safeHtml"></div>
     </div>
 
     <Teleport to="body">
-      <div v-if="actionMenuOpen" class="msg-dialog-backdrop" @click.self="actionMenuOpen = false">
+      <div
+        v-if="actionMenuOpen"
+        class="msg-dialog-backdrop msg-action-menu-backdrop"
+        @click.self="actionMenuOpen = false"
+      >
         <div class="msg-action-dialog" role="menu" aria-label="消息操作">
           <button
             v-for="item in menuItems"
@@ -127,6 +191,44 @@ function handleAction(label: MessageAction) {
             <component :is="item.icon" :size="18" />
             <span>{{ item.label }}</span>
           </button>
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div
+        v-if="quoteThreadDialogOpen"
+        class="msg-dialog-backdrop"
+        @click.self="quoteThreadDialogOpen = false"
+      >
+        <div
+          class="msg-action-dialog msg-quote-thread-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="quote-thread-dialog-title"
+        >
+          <div class="msg-quote-thread-dialog-header">
+            <div>
+              <h2 id="quote-thread-dialog-title">回复链</h2>
+              <p>共 {{ expandedQuoteMessageCount }} 条关联消息，包含当前回复与支线回复</p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              title="关闭"
+              @click="quoteThreadDialogOpen = false"
+            >
+              <X />
+            </Button>
+          </div>
+          <div class="msg-quote-thread-dialog-content">
+            <QuoteThread
+              :nodes="expandedQuoteThreadNodes"
+              @content-click="onMessageContentClick"
+              @message-context-menu="openThreadMessageActions"
+            />
+          </div>
         </div>
       </div>
     </Teleport>
@@ -275,27 +377,71 @@ function handleAction(label: MessageAction) {
   color: #607d8b;
 }
 
-.msg-quote-thread {
-  width: min(520px, calc(100vw - 96px));
-  max-width: calc(100vw - 96px);
-  overflow-x: auto;
+.msg-quote-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'sender expand'
+    'content expand';
+  align-items: center;
+  column-gap: 12px;
+  width: min(420px, 100%);
 }
 
 .msg-quote-sender {
+  grid-area: sender;
   font-size: 11px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
 .msg-quote-content {
+  grid-area: content;
+  min-width: 0;
   font-size: 12px;
   line-height: 1.35;
-  max-height: 42px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.msg-quote-content p:first-child { margin-top: 0; }
-.msg-quote-content p:last-child { margin-bottom: 0; }
+.msg-quote-content :where(*) {
+  display: inline;
+  margin: 0;
+}
+
+.msg-quote-content :where(br) {
+  display: none;
+}
+
+.msg-quote-content :where(.chat-media) {
+  display: none;
+}
+
+.msg-quote-expand {
+  grid-area: expand;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  padding: 0;
+  background: rgba(84, 110, 122, 0.08);
+  color: #546e7a;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.msg-quote-expand:hover {
+  background: rgba(84, 110, 122, 0.16);
+  color: #37474f;
+}
 
 .msg-bubble .chat-media-image {
   height: auto;
@@ -343,6 +489,10 @@ function handleAction(label: MessageAction) {
   background: rgba(15, 23, 42, 0.28);
 }
 
+.msg-action-menu-backdrop {
+  z-index: 10002;
+}
+
 .msg-action-dialog {
   width: min(400px, calc(100vw - 32px));
   overflow: hidden;
@@ -372,6 +522,46 @@ function handleAction(label: MessageAction) {
 .msg-action-item:hover {
   background: rgba(84, 110, 122, 0.1);
   color: #37474f;
+}
+
+.msg-quote-thread-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(920px, calc(100vw - 32px));
+  max-height: min(720px, calc(100vh - 32px));
+}
+
+.msg-quote-thread-dialog-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid rgba(84, 110, 122, 0.14);
+  padding: 16px 18px 14px;
+}
+
+.msg-quote-thread-dialog-header h2 {
+  margin: 0;
+  color: #263238;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.msg-quote-thread-dialog-header p {
+  margin: 3px 0 0;
+  color: #78909c;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.msg-quote-thread-dialog-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px;
+  background: rgba(236, 239, 241, 0.24);
 }
 
 .link-confirm-dialog {
@@ -466,10 +656,9 @@ function handleAction(label: MessageAction) {
     max-width: 100%;
   }
 
-  .msg-quote-thread {
-    width: min(100%, calc(100vw - 58px));
-    max-width: calc(100vw - 58px);
-    padding: 5px 7px;
+  .msg-quote-summary {
+    width: 100%;
+    column-gap: 8px;
   }
 
   .msg-bubble .chat-media {
@@ -478,6 +667,19 @@ function handleAction(label: MessageAction) {
 
   .msg-action-dialog {
     width: min(360px, calc(100vw - 32px));
+  }
+
+  .msg-quote-thread-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .msg-quote-thread-dialog-header {
+    padding: 14px;
+  }
+
+  .msg-quote-thread-dialog-content {
+    padding: 14px;
   }
 }
 </style>

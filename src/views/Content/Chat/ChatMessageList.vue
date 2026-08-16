@@ -30,6 +30,10 @@ const messagesById = computed(() => {
 
 const quoteThreadsByMessageId = computed(() => buildQuoteThreadsByMessage(props.messages))
 
+function forwardMessageAction(action: MessageAction, targetMessage: ChatMessage) {
+  emit('action', action, targetMessage)
+}
+
 function isAtMessageBottom() {
   const el = messageScrollRef.value
   if (!el) return true
@@ -126,7 +130,7 @@ defineExpose({
           :quote-thread="quoteThreadsByMessageId.get(message.id) ?? null"
           :timestamp="formatMessageTime(message.createdAt)"
           :current-user-id="currentUserId ?? null"
-          @action="emit('action', $event, message)"
+          @action="forwardMessageAction"
           @avatar-click="emit('avatarClick', $event)"
         />
         <Message
@@ -135,7 +139,7 @@ defineExpose({
           :quoted-message="message.replyToId ? messagesById.get(message.replyToId) ?? null : null"
           :quote-thread="quoteThreadsByMessageId.get(message.id) ?? null"
           :timestamp="formatMessageTime(message.createdAt)"
-          @action="emit('action', $event, message)"
+          @action="forwardMessageAction"
           @avatar-click="emit('avatarClick', $event)"
         />
         <StateMessage
