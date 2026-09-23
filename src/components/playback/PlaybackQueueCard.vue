@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Button } from '../ui/button'
 import type { MediaItem } from '../../types/playbackTypes'
 import { REMOVE_VOTE_THRESHOLD } from '../../types/playbackTypes'
 import { formatDuration } from '../../utils/formatDuration'
@@ -42,14 +43,16 @@ const hasVoted = computed(() => {
 
     <div class="queue-actions">
       <span v-if="isCurrent" class="queue-status">正在播放</span>
-      <button
-        class="mdui-btn mdui-btn-dense mdui-ripple vote-button"
+      <Button
+        variant="ghost"
+        size="sm"
+        class="vote-button"
         type="button"
         @click="emit('voteRemove', item.id)"
       >
         {{ hasVoted ? '取消切除' : '投票切除' }}
         {{ item.removeVotes.length }}/{{ REMOVE_VOTE_THRESHOLD }}
-      </button>
+      </Button>
     </div>
   </article>
 </template>

@@ -1,4 +1,3 @@
-import { Room } from '../models/Room'
 import { User } from '../models/User'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -99,10 +98,10 @@ export async function settlePassiveIncome(user: any, now = new Date()): Promise<
   if (chunks <= 0) return 0
 
   const settledMinutes = chunks * PASSIVE_SETTLEMENT_MINUTES
-  const room = await Room.findOne({ roomId: user.currentRoom || 'plaza' }).lean()
-  const roomMembers = Math.max(1, room?.memberCount ?? 1)
-  const roomHeat = Math.max(0, room?.heat ?? roomMembers)
-  const perMinute = PASSIVE_BASE_PER_MINUTE + roomHeat / roomMembers
+  const roomId = user.currentRoom || 'plaza'
+  const onlineCount = await User.countDocuments({ currentRoom: roomId, isOnline: true })
+  const roomMembers = Math.max(1, onlineCount)
+  const perMinute = PASSIVE_BASE_PER_MINUTE + onlineCount / roomMembers
   const income = asMoney(settledMinutes * perMinute)
 
   user.money = asMoney((user.money ?? 0) + income)

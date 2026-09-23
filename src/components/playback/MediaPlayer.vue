@@ -20,6 +20,7 @@ interface YoutubePlayer {
   playVideo(): void
   pauseVideo(): void
   setVolume(volume: number): void
+  setPlaybackQuality(suggestedQuality: string): void
 }
 
 const props = defineProps<{
@@ -83,6 +84,10 @@ function syncYoutubeVolume() {
   youtubePlayer?.setVolume(settingsStore.masterVolume)
 }
 
+function syncYoutubeQuality() {
+  youtubePlayer?.setPlaybackQuality(settingsStore.youtubePlaybackQuality)
+}
+
 async function syncDirectMedia() {
   await nextTick()
   const el = mediaEl.value
@@ -127,6 +132,7 @@ async function syncYoutubeMedia() {
       onReady: () => {
         if (!youtubePlayer) return
         syncYoutubeVolume()
+        syncYoutubeQuality()
         youtubePlayer.seekTo(Math.max(0, targetTime), true)
         if (props.status === 'playing') {
           youtubePlayer.playVideo()
@@ -173,6 +179,11 @@ watch(
     syncDirectVolume()
     syncYoutubeVolume()
   },
+)
+
+watch(
+  () => settingsStore.playbackResolution,
+  () => syncYoutubeQuality(),
 )
 
 onBeforeUnmount(destroyYoutubePlayer)

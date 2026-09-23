@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { User } from '../models/User'
+import { User, ensureUserIdentityId } from '../models/User'
 import { ProfileLike } from '../models/ProfileLike'
 import { ProfileVisit } from '../models/ProfileVisit'
 import { authRequired } from '../auth/middleware'
@@ -27,6 +27,7 @@ function serializeProfile(user: any, likedToday = false, recentLikeUsers: Array<
 
   return {
     uid: user.uid,
+    identityId: user.identityId ?? '',
     nickname: user.nickname,
     avatarUrl: user.avatarUrl,
     motto: user.motto,
@@ -80,6 +81,7 @@ async function getRecentLikeUsers(targetUserId: string) {
 async function getPublicProfile(targetUserId: string, viewerUserId: string) {
   let user = await User.findOne({ uid: targetUserId }).lean()
   if (!user) return null
+  await ensureUserIdentityId(user)
 
   if (targetUserId !== viewerUserId) {
     try {
@@ -92,6 +94,7 @@ async function getPublicProfile(targetUserId: string, viewerUserId: string) {
       await User.updateOne({ uid: targetUserId }, { $inc: { visitCount: 1 } })
       user = await User.findOne({ uid: targetUserId }).lean()
       if (!user) return null
+      await ensureUserIdentityId(user)
     } catch (err: any) {
       if (err?.code !== 11000) throw err
     }
@@ -117,6 +120,7 @@ router.get('/', authRequired, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: '用户不存在' })
     }
+    await ensureUserIdentityId(user)
 
     res.json(serializeProfile(user))
   } catch (err) {
@@ -155,6 +159,7 @@ router.post('/status', authRequired, async (req, res) => {
     ).lean()
 
     if (!user) return res.status(404).json({ error: '用户不存在' })
+    await ensureUserIdentityId(user)
     res.json(serializeProfile(user))
   } catch (err) {
     res.status(500).json({ error: '设置状态失败' })
@@ -177,6 +182,7 @@ router.delete('/status', authRequired, async (req, res) => {
     ).lean()
 
     if (!user) return res.status(404).json({ error: '用户不存在' })
+    await ensureUserIdentityId(user)
     res.json(serializeProfile(user))
   } catch (err) {
     res.status(500).json({ error: '结束状态失败' })
@@ -257,6 +263,7 @@ router.put('/', authRequired, async (req, res) => {
     ).lean()
 
     if (!user) return res.status(404).json({ error: '用户不存在' })
+    await ensureUserIdentityId(user)
 
     res.json(serializeProfile(user))
   } catch (err) {

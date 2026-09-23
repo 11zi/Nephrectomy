@@ -39,6 +39,16 @@ export interface ChatApi {
   fetchRoomInfo(roomId: RoomId): Promise<RoomDetail>
   /** 偿还房间贷款 */
   repayRoomLoan(roomId: RoomId, amount: number): Promise<RoomDetail>
+  /** 拆除房间：免除债务，并临时隐藏/限制进入 */
+  demolishRoom(roomId: RoomId): Promise<RoomDetail>
+  /** 恢复已拆除房间 */
+  reopenRoom(roomId: RoomId): Promise<RoomDetail>
+  /** 订阅房间 */
+  subscribeRoom(roomId: RoomId): Promise<RoomDetail>
+  /** 取消订阅房间 */
+  unsubscribeRoom(roomId: RoomId): Promise<RoomDetail>
+  /** 房主将订阅用户添加为成员 */
+  addRoomMember(roomId: RoomId, userId: string): Promise<RoomDetail>
   /** 购买房间 */
   buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult>
   /** 获取当前用户资料 */

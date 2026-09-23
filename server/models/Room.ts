@@ -7,6 +7,11 @@ export interface IRoom extends Document {
   ownerId: string | null
   loanBalance: number
   downPayment: number
+  memberIds: string[]
+  subscriberIds: string[]
+  isHidden: boolean
+  ownerOnly: boolean
+  demolishedAt: Date | null
   memberCount: number
   heat: number
   isActive: boolean
@@ -24,6 +29,11 @@ const RoomSchema = new Schema<IRoom>(
     ownerId: { type: String, default: null },
     loanBalance: { type: Number, default: 0 },
     downPayment: { type: Number, default: 0 },
+    memberIds: { type: [String], default: [] },
+    subscriberIds: { type: [String], default: [] },
+    isHidden: { type: Boolean, default: false },
+    ownerOnly: { type: Boolean, default: false },
+    demolishedAt: { type: Date, default: null },
     memberCount: { type: Number, default: 0 },
     heat: { type: Number, default: 0 },
     isActive: { type: Boolean, default: false },

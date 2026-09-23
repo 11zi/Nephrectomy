@@ -8,6 +8,11 @@ const router = createRouter({
       name: 'home',
       component: { template: '<div />' },
     },
+    {
+      path: '/ui-preview',
+      name: 'ui-preview',
+      component: { template: '<div />' },
+    },
   ],
 })
 

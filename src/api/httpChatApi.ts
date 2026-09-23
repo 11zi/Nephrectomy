@@ -129,6 +129,37 @@ export const httpChatApi: ChatApi = {
     })
   },
 
+  async demolishRoom(roomId: RoomId): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/demolish`, {
+      method: 'POST',
+    })
+  },
+
+  async reopenRoom(roomId: RoomId): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/reopen`, {
+      method: 'POST',
+    })
+  },
+
+  async subscribeRoom(roomId: RoomId): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/subscribe`, {
+      method: 'POST',
+    })
+  },
+
+  async unsubscribeRoom(roomId: RoomId): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/subscribe`, {
+      method: 'DELETE',
+    })
+  },
+
+  async addRoomMember(roomId: RoomId, userId: string): Promise<RoomDetail> {
+    return request<RoomDetail>(`/rooms/${roomId}/members`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    })
+  },
+
   async buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult> {
     return request<BuyRoomResult>('/shop/rooms', {
       method: 'POST',

@@ -2,6 +2,7 @@ import { ref } from 'vue'
 
 const SIDEBAR_WIDTH = '240px'
 const MOBILE_QUERY = '(max-width: 600px)'
+const CLOSED_CONTENT_GAP = '10px'
 
 const isSidebarOpen = ref(false)
 let resizeListenerRegistered = false
@@ -14,12 +15,17 @@ function syncSidebarLayout(open: boolean) {
   if (typeof document === 'undefined') return
 
   const sidebarWidth = open && !isMobileViewport() ? SIDEBAR_WIDTH : '0px'
+  const contentLeftGap = open && !isMobileViewport() ? '0px' : CLOSED_CONTENT_GAP
   document.body.style.paddingLeft = sidebarWidth
   document.documentElement.style.setProperty('--sidebar-width', sidebarWidth)
+  document.documentElement.style.setProperty('--content-left-gap', contentLeftGap)
 }
 
 function ensureResizeListener() {
-  if (resizeListenerRegistered || typeof window === 'undefined') return
+  if (typeof window === 'undefined') return
+
+  syncSidebarLayout(isSidebarOpen.value)
+  if (resizeListenerRegistered) return
 
   window.addEventListener(
     'resize',
@@ -39,7 +45,6 @@ function openSidebar() {
 function closeSidebar() {
   isSidebarOpen.value = false
   syncSidebarLayout(false)
-  mdui.mutation()
 }
 
 function toggleSidebar() {

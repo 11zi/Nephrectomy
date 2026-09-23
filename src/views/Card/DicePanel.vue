@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { BadgePercent, Check, CircleMinus, Hourglass, Landmark, ReceiptText } from 'lucide-vue-next'
 import { httpChatApi } from '../../api/httpChatApi'
+import { Badge } from '../../components/ui/badge'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useSnackbar } from '../../composables/useSnackbar'
 import { useUserStore } from '../../stores/useUserStore'
 import type { BankStatus } from '../../types/bankTypes'
@@ -57,14 +61,7 @@ async function loadBalance() {
     snackbar.error(err.message || '余额加载失败')
   } finally {
     isLoading.value = false
-    await refreshTextFields()
   }
-}
-
-async function refreshTextFields() {
-  await nextTick()
-  mdui.mutation()
-  mdui.updateTextFields?.()
 }
 
 async function rollDice() {
@@ -86,14 +83,12 @@ async function rollDice() {
     await loadBalance()
   } finally {
     isSubmitting.value = false
-    await refreshTextFields()
     amountInput.value?.focus()
   }
 }
 
 onMounted(() => {
   loadBalance()
-  refreshTextFields()
 })
 </script>
 
@@ -104,12 +99,10 @@ onMounted(() => {
         <span class="app-stat-label">骰子游戏</span>
         <strong class="app-stat-value dice-title-value">下注试手气</strong>
       </div>
-      <div class="mdui-chip dice-chip mdui-color-blue-grey-600">
-        <span class="mdui-chip-icon">
-          <i class="mdui-icon material-icons">casino</i>
-        </span>
-        <span class="mdui-chip-title">50%</span>
-      </div>
+      <Badge class="dice-chip">
+        <BadgePercent />
+        50%
+      </Badge>
     </div>
 
     <div class="app-stat-card app-stat-card-strong balance-band">
@@ -119,44 +112,41 @@ onMounted(() => {
 
     <div class="dice-copy app-meta-list">
       <span class="app-meta-line">
-        <i class="mdui-icon material-icons">payments</i>
+        <ReceiptText class="dice-copy-icon" />
         成功获得下注额 1 倍
       </span>
       <span class="app-meta-line">
-        <i class="mdui-icon material-icons">remove_circle_outline</i>
+        <CircleMinus class="dice-copy-icon" />
         失败失去下注额
       </span>
     </div>
 
     <form class="app-action-row app-action-row-two dice-form" @submit.prevent="rollDice">
-      <div
-        class="mdui-textfield mdui-textfield-floating-label app-field amount-field"
-        :class="{ 'mdui-textfield-invalid': validationMessage }"
-      >
-        <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
-        <label class="mdui-textfield-label">下注金额</label>
-        <input
+      <div class="amount-field">
+        <label class="amount-label">
+          <Landmark class="amount-label-icon" />
+          下注金额
+        </label>
+        <Input
           ref="amountInput"
-          v-model.trim="amountText"
-          class="mdui-textfield-input"
+          v-model="amountText"
           type="text"
           inputmode="numeric"
           pattern="[0-9]*"
           :disabled="isLoading || isSubmitting"
         />
-        <div class="mdui-textfield-error">{{ validationMessage }}</div>
+        <div v-if="validationMessage" class="amount-error">{{ validationMessage }}</div>
       </div>
 
-      <button
-        class="mdui-btn mdui-btn-raised mdui-ripple app-button action-btn"
+      <Button
+        class="app-button action-btn"
         type="submit"
         :disabled="!canSubmit"
       >
-        <i class="mdui-icon material-icons mdui-icon-left">
-          {{ isSubmitting ? 'hourglass_empty' : 'check' }}
-        </i>
+        <Hourglass v-if="isSubmitting" />
+        <Check v-else />
         确定
-      </button>
+      </Button>
     </form>
   </div>
 </template>
@@ -191,11 +181,7 @@ onMounted(() => {
 
 .dice-chip {
   flex: 0 0 auto;
-  color: #fff;
-}
-
-.dice-chip .mdui-chip-icon {
-  background: rgba(255, 255, 255, 0.2);
+  gap: 6px;
 }
 
 .dice-copy {
@@ -209,7 +195,29 @@ onMounted(() => {
 
 .amount-field {
   min-width: 0;
-  padding-top: 0;
+}
+
+.amount-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.amount-label-icon,
+.dice-copy-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.amount-error {
+  margin-top: 4px;
+  color: #c62828;
+  font-size: 12px;
 }
 
 .action-btn {

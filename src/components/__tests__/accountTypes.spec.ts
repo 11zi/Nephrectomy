@@ -4,6 +4,7 @@ import type { AccountProfile } from '../../types/accountTypes'
 
 const validProfile: AccountProfile = {
   uid: 'user-test',
+  identityId: 'TEST0001',
   avatarUrl: '',
   nickname: '哈米斯基',
   motto: '',

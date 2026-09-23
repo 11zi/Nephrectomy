@@ -1,6 +1,20 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  BadgeDollarSign,
+  ChartLine,
+  RefreshCw,
+  Save,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+} from 'lucide-vue-next'
 import { httpChatApi } from '../../api/httpChatApi'
+import { Badge } from '../../components/ui/badge'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
 import { useSnackbar } from '../../composables/useSnackbar'
 import { useUserStore } from '../../stores/useUserStore'
 import type { StockStatus } from '../../types/stockTypes'
@@ -72,12 +86,6 @@ function syncForm(nextStatus: StockStatus) {
   autoSellText.value = nextStatus.user.autoSellPrice?.toString() ?? ''
 }
 
-async function refreshTextFields() {
-  await nextTick()
-  mdui.mutation()
-  mdui.updateTextFields?.()
-}
-
 async function loadStock({ silent = false } = {}) {
   if (!silent) isLoading.value = true
   try {
@@ -85,7 +93,6 @@ async function loadStock({ silent = false } = {}) {
     status.value = nextStatus
     syncProfile(nextStatus)
     if (!autoBuyText.value && !autoSellText.value) syncForm(nextStatus)
-    await refreshTextFields()
   } catch (err: any) {
     if (!silent) snackbar.error(err.message || '股票信息加载失败')
   } finally {
@@ -144,7 +151,6 @@ async function saveAutoPrices() {
     status.value = nextStatus
     syncProfile(nextStatus)
     syncForm(nextStatus)
-    await refreshTextFields()
     snackbar.success('自动交易价格已保存')
   } catch (err: any) {
     snackbar.error(err.message || '自动价格设置失败')
@@ -155,7 +161,6 @@ async function saveAutoPrices() {
 
 onMounted(() => {
   loadStock()
-  refreshTextFields()
   refreshTimer = setInterval(() => loadStock({ silent: true }), 60_000)
 })
 
@@ -174,25 +179,17 @@ onUnmounted(() => {
         <span class="app-stat-label">
           {{ status?.symbol ?? 'NEPH' }}
         </span>
-        <strong class="app-stat-value stock-name mdui-text-truncate">{{ status?.name ?? '肾股' }}</strong>
+        <strong class="app-stat-value stock-name">{{ status?.name ?? '肾股' }}</strong>
       </div>
-      <div
-        class="mdui-chip stock-badge"
-        :class="{
-          'mdui-color-red-700': status?.isCrashed,
-          'mdui-color-green-700': status?.isBull,
-          'mdui-color-blue-grey-600': !status?.isCrashed && !status?.isBull,
-        }"
+      <Badge
+        class="stock-badge"
+        :variant="status?.isCrashed ? 'destructive' : status?.isBull ? 'default' : 'secondary'"
       >
-        <span class="mdui-chip-icon">
-          <i class="mdui-icon material-icons">
-            {{ status?.isCrashed ? 'trending_down' : status?.isBull ? 'trending_up' : 'show_chart' }}
-          </i>
-        </span>
-        <span class="mdui-chip-title">
-          {{ status?.isCrashed ? '已崩盘' : status?.isBull ? '牛股' : '交易中' }}
-        </span>
-      </div>
+        <TrendingDown v-if="status?.isCrashed" />
+        <TrendingUp v-else-if="status?.isBull" />
+        <ChartLine v-else />
+        {{ status?.isCrashed ? '已崩盘' : status?.isBull ? '牛股' : '交易中' }}
+      </Badge>
     </div>
 
     <div class="app-stat-grid">
@@ -216,11 +213,11 @@ onUnmounted(() => {
 
     <div class="stock-meta app-meta-list">
       <span class="app-meta-line">
-        <i class="mdui-icon material-icons">account_balance_wallet</i>
+        <Wallet class="stock-meta-icon" />
         余额 {{ formatMoney(status?.user.cash) }}
       </span>
       <span class="app-meta-line">
-        <i class="mdui-icon material-icons">update</i>
+        <RefreshCw class="stock-meta-icon" />
         更新 {{ formatDate(status?.updatedAt) }}
       </span>
       <span class="app-meta-line">
@@ -235,75 +232,72 @@ onUnmounted(() => {
     </div>
 
     <div class="app-action-row app-action-row-two trade-row">
-      <div class="mdui-textfield mdui-textfield-floating-label app-field amount-field">
-        <i class="mdui-icon material-icons mdui-textfield-icon">confirmation_number</i>
-        <label class="mdui-textfield-label">股数</label>
-        <input
+      <label class="amount-field">
+        <span class="amount-label">
+          <BadgeDollarSign class="amount-label-icon" />
+          股数
+        </span>
+        <Input
           v-model="sharesText"
-          class="mdui-textfield-input"
           type="number"
           min="1"
           step="1"
           inputmode="numeric"
           :disabled="isSubmitting"
         />
-      </div>
+      </label>
       <div class="trade-actions">
-        <button
-          class="mdui-btn mdui-btn-raised mdui-ripple app-button app-button-danger action-btn"
+        <Button
+          class="app-button app-button-danger action-btn"
           type="button"
           :disabled="isSubmitting"
           @click.prevent="trade('sell')"
         >
-          <i class="mdui-icon material-icons mdui-icon-left">call_received</i>
+          <ArrowDownToLine />
           卖出
-        </button>
-        <button
-          class="mdui-btn mdui-btn-raised mdui-ripple app-button app-button-success action-btn"
+        </Button>
+        <Button
+          class="app-button app-button-success action-btn"
           type="button"
           :disabled="isSubmitting || status?.isCrashed === true"
           @click.prevent="trade('buy')"
         >
-          <i class="mdui-icon material-icons mdui-icon-left">call_made</i>
+          <ArrowUpFromLine />
           买入
-        </button>
+        </Button>
       </div>
     </div>
 
     <div class="app-action-row app-action-row-auto auto-row">
-      <div class="mdui-textfield mdui-textfield-floating-label app-field amount-field">
-        <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
-        <label class="mdui-textfield-label">自动买入价</label>
-        <input
+      <label class="amount-field">
+        <span class="amount-label">自动买入价</span>
+        <Input
           v-model="autoBuyText"
-          class="mdui-textfield-input"
           type="number"
           min="0"
           step="0.0001"
           :disabled="isSubmitting"
         />
-      </div>
-      <div class="mdui-textfield mdui-textfield-floating-label app-field amount-field">
-        <i class="mdui-icon material-icons mdui-textfield-icon">attach_money</i>
-        <label class="mdui-textfield-label">自动卖出价</label>
-        <input
+      </label>
+      <label class="amount-field">
+        <span class="amount-label">自动卖出价</span>
+        <Input
           v-model="autoSellText"
-          class="mdui-textfield-input"
           type="number"
           min="0"
           step="0.0001"
           :disabled="isSubmitting"
         />
-      </div>
-      <button
-        class="mdui-btn mdui-btn-raised mdui-ripple app-button action-btn"
+      </label>
+      <Button
+        class="app-button action-btn"
         type="button"
         :disabled="isSubmitting"
         @click.prevent="saveAutoPrices"
       >
-        <i class="mdui-icon material-icons mdui-icon-left">save</i>
+        <Save />
         保存
-      </button>
+      </Button>
     </div>
   </div>
 </template>
@@ -330,15 +324,14 @@ onUnmounted(() => {
 
 .stock-name {
   max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stock-badge {
   flex: 0 0 auto;
-  color: #fff;
-}
-
-.stock-badge .mdui-chip-icon {
-  background: rgba(255, 255, 255, 0.2);
+  gap: 6px;
 }
 
 .stock-meta,
@@ -351,9 +344,10 @@ onUnmounted(() => {
   margin-top: 8px;
 }
 
-.trade-preview .mdui-icon {
-  margin-right: 6px;
-  font-size: 16px;
+.stock-meta-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .trade-row {
@@ -372,8 +366,25 @@ onUnmounted(() => {
 }
 
 .amount-field {
+  display: grid;
+  gap: 6px;
   margin: 0;
-  padding-top: 8px;
+  min-width: 0;
+}
+
+.amount-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.amount-label-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .action-btn {

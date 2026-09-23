@@ -3,6 +3,7 @@ import mongoose, { Schema, type Document } from 'mongoose'
 /** 消息中嵌入的发件人摘要（对应前端 UserSummary） */
 export interface ISenderSummary {
   id: string
+  identityId?: string
   nickname: string
   avatarUrl: string
   motto?: string
@@ -23,6 +24,7 @@ export interface IMessage extends Document {
 const SenderSummarySchema = new Schema<ISenderSummary>(
   {
     id: { type: String, required: true },
+    identityId: { type: String },
     nickname: { type: String, required: true },
     avatarUrl: { type: String, default: '' },
     motto: { type: String },

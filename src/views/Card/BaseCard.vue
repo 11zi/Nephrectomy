@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onUnmounted } from 'vue'
+import { X } from 'lucide-vue-next'
 import type { Component } from 'vue'
+import { Button } from '../../components/ui/button'
 import { getNextZIndex } from '../../utils/useZIndex'
 import { useSidebar } from '../../composables/useSidebar'
 
@@ -101,27 +103,36 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="mdui-card float-card app-floating-card"
+    class="float-card app-floating-card"
     :style="{ zIndex: currentZIndex }"
     @mousedown="bringToFront"
   >
     <div class="app-panel-shell">
       <div
-        class="mdui-card-actions app-drag-header"
+        class="app-drag-header"
         @mousedown="m_d($event)"
         @touchstart="onTouchStart($event)"
       >
-        <div class="mdui-card-primary-title app-drag-title">
+        <div class="app-drag-title">
           {{ panelName }}
         </div>
-        <button
-          class="mdui-btn mdui-btn-icon mdui-ripple"
+        <Button
+          variant="ghost"
+          size="icon"
+          class="app-panel-close-button"
           @click="_emit('closePanel')"
           @mousedown.stop
+          title="关闭"
         >
-          <i class="mdui-icon material-icons">close</i>
-        </button>
+          <X />
+        </Button>
       </div>
+      <div
+        class="app-drag-extension"
+        aria-hidden="true"
+        @mousedown="m_d($event)"
+        @touchstart="onTouchStart($event)"
+      ></div>
 
       <div class="app-panel-content">
         <component v-if="contentComponent" :is="contentComponent" v-bind="contentProps" />
@@ -144,13 +155,57 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.app-drag-header .mdui-card-primary-title {
+.app-drag-title {
   flex: 1 1 auto;
   min-width: 0;
+  padding-left: 14px;
+  overflow: hidden;
+  font-size: var(--app-font-lg);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.app-drag-header .mdui-btn {
+
+.app-panel-close-button {
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
+  margin-right: 8px;
   margin-left: auto;
+  border: 0;
+  border-radius: var(--app-radius-sm);
+  background: transparent;
+  color: var(--app-text-soft);
+  box-shadow: none;
+}
+
+.app-panel-close-button:hover {
+  background: rgba(84, 110, 122, 0.12);
+  color: var(--app-text);
+}
+
+.app-panel-close-button:focus-visible {
+  outline: 2px solid rgba(84, 110, 122, 0.28);
+  outline-offset: 2px;
+}
+
+.app-drag-header {
+  min-height: 42px;
+  padding: 4px 0;
+}
+
+.app-drag-extension {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 10px;
+  cursor: grab;
+}
+
+.app-drag-extension:active {
+  cursor: grabbing;
 }
 
 @media (max-width: 768px) {
@@ -183,11 +238,10 @@ onUnmounted(() => {
   }
 
   .app-drag-header {
-    min-height: 48px;
+    min-height: 44px;
     cursor: default;
     touch-action: pan-y;
-    padding-left: calc(var(--app-safe-area-left) + 8px);
-    padding-right: calc(var(--app-safe-area-right) + 4px);
+    padding: 5px calc(var(--app-safe-area-right) + 0px) 5px calc(var(--app-safe-area-left) + 0px);
   }
 
   .app-drag-header:active {
@@ -195,11 +249,20 @@ onUnmounted(() => {
   }
 
   .app-drag-title {
+    padding-left: calc(var(--app-safe-area-left) + 14px);
     font-size: 16px;
   }
 
+  .app-panel-close-button {
+    margin-right: calc(var(--app-safe-area-right) + 8px);
+  }
+
+  .app-drag-extension {
+    display: none;
+  }
+
   .app-panel-content {
-    max-height: calc(var(--mobile-panel-max-height) - 48px);
+    max-height: calc(var(--mobile-panel-max-height) - 44px);
     overflow: auto;
     overscroll-behavior: contain;
     padding-bottom: var(--app-safe-area-bottom);

@@ -8,6 +8,7 @@ import { DEFAULT_ROOM_ID, useRoomStore } from './useRoomStore'
 // ── 默认值 ──
 const defaultUser: UserSummary = {
   id: 'user-hamisky',
+  identityId: 'HAMI0001',
   nickname: '哈米斯基',
   avatarUrl: 'src/assets/static_image/r19.png',
   motto: '凡是被那把武器伤害的人，都会遭到席卷全身的诅咒',
@@ -16,6 +17,7 @@ const defaultUser: UserSummary = {
 function makeDefaultProfile(user: UserSummary): AccountProfile {
   return {
     uid: user.id,
+    identityId: user.identityId ?? '',
     avatarUrl: user.avatarUrl,
     nickname: user.nickname,
     motto: user.motto ?? '',
@@ -115,6 +117,7 @@ export const useUserStore = defineStore('user', () => {
     syncCurrentRoom(result.user)
     currentUser.value = {
       id: result.user.uid,
+      identityId: result.user.identityId,
       nickname: result.user.nickname,
       avatarUrl: result.user.avatarUrl,
       motto: result.user.motto,
@@ -132,6 +135,7 @@ export const useUserStore = defineStore('user', () => {
     syncCurrentRoom(result.user)
     currentUser.value = {
       id: result.user.uid,
+      identityId: result.user.identityId,
       nickname: result.user.nickname,
       avatarUrl: result.user.avatarUrl,
       motto: result.user.motto,
@@ -164,6 +168,7 @@ export const useUserStore = defineStore('user', () => {
       syncCurrentRoom(p)
       currentUser.value = {
         id: p.uid,
+        identityId: p.identityId,
         nickname: p.nickname,
         avatarUrl: p.avatarUrl,
         motto: p.motto,
@@ -251,6 +256,7 @@ export const useUserStore = defineStore('user', () => {
     currentUser.value = {
       ...currentUser.value,
       nickname: p.nickname || currentUser.value.nickname,
+      identityId: p.identityId || currentUser.value.identityId,
       motto: p.motto ?? currentUser.value.motto,
       avatarUrl: p.avatarUrl || currentUser.value.avatarUrl,
     }

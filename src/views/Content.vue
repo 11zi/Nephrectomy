@@ -71,7 +71,7 @@ function onTouchEnd(e: TouchEvent) {
 
 <template>
   <div
-    style="height: 100%; overflow: hidden;"
+    class="content-shell"
     @touchstart.passive="onTouchStart"
     @touchend.passive="onTouchEnd"
   >
@@ -81,3 +81,19 @@ function onTouchEnd(e: TouchEvent) {
     <component v-else :is="currentComponent" :key="currentPage" :implicit-teleport="isImplicitRoomList" />
   </div>
 </template>
+
+<style scoped>
+.content-shell {
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  transform: translateX(0);
+  transition: transform var(--sidebar-transition-duration) var(--sidebar-transition-easing);
+}
+
+@media (max-width: 600px) {
+  .content-shell {
+    transition: none;
+  }
+}
+</style>

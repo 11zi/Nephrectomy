@@ -29,6 +29,7 @@ body {
   background: var(--app-bg);
   color: var(--app-text);
   overscroll-behavior: none;
+  transition: padding-left var(--sidebar-transition-duration) var(--sidebar-transition-easing);
 }
 
 #app {
@@ -98,6 +99,7 @@ body ::-webkit-scrollbar-thumb:hover {
 @media (max-width: 600px) {
   body {
     padding-left: 0 !important;
+    transition: none;
   }
 
   body ::-webkit-scrollbar {

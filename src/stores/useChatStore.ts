@@ -53,9 +53,13 @@ export const useChatStore = defineStore('chat', () => {
           name: found.name,
           description: found.description,
           memberCount: found.memberCount,
+          onlineCount: found.onlineCount,
+          subscriberCount: found.subscriberCount,
+          isSubscribed: found.isSubscribed,
+          isMember: found.isMember,
           isActive: found.isActive,
         }
-      : { id: rid, name: rid, description: '', memberCount: 0, isActive: false }
+      : { id: rid, name: rid, description: '', memberCount: 0, onlineCount: 0, subscriberCount: 0, isActive: false }
   })
 
   const messages = computed<ChatMessage[]>(() => {

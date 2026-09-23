@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Info } from 'lucide-vue-next'
+
 defineProps<{
   content: string
   timestamp?: string
@@ -8,7 +10,7 @@ defineProps<{
 <template>
   <div class="state-msg-row anim_in">
     <div class="state-msg-bubble">
-      <i class="mdui-icon material-icons state-icon">info</i>
+      <Info class="state-icon" />
       <span class="state-msg-text">{{ content }}</span>
       <span v-if="timestamp" class="state-msg-time">{{ timestamp }}</span>
     </div>
@@ -33,7 +35,8 @@ defineProps<{
 }
 
 .state-icon {
-  font-size: 14px;
+  width: 14px;
+  height: 14px;
   color: #455a64;
   flex-shrink: 0;
 }

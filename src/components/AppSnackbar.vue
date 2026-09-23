@@ -1,6 +1,7 @@
 <!-- 全局 Snackbar 通知组件，配合 useSnackbar composable 使用 -->
 <script setup lang="ts">
 import { ref } from 'vue'
+import { AlertCircle, CheckCircle2, Info } from 'lucide-vue-next'
 
 export interface SnackbarItem {
   id: number
@@ -38,9 +39,9 @@ defineExpose({ show })
           :class="`snackbar-${item.type}`"
           @click="dismiss(item.id)"
         >
-          <i class="mdui-icon material-icons snackbar-icon">
-            {{ item.type === 'error' ? 'error_outline' : item.type === 'success' ? 'check_circle' : 'info' }}
-          </i>
+          <AlertCircle v-if="item.type === 'error'" class="snackbar-icon" />
+          <CheckCircle2 v-else-if="item.type === 'success'" class="snackbar-icon" />
+          <Info v-else class="snackbar-icon" />
           <span>{{ item.message }}</span>
         </div>
       </TransitionGroup>
@@ -84,7 +85,8 @@ defineExpose({ show })
 .snackbar-success { background: #2e7d32; }
 
 .snackbar-icon {
-  font-size: 20px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 }
 

@@ -2,6 +2,7 @@ import mongoose, { Schema, type Document } from 'mongoose'
 
 export interface IUser extends Document {
   uid: string
+  identityId: string
 
   // ── 基础信息 ──
   nickname: string
@@ -58,6 +59,7 @@ export interface IUser extends Document {
 const UserSchema = new Schema<IUser>(
   {
     uid: { type: String, required: true, unique: true },
+    identityId: { type: String, required: true, unique: true, default: generateIdentityId },
 
     nickname: { type: String, required: true, maxlength: 24 },
     avatarUrl: { type: String, default: '' },
@@ -111,5 +113,69 @@ function limit(max: number) {
 }
 
 UserSchema.index({ email: 1 }, { unique: true, sparse: true })
-
 export const User = mongoose.model<IUser>('User', UserSchema)
+
+export function generateIdentityId(): string {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const digits = '0123456789'
+  let result = ''
+
+  for (let i = 0; i < 4; i += 1) {
+    result += letters[Math.floor(Math.random() * letters.length)]
+  }
+  for (let i = 0; i < 4; i += 1) {
+    result += digits[Math.floor(Math.random() * digits.length)]
+  }
+
+  return result
+}
+
+export async function generateUniqueIdentityId(): Promise<string> {
+  for (let i = 0; i < 30; i += 1) {
+    const identityId = generateIdentityId()
+    const existing = await User.exists({ identityId })
+    if (!existing) return identityId
+  }
+
+  throw new Error('Unable to generate unique identity id')
+}
+
+export async function ensureUserIdentityId<T extends { uid?: string; identityId?: string | null }>(
+  user: T,
+): Promise<string> {
+  if (user.identityId) return user.identityId
+  if (!user.uid) throw new Error('Cannot assign identity id without uid')
+
+  for (let i = 0; i < 30; i += 1) {
+    const identityId = await generateUniqueIdentityId()
+
+    try {
+      const result = await User.updateOne(
+        {
+          uid: user.uid,
+          $or: [
+            { identityId: { $exists: false } },
+            { identityId: '' },
+            { identityId: null },
+          ],
+        },
+        { $set: { identityId } },
+      )
+
+      if (result.modifiedCount > 0 || result.matchedCount > 0) {
+        user.identityId = identityId
+        return identityId
+      }
+
+      const freshUser = await User.findOne({ uid: user.uid }).select('identityId').lean()
+      if (freshUser?.identityId) {
+        user.identityId = freshUser.identityId
+        return freshUser.identityId
+      }
+    } catch (err: any) {
+      if (err?.code !== 11000) throw err
+    }
+  }
+
+  throw new Error('Unable to assign identity id')
+}

@@ -60,6 +60,41 @@ export const useRoomStore = defineStore('room', () => {
     return detail
   }
 
+  async function demolishRoom(roomId: RoomId): Promise<RoomDetail> {
+    const detail = await httpChatApi.demolishRoom(roomId)
+    selectedRoomInfo.value = detail
+    await fetchRoomList()
+    return detail
+  }
+
+  async function reopenRoom(roomId: RoomId): Promise<RoomDetail> {
+    const detail = await httpChatApi.reopenRoom(roomId)
+    selectedRoomInfo.value = detail
+    await fetchRoomList()
+    return detail
+  }
+
+  async function subscribeRoom(roomId: RoomId): Promise<RoomDetail> {
+    const detail = await httpChatApi.subscribeRoom(roomId)
+    selectedRoomInfo.value = detail
+    await fetchRoomList()
+    return detail
+  }
+
+  async function unsubscribeRoom(roomId: RoomId): Promise<RoomDetail> {
+    const detail = await httpChatApi.unsubscribeRoom(roomId)
+    selectedRoomInfo.value = detail
+    await fetchRoomList()
+    return detail
+  }
+
+  async function addRoomMember(roomId: RoomId, userId: string): Promise<RoomDetail> {
+    const detail = await httpChatApi.addRoomMember(roomId, userId)
+    selectedRoomInfo.value = detail
+    await fetchRoomList()
+    return detail
+  }
+
   async function buyRoom(payload: BuyRoomPayload): Promise<BuyRoomResult> {
     const result = await httpChatApi.buyRoom(payload)
     await fetchRoomList()
@@ -82,6 +117,11 @@ export const useRoomStore = defineStore('room', () => {
     enterRoom,
     fetchRoomInfo,
     repayRoomLoan,
+    demolishRoom,
+    reopenRoom,
+    subscribeRoom,
+    unsubscribeRoom,
+    addRoomMember,
     buyRoom,
     setActiveRoom,
   }
